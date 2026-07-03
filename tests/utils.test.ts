@@ -15,7 +15,7 @@ describe("formatNumber", () => {
 
 describe("truncate", () => {
   it("truncates long strings", () => {
-    expect(truncate("Hello World", 5)).toBe("Hello...");
+    expect(truncate("Hello World", 5)).toBe("Hello\u2026");
   });
 
   it("does not truncate short strings", () => {
