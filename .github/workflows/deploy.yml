@@ -8,7 +8,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: problems4us
-  NODE_VERSION: "20.x"
+  NODE_VERSION: "22.x"
 
 jobs:
   build:
