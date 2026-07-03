@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  AZURE_WEBAPP_NAME: problems4us
+  AZURE_WEBAPP_NAME: problems4us-linux
   AZURE_RESOURCE_GROUP: rg-problems4us
   NODE_VERSION: "22.x"
 
@@ -42,7 +42,7 @@ jobs:
         run: npm run build
         env:
           AI_PROVIDER: mock
-          NEXT_PUBLIC_APP_URL: https://problems4us.azurewebsites.net
+          NEXT_PUBLIC_APP_URL: https://problems4us-linux.azurewebsites.net
           NEXT_PUBLIC_APP_NAME: Problems4Us
 
       - name: Prepare standalone deployment package
@@ -50,7 +50,6 @@ jobs:
           cp -r .next/static .next/standalone/.next/static
           mkdir -p .next/standalone/public
           cp -r public/* .next/standalone/public/ 2>/dev/null || true
-          cp web.config .next/standalone/web.config 2>/dev/null || true
           cd .next/standalone && zip -r ../../deploy.zip . && cd ../..
 
       - name: Login to Azure
