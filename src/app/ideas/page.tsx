@@ -305,7 +305,7 @@ export default function ProductIdeasPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filteredAndSorted = useMemo(() => {
-    let results = productIdeas.filter((idea) => {
+    const results = productIdeas.filter((idea) => {
       const matchesSearch =
         searchQuery === "" ||
         idea.Name.toLowerCase().includes(searchQuery.toLowerCase()) ||

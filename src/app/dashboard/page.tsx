@@ -20,15 +20,6 @@ import { StatCard } from "@/components/ui/StatCard";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { TrendIndicator } from "@/components/ui/TrendIndicator";
 
-const dashboardStats = {
-  totalProblems: 1247,
-  newThisWeek: 38,
-  topTrending: "Azure Reserved Instance Cost Surprises",
-  highestWTP: 92,
-  clusterCount: 43,
-  emergingAlerts: 7,
-};
-
 const trendData = [
   { month: "Jul '25", problems: 620, mentions: 1850 },
   { month: "Aug '25", problems: 680, mentions: 2100 },
