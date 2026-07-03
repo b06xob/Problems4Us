@@ -45,6 +45,7 @@ jobs:
           cp -r .next/static .next/standalone/.next/static
           mkdir -p .next/standalone/public
           cp -r public/* .next/standalone/public/ 2>/dev/null || true
+          cp web.config .next/standalone/web.config 2>/dev/null || true
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
