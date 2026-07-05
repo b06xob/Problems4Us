@@ -153,3 +153,17 @@ INSERT INTO PainPointMentions (MentionId, PainPointId, RawPostId, ExtractedText,
 ('m-6', 'pp-17', 'rp-6', 'Third time this quarter QB update broke Shopify sync, manually entering everything', -0.85, 80),
 ('m-7', 'pp-9',  'rp-7', 'M365 usage reports clearly wrong, showing active usage for disabled accounts', -0.6, 60),
 ('m-8', 'pp-13', 'rp-8', 'Half our new laptops fail enrollment, spent 3 days with no resolution', -0.75, 78);
+
+-- ============================================================
+-- USER SUBMISSIONS (community-submitted problems)
+-- ============================================================
+INSERT INTO UserSubmissions (SubmissionId, Title, Description, Category, Urgency, SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt) VALUES
+('sub-seed-1', 'Need a tool to track software licenses across vendors',
+ 'Our IT team manages licenses for Microsoft, Adobe, Slack, Zoom, and dozens of other vendors in spreadsheets. Renewals slip through, we over-buy seats, and audits are a nightmare. Looking for a centralized license tracker that integrates with our procurement workflow.',
+ 'IT Operations', 'high', 'Jordan M.', NULL, 'pending', '2026-06-28T10:30:00', '2026-06-28T10:30:00'),
+('sub-seed-2', 'Automated onboarding checklist for new employees',
+ 'Every new hire requires 15+ manual steps across HR, IT, and facilities — AD account, email, laptop, badge, training access. Steps get missed and new hires sit idle on day one. Need a workflow tool that orchestrates onboarding across departments.',
+ 'HR & People Ops', 'medium', 'Alex R.', NULL, 'reviewing', '2026-06-25T14:00:00', '2026-06-30T09:15:00'),
+('sub-seed-3', 'Simple invoice reconciliation for small accounting firms',
+ 'We reconcile client bank statements against QuickBooks entries manually. Takes 4-6 hours per client per month. Need something that matches transactions automatically and flags discrepancies for review.',
+ 'Accounting Software', 'critical', 'Sam K.', NULL, 'pending', '2026-07-01T08:45:00', '2026-07-01T08:45:00');

@@ -227,8 +227,8 @@ export default function HomePage() {
             <Link href="/dashboard" className="btn-primary text-base px-7 py-3">
               Start Finding Opportunities
             </Link>
-            <Link href="/dashboard" className="btn-secondary text-base px-7 py-3">
-              View Demo Dashboard
+            <Link href="/submit" className="btn-secondary text-base px-7 py-3">
+              Submit a Problem
             </Link>
           </div>
         </div>
@@ -450,6 +450,29 @@ export default function HomePage() {
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================ */}
+      {/*  Community Submissions                                       */}
+      {/* ============================================================ */}
+      <section className="py-24">
+        <div className="mx-auto max-w-4xl px-6 text-center">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Have a problem that needs solving?
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-text-secondary">
+            Share your pain point with the community. Builders and entrepreneurs
+            use Problems4Us to find real problems worth building products for.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <Link href="/submit" className="btn-primary text-base px-7 py-3">
+              Submit Your Problem
+            </Link>
+            <Link href="/submissions" className="btn-secondary text-base px-7 py-3">
+              Browse Community Problems
+            </Link>
           </div>
         </div>
       </section>

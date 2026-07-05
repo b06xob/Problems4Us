@@ -114,3 +114,22 @@ CREATE TABLE TrendSnapshots (
 );
 
 CREATE INDEX IX_TrendSnapshots_PainPoint_Date ON TrendSnapshots(PainPointId, SnapshotDate);
+
+-- UserSubmissions: Problems submitted by users seeking solutions
+CREATE TABLE UserSubmissions (
+    SubmissionId        NVARCHAR(50)   PRIMARY KEY,
+    Title               NVARCHAR(500)  NOT NULL,
+    Description         NVARCHAR(MAX)  NOT NULL,
+    Category            NVARCHAR(100)  NOT NULL,
+    Urgency             NVARCHAR(20)   NOT NULL CHECK (Urgency IN ('low', 'medium', 'high', 'critical')),
+    SubmitterName       NVARCHAR(200),
+    SubmitterEmail      NVARCHAR(200),
+    Status              NVARCHAR(20)   DEFAULT 'pending' CHECK (Status IN ('pending', 'reviewing', 'accepted', 'declined')),
+    CreatedAt           DATETIME2      DEFAULT GETUTCDATE(),
+    UpdatedAt           DATETIME2      DEFAULT GETUTCDATE()
+);
+
+CREATE INDEX IX_UserSubmissions_Category ON UserSubmissions(Category);
+CREATE INDEX IX_UserSubmissions_Urgency ON UserSubmissions(Urgency);
+CREATE INDEX IX_UserSubmissions_Status ON UserSubmissions(Status);
+CREATE INDEX IX_UserSubmissions_CreatedAt ON UserSubmissions(CreatedAt DESC);

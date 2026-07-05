@@ -62,16 +62,31 @@ az sql server firewall-rule create \
 
 ### Initialize Database
 
-```bash
-sqlcmd -S problems4us-sql.database.windows.net \
-  -U p4uadmin -P "<password>" \
-  -d problems4us \
-  -i database/schema.sql
+On the existing Azure SQL server (`prius.database.windows.net`):
 
-sqlcmd -S problems4us-sql.database.windows.net \
-  -U p4uadmin -P "<password>" \
-  -d problems4us \
-  -i database/seed.sql
+```bash
+# Create database (Azure CLI)
+az sql db create \
+  --resource-group Prius_RG \
+  --server prius \
+  --name Problems4UsDB \
+  --edition Basic \
+  --capacity 5 \
+  --max-size 2GB
+
+# Apply schema and seed (PowerShell — uses Azure AD or SQL login)
+.\database\provision.ps1 -Server prius -ResourceGroup Prius_RG -User wewon2018 -Password "<password>"
+
+# Or with sqlcmd directly
+sqlcmd -S prius.database.windows.net \
+  -U wewon2018 -P "<password>" \
+  -d Problems4UsDB \
+  -C -i database/schema.sql
+
+sqlcmd -S prius.database.windows.net \
+  -U wewon2018 -P "<password>" \
+  -d Problems4UsDB \
+  -C -i database/seed.sql
 ```
 
 ### Azure OpenAI (Optional)

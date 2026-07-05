@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getMockPainPointById,
-  getMockIdeasForPainPoint,
-} from "@/lib/mock-data";
+  getPainPointById,
+  getProductIdeasForPainPoint,
+} from "@/lib/db-service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const painPoint = getMockPainPointById(painPointId);
+    const painPoint = await getPainPointById(painPointId);
     if (!painPoint) {
       return NextResponse.json(
         { error: `Pain point "${painPointId}" not found` },
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingIdeas = getMockIdeasForPainPoint(painPointId);
+    const existingIdeas = await getProductIdeasForPainPoint(painPointId);
 
     if (existingIdeas.length > 0) {
       return NextResponse.json({

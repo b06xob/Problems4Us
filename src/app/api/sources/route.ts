@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMockSources } from "@/lib/mock-data";
-import type { Source, SourceType } from "@/lib/types";
-
-const mutableSources: Source[] = [...getMockSources()];
+import {
+  listSources,
+  createSource,
+} from "@/lib/db-service";
+import type { SourceType } from "@/lib/types";
 
 export async function GET() {
   try {
-    return NextResponse.json({ data: mutableSources });
-  } catch {
+    const data = await listSources();
+    return NextResponse.json({ data });
+  } catch (error) {
+    console.error("Failed to fetch sources:", error);
     return NextResponse.json(
       { error: "Failed to fetch sources" },
       { status: 500 }
@@ -49,19 +52,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newSource: Source = {
-      SourceId: `src-${sourceType}-${Date.now()}`,
+    const newSource = await createSource({
       SourceType: sourceType,
       SourceName,
       SourceUrl,
-      IsActive: true,
-      CreatedAt: new Date().toISOString(),
-    };
-
-    mutableSources.push(newSource);
+    });
 
     return NextResponse.json(newSource, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error("Failed to create source:", error);
     return NextResponse.json(
       { error: "Failed to create source" },
       { status: 500 }

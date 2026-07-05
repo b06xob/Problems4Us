@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { TrendIndicator } from "@/components/ui/TrendIndicator";
@@ -25,371 +25,7 @@ interface PainPoint {
   TrendDirection: "up" | "down" | "stable";
 }
 
-const PAIN_POINTS: PainPoint[] = [
-  {
-    PainPointId: "pp-1",
-    Title: "Unexpected Azure spend spikes from idle resources",
-    Summary:
-      "Teams frequently leave VMs, storage accounts, and App Service plans running over weekends and holidays, causing 30-60% budget overruns.",
-    Category: "Cloud Infrastructure",
-    SeverityScore: 88,
-    FrequencyScore: 92,
-    WillingnessToPayScore: 75,
-    MarketSizeScore: 90,
-    TrendScore: 85,
-    OpportunityScore: 86,
-    FirstSeenAt: "2025-03-10",
-    LastSeenAt: "2026-06-28",
-    Status: "active",
-    SourceType: "reddit",
-    TrendDirection: "up",
-  },
-  {
-    PainPointId: "pp-2",
-    Title: "No unified Azure cost dashboard across subscriptions",
-    Summary:
-      "Enterprises with 10+ subscriptions struggle to get a single-pane cost view. Azure Cost Management lacks cross-tenant aggregation.",
-    Category: "Cloud Infrastructure",
-    SeverityScore: 72,
-    FrequencyScore: 68,
-    WillingnessToPayScore: 80,
-    MarketSizeScore: 85,
-    TrendScore: 60,
-    OpportunityScore: 73,
-    FirstSeenAt: "2025-06-15",
-    LastSeenAt: "2026-06-20",
-    Status: "active",
-    SourceType: "github",
-    TrendDirection: "stable",
-  },
-  {
-    PainPointId: "pp-3",
-    Title: "Azure Reserved Instance recommendations are unreliable",
-    Summary:
-      "Cost-saving recommendations often suggest reservations for workloads with unpredictable demand, leading to wasted commitments.",
-    Category: "Cloud Infrastructure",
-    SeverityScore: 65,
-    FrequencyScore: 55,
-    WillingnessToPayScore: 70,
-    MarketSizeScore: 78,
-    TrendScore: 45,
-    OpportunityScore: 63,
-    FirstSeenAt: "2025-09-01",
-    LastSeenAt: "2026-05-14",
-    Status: "monitoring",
-    SourceType: "forum",
-    TrendDirection: "down",
-  },
-  {
-    PainPointId: "pp-4",
-    Title: "SQL Server index maintenance causes production downtime",
-    Summary:
-      "Rebuilding fragmented indexes on large tables locks rows for hours. DBAs need zero-downtime reindexing that works with Standard Edition.",
-    Category: "Database Admin",
-    SeverityScore: 91,
-    FrequencyScore: 78,
-    WillingnessToPayScore: 85,
-    MarketSizeScore: 72,
-    TrendScore: 70,
-    OpportunityScore: 79,
-    FirstSeenAt: "2025-01-20",
-    LastSeenAt: "2026-07-01",
-    Status: "active",
-    SourceType: "reddit",
-    TrendDirection: "up",
-  },
-  {
-    PainPointId: "pp-5",
-    Title: "No simple way to track SQL Server query performance regressions",
-    Summary:
-      "After patching or schema changes, teams lack automated regression detection. Query Store is too complex for small shops.",
-    Category: "Database Admin",
-    SeverityScore: 67,
-    FrequencyScore: 74,
-    WillingnessToPayScore: 60,
-    MarketSizeScore: 65,
-    TrendScore: 55,
-    OpportunityScore: 64,
-    FirstSeenAt: "2025-05-12",
-    LastSeenAt: "2026-06-10",
-    Status: "active",
-    SourceType: "forum",
-    TrendDirection: "stable",
-  },
-  {
-    PainPointId: "pp-6",
-    Title: "SQL Server backup verification is manual and error-prone",
-    Summary:
-      "Most teams only discover corrupted backups during disaster recovery. Automated restore-and-verify solutions are expensive or complex.",
-    Category: "Database Admin",
-    SeverityScore: 82,
-    FrequencyScore: 45,
-    WillingnessToPayScore: 90,
-    MarketSizeScore: 68,
-    TrendScore: 40,
-    OpportunityScore: 65,
-    FirstSeenAt: "2025-04-08",
-    LastSeenAt: "2026-04-22",
-    Status: "monitoring",
-    SourceType: "review",
-    TrendDirection: "stable",
-  },
-  {
-    PainPointId: "pp-7",
-    Title: "M365 license utilization reports are inaccurate",
-    Summary:
-      "Built-in reports undercount actual usage by ignoring mobile and Teams activity. Companies overpay for licenses they could reclaim.",
-    Category: "Business Software",
-    SeverityScore: 70,
-    FrequencyScore: 82,
-    WillingnessToPayScore: 78,
-    MarketSizeScore: 92,
-    TrendScore: 72,
-    OpportunityScore: 79,
-    FirstSeenAt: "2025-02-18",
-    LastSeenAt: "2026-06-30",
-    Status: "active",
-    SourceType: "reddit",
-    TrendDirection: "up",
-  },
-  {
-    PainPointId: "pp-8",
-    Title: "SharePoint storage consumption hard to attribute to departments",
-    Summary:
-      "Large organizations cannot easily see which department or team consumes the most SharePoint storage, making chargeback impossible.",
-    Category: "Business Software",
-    SeverityScore: 55,
-    FrequencyScore: 63,
-    WillingnessToPayScore: 50,
-    MarketSizeScore: 80,
-    TrendScore: 48,
-    OpportunityScore: 59,
-    FirstSeenAt: "2025-08-22",
-    LastSeenAt: "2026-05-05",
-    Status: "active",
-    SourceType: "forum",
-    TrendDirection: "stable",
-  },
-  {
-    PainPointId: "pp-9",
-    Title: "Teams meeting analytics missing for compliance audits",
-    Summary:
-      "Regulated industries need detailed meeting attendance and recording logs. Microsoft provides limited data via admin center and Graph API.",
-    Category: "Business Software",
-    SeverityScore: 76,
-    FrequencyScore: 58,
-    WillingnessToPayScore: 82,
-    MarketSizeScore: 70,
-    TrendScore: 68,
-    OpportunityScore: 71,
-    FirstSeenAt: "2025-07-03",
-    LastSeenAt: "2026-06-25",
-    Status: "active",
-    SourceType: "github",
-    TrendDirection: "up",
-  },
-  {
-    PainPointId: "pp-10",
-    Title: "Stale Active Directory accounts create security risks",
-    Summary:
-      "Organizations accumulate hundreds of disabled or unused AD accounts from departed employees. No built-in automated cleanup exists.",
-    Category: "Identity & Access",
-    SeverityScore: 85,
-    FrequencyScore: 90,
-    WillingnessToPayScore: 65,
-    MarketSizeScore: 88,
-    TrendScore: 78,
-    OpportunityScore: 81,
-    FirstSeenAt: "2025-01-05",
-    LastSeenAt: "2026-07-02",
-    Status: "active",
-    SourceType: "reddit",
-    TrendDirection: "up",
-  },
-  {
-    PainPointId: "pp-11",
-    Title: "AD group membership sprawl is unmanageable",
-    Summary:
-      "Users accumulate group memberships over years. Reviewing and pruning nested groups across a large forest is nearly impossible manually.",
-    Category: "Identity & Access",
-    SeverityScore: 73,
-    FrequencyScore: 80,
-    WillingnessToPayScore: 55,
-    MarketSizeScore: 82,
-    TrendScore: 62,
-    OpportunityScore: 70,
-    FirstSeenAt: "2025-03-28",
-    LastSeenAt: "2026-06-18",
-    Status: "active",
-    SourceType: "social",
-    TrendDirection: "stable",
-  },
-  {
-    PainPointId: "pp-12",
-    Title: "Hybrid AD sync conflicts cause login failures",
-    Summary:
-      "Azure AD Connect sync errors for on-prem/cloud attribute mismatches are cryptic. IT spends hours resolving UPN and proxy address conflicts.",
-    Category: "Identity & Access",
-    SeverityScore: 78,
-    FrequencyScore: 60,
-    WillingnessToPayScore: 72,
-    MarketSizeScore: 75,
-    TrendScore: 50,
-    OpportunityScore: 67,
-    FirstSeenAt: "2025-06-10",
-    LastSeenAt: "2026-03-30",
-    Status: "resolved",
-    SourceType: "github",
-    TrendDirection: "down",
-  },
-  {
-    PainPointId: "pp-13",
-    Title: "Intune compliance policies don't cover BYOD edge cases",
-    Summary:
-      "Personal devices with work profiles trigger false non-compliance flags. Admin overrides are all-or-nothing with no granular exceptions.",
-    Category: "Endpoint Management",
-    SeverityScore: 69,
-    FrequencyScore: 75,
-    WillingnessToPayScore: 62,
-    MarketSizeScore: 78,
-    TrendScore: 70,
-    OpportunityScore: 71,
-    FirstSeenAt: "2025-04-15",
-    LastSeenAt: "2026-06-22",
-    Status: "active",
-    SourceType: "reddit",
-    TrendDirection: "up",
-  },
-  {
-    PainPointId: "pp-14",
-    Title: "Bulk device enrollment in Intune is fragile and slow",
-    Summary:
-      "Provisioning packages fail silently on certain hardware. Autopilot timeouts force manual re-enrollment of 10-20% of devices per batch.",
-    Category: "Endpoint Management",
-    SeverityScore: 74,
-    FrequencyScore: 52,
-    WillingnessToPayScore: 68,
-    MarketSizeScore: 70,
-    TrendScore: 55,
-    OpportunityScore: 64,
-    FirstSeenAt: "2025-08-01",
-    LastSeenAt: "2026-05-28",
-    Status: "monitoring",
-    SourceType: "review",
-    TrendDirection: "down",
-  },
-  {
-    PainPointId: "pp-15",
-    Title: "PowerShell scripts break after module updates",
-    Summary:
-      "Az module and Microsoft.Graph module breaking changes ship frequently. Scripts that worked last month fail without clear migration paths.",
-    Category: "Automation",
-    SeverityScore: 80,
-    FrequencyScore: 88,
-    WillingnessToPayScore: 58,
-    MarketSizeScore: 85,
-    TrendScore: 82,
-    OpportunityScore: 79,
-    FirstSeenAt: "2025-02-01",
-    LastSeenAt: "2026-07-03",
-    Status: "active",
-    SourceType: "github",
-    TrendDirection: "up",
-  },
-  {
-    PainPointId: "pp-16",
-    Title: "No good way to schedule and monitor PowerShell runbooks",
-    Summary:
-      "Azure Automation runbooks lack decent logging and alerting. Teams resort to Task Scheduler on VMs, losing cloud-native benefits.",
-    Category: "Automation",
-    SeverityScore: 62,
-    FrequencyScore: 70,
-    WillingnessToPayScore: 55,
-    MarketSizeScore: 72,
-    TrendScore: 50,
-    OpportunityScore: 62,
-    FirstSeenAt: "2025-05-20",
-    LastSeenAt: "2026-04-15",
-    Status: "active",
-    SourceType: "forum",
-    TrendDirection: "stable",
-  },
-  {
-    PainPointId: "pp-17",
-    Title: "Small businesses lack affordable inventory + invoicing combo",
-    Summary:
-      "QuickBooks + separate inventory tools cost $100+/mo. Owner-operators want a single app under $30/mo that handles both.",
-    Category: "Business Software",
-    SeverityScore: 60,
-    FrequencyScore: 85,
-    WillingnessToPayScore: 92,
-    MarketSizeScore: 95,
-    TrendScore: 78,
-    OpportunityScore: 82,
-    FirstSeenAt: "2025-01-12",
-    LastSeenAt: "2026-06-27",
-    Status: "active",
-    SourceType: "social",
-    TrendDirection: "up",
-  },
-  {
-    PainPointId: "pp-18",
-    Title: "Employee scheduling tools ignore labor law constraints",
-    Summary:
-      "Most scheduling apps don't enforce overtime rules, mandatory breaks, or minor-age restrictions. Managers risk compliance violations.",
-    Category: "Business Software",
-    SeverityScore: 71,
-    FrequencyScore: 66,
-    WillingnessToPayScore: 74,
-    MarketSizeScore: 88,
-    TrendScore: 65,
-    OpportunityScore: 73,
-    FirstSeenAt: "2025-03-05",
-    LastSeenAt: "2026-06-12",
-    Status: "active",
-    SourceType: "review",
-    TrendDirection: "stable",
-  },
-  {
-    PainPointId: "pp-19",
-    Title: "Customer support ticket routing is mostly random",
-    Summary:
-      "Small support teams manually triage tickets. Auto-routing by keyword misclassifies 40%+ of tickets, increasing resolution time.",
-    Category: "Support Operations",
-    SeverityScore: 77,
-    FrequencyScore: 83,
-    WillingnessToPayScore: 70,
-    MarketSizeScore: 90,
-    TrendScore: 75,
-    OpportunityScore: 79,
-    FirstSeenAt: "2025-02-25",
-    LastSeenAt: "2026-07-01",
-    Status: "active",
-    SourceType: "reddit",
-    TrendDirection: "up",
-  },
-  {
-    PainPointId: "pp-20",
-    Title: "No way to measure support agent empathy or tone",
-    Summary:
-      "CSAT surveys are unreliable. Managers want real-time sentiment analysis on live chats and calls to coach agents proactively.",
-    Category: "Support Operations",
-    SeverityScore: 58,
-    FrequencyScore: 50,
-    WillingnessToPayScore: 65,
-    MarketSizeScore: 82,
-    TrendScore: 72,
-    OpportunityScore: 65,
-    FirstSeenAt: "2025-07-15",
-    LastSeenAt: "2026-06-08",
-    Status: "monitoring",
-    SourceType: "social",
-    TrendDirection: "stable",
-  },
-];
-
 const ITEMS_PER_PAGE = 10;
-
 type SortKey =
   | "Title"
   | "SourceType"
@@ -401,7 +37,7 @@ type SortKey =
   | "LastSeenAt";
 
 function relativeTime(dateStr: string): string {
-  const now = new Date("2026-07-03");
+  const now = new Date();
   const date = new Date(dateStr);
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -433,6 +69,8 @@ function statusBadgeClass(status: PainPoint["Status"]): string {
 }
 
 export default function ProblemsPage() {
+  const [painPoints, setPainPoints] = useState<PainPoint[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -443,8 +81,28 @@ export default function ProblemsPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
 
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/problems?limit=100");
+        const json = await res.json();
+        setPainPoints(json.data ?? []);
+      } catch {
+        setPainPoints([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const categories = useMemo(
+    () => [...new Set(painPoints.map((p) => p.Category))].sort(),
+    [painPoints]
+  );
+
   const filtered = useMemo(() => {
-    return PAIN_POINTS.filter((p) => {
+    return painPoints.filter((p) => {
       if (search) {
         const q = search.toLowerCase();
         if (
@@ -465,7 +123,7 @@ export default function ProblemsPage() {
       if (statusFilter && p.Status !== statusFilter) return false;
       return true;
     });
-  }, [search, sourceFilter, categoryFilter, minScore, trendFilter, statusFilter]);
+  }, [painPoints, search, sourceFilter, categoryFilter, minScore, trendFilter, statusFilter]);
 
   const sorted = useMemo(() => {
     const copy = [...filtered];
@@ -564,11 +222,19 @@ export default function ProblemsPage() {
         <p className="shrink-0 text-sm font-medium text-text-muted">
           Showing{" "}
           <span className="text-text-primary">{sorted.length}</span> of{" "}
-          <span className="text-text-primary">{PAIN_POINTS.length}</span>{" "}
+          <span className="text-text-primary">{painPoints.length}</span>{" "}
           problems
         </p>
       </div>
 
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="card animate-pulse h-16" />
+          ))}
+        </div>
+      ) : (
+        <>
       {/* Filter Bar */}
       <div className="card sticky top-0 z-20 mb-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -625,14 +291,11 @@ export default function ProblemsPage() {
             className="select"
           >
             <option value="">All Categories</option>
-            <option value="Cloud Infrastructure">Cloud Infrastructure</option>
-            <option value="Database Admin">Database Admin</option>
-            <option value="Identity & Access">Identity &amp; Access</option>
-            <option value="Dev Tooling">Dev Tooling</option>
-            <option value="Business Software">Business Software</option>
-            <option value="Support Operations">Support Operations</option>
-            <option value="Endpoint Management">Endpoint Management</option>
-            <option value="Automation">Automation</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
           </select>
 
           {/* Min Opportunity Score */}
@@ -912,6 +575,8 @@ export default function ProblemsPage() {
               </button>
             </div>
           )}
+        </>
+      )}
         </>
       )}
     </div>

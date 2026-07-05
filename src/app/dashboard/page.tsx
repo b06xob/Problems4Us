@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -20,30 +21,6 @@ import { StatCard } from "@/components/ui/StatCard";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { TrendIndicator } from "@/components/ui/TrendIndicator";
 
-const trendData = [
-  { month: "Jul '25", problems: 620, mentions: 1850 },
-  { month: "Aug '25", problems: 680, mentions: 2100 },
-  { month: "Sep '25", problems: 710, mentions: 2280 },
-  { month: "Oct '25", problems: 760, mentions: 2450 },
-  { month: "Nov '25", problems: 805, mentions: 2680 },
-  { month: "Dec '25", problems: 830, mentions: 2790 },
-  { month: "Jan '26", problems: 890, mentions: 3050 },
-  { month: "Feb '26", problems: 940, mentions: 3320 },
-  { month: "Mar '26", problems: 1010, mentions: 3580 },
-  { month: "Apr '26", problems: 1080, mentions: 3890 },
-  { month: "May '26", problems: 1160, mentions: 4200 },
-  { month: "Jun '26", problems: 1247, mentions: 4580 },
-];
-
-const categoryData = [
-  { name: "Cloud Infrastructure", value: 320 },
-  { name: "Identity & Access", value: 215 },
-  { name: "Database Admin", value: 198 },
-  { name: "Dev Tooling", value: 187 },
-  { name: "Business Software", value: 165 },
-  { name: "Support Operations", value: 162 },
-];
-
 const CATEGORY_COLORS = [
   "#6366f1",
   "#22c55e",
@@ -53,13 +30,24 @@ const CATEGORY_COLORS = [
   "#06b6d4",
 ];
 
-const severityDistribution = [
-  { range: "0-20", count: 185 },
-  { range: "21-40", count: 290 },
-  { range: "41-60", count: 345 },
-  { range: "61-80", count: 265 },
-  { range: "81-100", count: 162 },
-];
+interface DashboardData {
+  totalProblems: number;
+  newThisWeek: number;
+  topTrending: string;
+  highestWTP: number;
+  clusterCount: number;
+  emergingAlerts: number;
+  trendData: { month: string; problems: number; mentions: number }[];
+  categoryBreakdown: { name: string; count: number }[];
+  severityDistribution: { range: string; count: number }[];
+  topOpportunities: {
+    id: string;
+    title: string;
+    score: number;
+    trend: "up" | "down" | "stable";
+    category: string;
+  }[];
+}
 
 function getSeverityColor(range: string) {
   switch (range) {
@@ -78,18 +66,50 @@ function getSeverityColor(range: string) {
   }
 }
 
-const topOpportunities = [
-  { id: "prob-001", title: "Azure Reserved Instance Cost Surprises", score: 92, trend: "up" as const, category: "Cloud Infrastructure", change: "+5" },
-  { id: "prob-002", title: "SSO Integration Timeout Failures", score: 88, trend: "up" as const, category: "Identity & Access", change: "+3" },
-  { id: "prob-003", title: "Postgres Connection Pool Exhaustion", score: 85, trend: "stable" as const, category: "Database Admin", change: "0" },
-  { id: "prob-004", title: "CI/CD Pipeline Flaky Test Loops", score: 82, trend: "up" as const, category: "Dev Tooling", change: "+7" },
-  { id: "prob-005", title: "Salesforce API Rate Limiting", score: 79, trend: "down" as const, category: "Business Software", change: "-2" },
-  { id: "prob-006", title: "Kubernetes Node Auto-scaling Lag", score: 76, trend: "up" as const, category: "Cloud Infrastructure", change: "+4" },
-  { id: "prob-007", title: "Zendesk Ticket Routing Misclassification", score: 74, trend: "stable" as const, category: "Support Operations", change: "0" },
-  { id: "prob-008", title: "MongoDB Sharding Hotspot Imbalance", score: 71, trend: "down" as const, category: "Database Admin", change: "-1" },
-];
-
 export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/dashboard");
+        const json = await res.json();
+        setData(json);
+      } catch {
+        setData(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (loading || !data) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-text-primary">Dashboard</h1>
+          <p className="mt-1 text-text-secondary">Loading dashboard data…</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="card animate-pulse h-24" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const categoryData = data.categoryBreakdown.map((c) => ({
+    name: c.name,
+    value: c.count,
+  }));
+
+  const trendingShort = data.topTrending.length > 24
+    ? data.topTrending.slice(0, 22) + "…"
+    : data.topTrending;
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
@@ -104,8 +124,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
           title="Total Problems"
-          value="1,247"
-          subtitle="Across 6 sources"
+          value={data.totalProblems.toLocaleString()}
+          subtitle="From database"
           icon={
             <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
@@ -115,8 +135,7 @@ export default function DashboardPage() {
         />
         <StatCard
           title="New This Week"
-          value={38}
-          trend={{ value: "+12%", positive: true }}
+          value={data.newThisWeek}
           icon={
             <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
@@ -125,7 +144,7 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Top Trending"
-          value="Azure RI Costs"
+          value={trendingShort}
           icon={
             <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
@@ -135,7 +154,7 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Highest WTP"
-          value={92}
+          value={data.highestWTP}
           icon={
             <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -144,7 +163,7 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Clusters"
-          value={43}
+          value={data.clusterCount}
           icon={
             <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3" />
@@ -158,7 +177,7 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Emerging Alerts"
-          value={7}
+          value={data.emergingAlerts}
           subtitle="Needs attention"
           icon={
             <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -178,7 +197,7 @@ export default function DashboardPage() {
             </h2>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={trendData}>
+            <LineChart data={data.trendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #e5e7eb)" />
               <XAxis
                 dataKey="month"
@@ -271,7 +290,7 @@ export default function DashboardPage() {
             </h2>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={severityDistribution}>
+            <BarChart data={data.severityDistribution}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #e5e7eb)" />
               <XAxis
                 dataKey="range"
@@ -290,7 +309,7 @@ export default function DashboardPage() {
                 }}
               />
               <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                {severityDistribution.map((entry, index) => (
+                {data.severityDistribution.map((entry, index) => (
                   <Cell key={`bar-${index}`} fill={getSeverityColor(entry.range)} />
                 ))}
               </Bar>
@@ -309,7 +328,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="space-y-1">
-            {topOpportunities.map((item, index) => (
+            {data.topOpportunities.map((item, index) => (
               <Link
                 key={item.id}
                 href={`/problems/${item.id}`}

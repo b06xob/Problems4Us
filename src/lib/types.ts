@@ -114,3 +114,29 @@ export interface PainPointDetail {
   competitiveNotes: string[];
   recommendedNextSteps: string[];
 }
+
+export type SubmissionStatus = 'pending' | 'reviewing' | 'accepted' | 'declined';
+
+export type SubmissionUrgency = 'low' | 'medium' | 'high' | 'critical';
+
+export interface UserProblemSubmission {
+  SubmissionId: string;
+  Title: string;
+  Description: string;
+  Category: string;
+  Urgency: SubmissionUrgency;
+  SubmitterName: string;
+  SubmitterEmail: string;
+  Status: SubmissionStatus;
+  CreatedAt: string;
+  UpdatedAt: string;
+}
+
+export interface CreateSubmissionInput {
+  title: string;
+  description: string;
+  category: string;
+  urgency: SubmissionUrgency;
+  submitterName?: string;
+  submitterEmail?: string;
+}

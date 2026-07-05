@@ -24,11 +24,21 @@ export function Footer() {
           <div>
             <h3 className="text-sm font-semibold text-text-primary">Platform</h3>
             <ul className="mt-3 space-y-2">
-              {["Dashboard", "Problem Explorer", "Product Ideas", "Data Sources"].map((item) => (
-                <li key={item}>
-                  <span className="text-sm text-text-secondary hover:text-text-primary cursor-pointer transition-colors">
-                    {item}
-                  </span>
+              {[
+                { label: "Dashboard", href: "/dashboard" },
+                { label: "Problem Explorer", href: "/problems" },
+                { label: "Community Problems", href: "/submissions" },
+                { label: "Submit a Problem", href: "/submit" },
+                { label: "Product Ideas", href: "/ideas" },
+                { label: "Data Sources", href: "/admin" },
+              ].map((item) => (
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+                  >
+                    {item.label}
+                  </a>
                 </li>
               ))}
             </ul>

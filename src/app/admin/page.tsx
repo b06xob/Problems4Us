@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { SourceIcon } from "@/components/ui/SourceIcon";
 
 interface DataSource {
@@ -17,138 +17,6 @@ interface DataSource {
   Config: Record<string, string>;
 }
 
-const initialSources: DataSource[] = [
-  {
-    SourceId: "src-001",
-    SourceType: "reddit",
-    SourceName: "r/sysadmin",
-    SourceUrl: "https://reddit.com/r/sysadmin",
-    IsActive: true,
-    CreatedAt: "2026-01-15T08:00:00Z",
-    LastScraped: "2026-07-03T14:22:00Z",
-    PostsCollected: 2847,
-    PainPointsFound: 156,
-    Status: "active",
-    Config: { subreddit: "sysadmin", sort: "hot", limit: "100" },
-  },
-  {
-    SourceId: "src-002",
-    SourceType: "reddit",
-    SourceName: "r/azure",
-    SourceUrl: "https://reddit.com/r/azure",
-    IsActive: true,
-    CreatedAt: "2026-01-20T10:30:00Z",
-    LastScraped: "2026-07-03T13:15:00Z",
-    PostsCollected: 1523,
-    PainPointsFound: 89,
-    Status: "active",
-    Config: { subreddit: "azure", sort: "new", limit: "50" },
-  },
-  {
-    SourceId: "src-003",
-    SourceType: "reddit",
-    SourceName: "r/YOURCOMPANY",
-    SourceUrl: "https://reddit.com/r/YOURCOMPANY",
-    IsActive: true,
-    CreatedAt: "2026-02-01T09:00:00Z",
-    LastScraped: "2026-07-03T12:00:00Z",
-    PostsCollected: 892,
-    PainPointsFound: 45,
-    Status: "active",
-    Config: { subreddit: "YOURCOMPANY", sort: "top", limit: "50" },
-  },
-  {
-    SourceId: "src-004",
-    SourceType: "reddit",
-    SourceName: "r/smallbusiness",
-    SourceUrl: "https://reddit.com/r/smallbusiness",
-    IsActive: true,
-    CreatedAt: "2026-02-10T14:00:00Z",
-    LastScraped: "2026-07-03T11:45:00Z",
-    PostsCollected: 1205,
-    PainPointsFound: 72,
-    Status: "active",
-    Config: { subreddit: "smallbusiness", sort: "hot", limit: "75" },
-  },
-  {
-    SourceId: "src-005",
-    SourceType: "github",
-    SourceName: "azure/azure-cli Issues",
-    SourceUrl: "https://github.com/azure/azure-cli/issues",
-    IsActive: true,
-    CreatedAt: "2026-03-01T11:00:00Z",
-    LastScraped: "2026-07-02T22:30:00Z",
-    PostsCollected: 634,
-    PainPointsFound: 34,
-    Status: "active",
-    Config: { owner: "azure", repo: "azure-cli", label: "bug", state: "open" },
-  },
-  {
-    SourceId: "src-006",
-    SourceType: "github",
-    SourceName: "MicrosoftDocs/azure-docs Issues",
-    SourceUrl: "https://github.com/MicrosoftDocs/azure-docs/issues",
-    IsActive: false,
-    CreatedAt: "2026-03-05T16:00:00Z",
-    LastScraped: "2026-06-28T10:00:00Z",
-    PostsCollected: 421,
-    PainPointsFound: 28,
-    Status: "paused",
-    Config: { owner: "MicrosoftDocs", repo: "azure-docs", label: "", state: "all" },
-  },
-  {
-    SourceId: "src-007",
-    SourceType: "forum",
-    SourceName: "Spiceworks Community",
-    SourceUrl: "https://community.spiceworks.com",
-    IsActive: true,
-    CreatedAt: "2026-03-10T09:30:00Z",
-    LastScraped: "2026-07-02T23:00:00Z",
-    PostsCollected: 1876,
-    PainPointsFound: 98,
-    Status: "active",
-    Config: { forum_url: "https://community.spiceworks.com", depth: "3", keyword: "problem,issue,bug" },
-  },
-  {
-    SourceId: "src-008",
-    SourceType: "forum",
-    SourceName: "TechCommunity Forums",
-    SourceUrl: "https://techcommunity.microsoft.com",
-    IsActive: true,
-    CreatedAt: "2026-03-15T13:00:00Z",
-    LastScraped: "2026-07-02T21:00:00Z",
-    PostsCollected: 956,
-    PainPointsFound: 67,
-    Status: "active",
-    Config: { forum_url: "https://techcommunity.microsoft.com", depth: "2", keyword: "pain,frustration,broken" },
-  },
-  {
-    SourceId: "src-009",
-    SourceType: "review",
-    SourceName: "G2 Reviews",
-    SourceUrl: "https://www.g2.com",
-    IsActive: false,
-    CreatedAt: "2026-04-01T08:00:00Z",
-    LastScraped: null,
-    PostsCollected: 0,
-    PainPointsFound: 0,
-    Status: "pending",
-    Config: { site: "G2", product: "Azure", min_rating: "1" },
-  },
-  {
-    SourceId: "src-010",
-    SourceType: "social",
-    SourceName: "Twitter/X #AzurePain",
-    SourceUrl: "https://x.com/search?q=%23AzurePain",
-    IsActive: false,
-    CreatedAt: "2026-04-10T15:00:00Z",
-    LastScraped: "2026-07-01T06:00:00Z",
-    PostsCollected: 234,
-    PainPointsFound: 12,
-    Status: "error",
-    Config: { platform: "twitter", keywords: "#AzurePain,#AzureDown", language: "en" },
-  },
-];
 
 const activityLog = [
   { time: "2026-07-03 14:22", message: "Scraped r/sysadmin — 12 new posts, 3 pain points extracted" },
@@ -233,13 +101,60 @@ function truncateUrl(url: string, max = 40): string {
   return clean.length > max ? clean.slice(0, max) + "…" : clean;
 }
 
+function mapSourceFromApi(s: {
+  SourceId: string;
+  SourceType: SourceType;
+  SourceName: string;
+  SourceUrl: string;
+  IsActive: boolean;
+  CreatedAt: string;
+  LastScraped: string | null;
+  PostsCollected: number;
+  PainPointsFound: number;
+}): DataSource {
+  return {
+    SourceId: s.SourceId,
+    SourceType: s.SourceType,
+    SourceName: s.SourceName,
+    SourceUrl: s.SourceUrl,
+    IsActive: s.IsActive,
+    CreatedAt: s.CreatedAt,
+    LastScraped: s.LastScraped,
+    PostsCollected: s.PostsCollected,
+    PainPointsFound: s.PainPointsFound,
+    Status: s.IsActive
+      ? s.PostsCollected > 0
+        ? "active"
+        : "pending"
+      : "paused",
+    Config: {},
+  };
+}
+
 export default function AdminDataSourcesPage() {
-  const [sources, setSources] = useState<DataSource[]>(initialSources);
+  const [sources, setSources] = useState<DataSource[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({ ...emptyForm, Config: getDefaultConfig("reddit") });
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  const loadSources = useCallback(async () => {
+    try {
+      const res = await fetch("/api/sources");
+      const json = await res.json();
+      setSources((json.data ?? []).map(mapSourceFromApi));
+    } catch {
+      setSources([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSources();
+  }, [loadSources]);
 
   const stats = useMemo(() => {
     const total = sources.length;
@@ -288,62 +203,79 @@ export default function AdminDataSourcesPage() {
     setForm((f) => ({ ...f, Config: { ...f.Config, [key]: value } }));
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!form.SourceName.trim() || !form.SourceUrl.trim()) {
       alert("Source Name and Source URL are required.");
       return;
     }
 
-    if (editingId) {
-      setSources((prev) =>
-        prev.map((s) =>
-          s.SourceId === editingId
-            ? {
-                ...s,
-                SourceType: form.SourceType,
-                SourceName: form.SourceName,
-                SourceUrl: form.SourceUrl,
-                IsActive: form.IsActive,
-                Status: form.IsActive ? "active" : "paused",
-                Config: { ...form.Config },
-              }
-            : s,
-        ),
-      );
-    } else {
-      const newSource: DataSource = {
-        SourceId: `src-${Date.now()}`,
-        SourceType: form.SourceType,
-        SourceName: form.SourceName,
-        SourceUrl: form.SourceUrl,
-        IsActive: false,
-        CreatedAt: new Date().toISOString(),
-        LastScraped: null,
-        PostsCollected: 0,
-        PainPointsFound: 0,
-        Status: "pending",
-        Config: { ...form.Config },
-      };
-      setSources((prev) => [...prev, newSource]);
+    try {
+      if (editingId) {
+        await fetch(`/api/sources/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            SourceName: form.SourceName,
+            SourceUrl: form.SourceUrl,
+            IsActive: form.IsActive,
+          }),
+        });
+      } else {
+        await fetch("/api/sources", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            SourceType: form.SourceType,
+            SourceName: form.SourceName,
+            SourceUrl: form.SourceUrl,
+          }),
+        });
+      }
+      await loadSources();
+      closeForm();
+    } catch {
+      alert("Failed to save source.");
     }
-    closeForm();
   }
 
-  function toggleSource(id: string) {
-    setSources((prev) =>
-      prev.map((s) => {
-        if (s.SourceId !== id) return s;
-        const nowActive = !s.IsActive;
-        return { ...s, IsActive: nowActive, Status: nowActive ? "active" : "paused" };
-      }),
-    );
+  async function toggleSource(id: string) {
+    const source = sources.find((s) => s.SourceId === id);
+    if (!source) return;
+    try {
+      await fetch(`/api/sources/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ IsActive: !source.IsActive }),
+      });
+      await loadSources();
+    } catch {
+      alert("Failed to update source.");
+    }
   }
 
-  function deleteSource(id: string) {
+  async function deleteSource(id: string) {
     const source = sources.find((s) => s.SourceId === id);
     if (!source) return;
     if (!window.confirm(`Delete "${source.SourceName}"? This action cannot be undone.`)) return;
-    setSources((prev) => prev.filter((s) => s.SourceId !== id));
+    try {
+      await fetch(`/api/sources/${id}`, { method: "DELETE" });
+      await loadSources();
+    } catch {
+      alert("Failed to delete source.");
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-3xl font-bold text-text-primary">Data Sources</h1>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="card animate-pulse h-20" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

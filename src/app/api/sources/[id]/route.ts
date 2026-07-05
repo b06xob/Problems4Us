@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMockSources } from "@/lib/mock-data";
-import type { Source } from "@/lib/types";
-
-const mutableSources: Source[] = [...getMockSources()];
-
-function findSource(id: string): Source | undefined {
-  return mutableSources.find((s) => s.SourceId === id);
-}
+import {
+  getSourceById,
+  updateSource,
+  deleteSource,
+} from "@/lib/db-service";
 
 export async function GET(
   request: NextRequest,
@@ -14,7 +11,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const source = findSource(id);
+    const source = await getSourceById(id);
 
     if (!source) {
       return NextResponse.json(
@@ -24,7 +21,8 @@ export async function GET(
     }
 
     return NextResponse.json(source);
-  } catch {
+  } catch (error) {
+    console.error("Failed to fetch source:", error);
     return NextResponse.json(
       { error: "Failed to fetch source" },
       { status: 500 }
@@ -38,30 +36,25 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const index = mutableSources.findIndex((s) => s.SourceId === id);
+    const body = await request.json();
+    const updates: Partial<Pick<import("@/lib/types").Source, "SourceName" | "SourceUrl" | "IsActive">> = {};
 
-    if (index === -1) {
+    if ("SourceName" in body) updates.SourceName = body.SourceName;
+    if ("SourceUrl" in body) updates.SourceUrl = body.SourceUrl;
+    if ("IsActive" in body) updates.IsActive = body.IsActive;
+
+    const updated = await updateSource(id, updates);
+
+    if (!updated) {
       return NextResponse.json(
         { error: `Source "${id}" not found` },
         { status: 404 }
       );
     }
 
-    const body = await request.json();
-    const allowedFields: (keyof Source)[] = [
-      "SourceName",
-      "SourceUrl",
-      "IsActive",
-    ];
-
-    for (const key of Object.keys(body)) {
-      if (allowedFields.includes(key as keyof Source)) {
-        (mutableSources[index] as unknown as Record<string, unknown>)[key] = body[key];
-      }
-    }
-
-    return NextResponse.json(mutableSources[index]);
-  } catch {
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("Failed to update source:", error);
     return NextResponse.json(
       { error: "Failed to update source" },
       { status: 500 }
@@ -75,21 +68,18 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const index = mutableSources.findIndex((s) => s.SourceId === id);
+    const deleted = await deleteSource(id);
 
-    if (index === -1) {
+    if (!deleted) {
       return NextResponse.json(
         { error: `Source "${id}" not found` },
         { status: 404 }
       );
     }
 
-    const [deleted] = mutableSources.splice(index, 1);
-
-    return NextResponse.json({
-      message: `Source "${deleted.SourceName}" deleted`,
-    });
-  } catch {
+    return NextResponse.json({ message: `Source "${id}" deleted` });
+  } catch (error) {
+    console.error("Failed to delete source:", error);
     return NextResponse.json(
       { error: "Failed to delete source" },
       { status: 500 }
