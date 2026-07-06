@@ -42,7 +42,7 @@ jobs:
         run: npm run build
         env:
           AI_PROVIDER: mock
-          NEXT_PUBLIC_APP_URL: https://problems4us-linux.azurewebsites.net
+          NEXT_PUBLIC_APP_URL: https://problems4us.com
           NEXT_PUBLIC_APP_NAME: Problems4Us
 
       - name: Prepare standalone deployment package
