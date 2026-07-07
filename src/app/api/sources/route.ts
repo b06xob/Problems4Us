@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       "forum",
       "review",
       "social",
+      "community",
     ];
     if (!validTypes.includes(sourceType)) {
       return NextResponse.json(

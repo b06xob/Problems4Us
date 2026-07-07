@@ -1,4 +1,4 @@
-export type SourceType = 'reddit' | 'github' | 'forum' | 'review' | 'social';
+export type SourceType = 'reddit' | 'github' | 'forum' | 'review' | 'social' | 'community';
 
 export type PainPointStatus = 'active' | 'resolved' | 'monitoring';
 

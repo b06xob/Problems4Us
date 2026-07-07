@@ -4,7 +4,7 @@
 -- Sources: Data collection endpoints
 CREATE TABLE Sources (
     SourceId        NVARCHAR(50)   PRIMARY KEY,
-    SourceType      NVARCHAR(20)   NOT NULL CHECK (SourceType IN ('reddit', 'github', 'forum', 'review', 'social')),
+    SourceType      NVARCHAR(20)   NOT NULL CHECK (SourceType IN ('reddit', 'github', 'forum', 'review', 'social', 'community')),
     SourceName      NVARCHAR(200)  NOT NULL,
     SourceUrl       NVARCHAR(500),
     IsActive        BIT            DEFAULT 1,

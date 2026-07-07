@@ -463,9 +463,18 @@ export async function listProductIdeas(filters: {
 export async function listSources(): Promise<SourceWithStats[]> {
   const rows = await query<SourceWithStats>(`
     SELECT s.SourceId, s.SourceType, s.SourceName, s.SourceUrl, s.IsActive, s.CreatedAt,
-           ISNULL(rp.PostCount, 0) AS PostsCollected,
-           ISNULL(pp.PainPointCount, 0) AS PainPointsFound,
-           rp.LastScraped
+           CASE
+             WHEN s.SourceType = 'community' THEN ISNULL(us.SubmissionCount, 0)
+             ELSE ISNULL(rp.PostCount, 0)
+           END AS PostsCollected,
+           CASE
+             WHEN s.SourceType = 'community' THEN ISNULL(us.AcceptedCount, 0)
+             ELSE ISNULL(pp.PainPointCount, 0)
+           END AS PainPointsFound,
+           CASE
+             WHEN s.SourceType = 'community' THEN us.LastSubmission
+             ELSE rp.LastScraped
+           END AS LastScraped
     FROM Sources s
     LEFT JOIN (
       SELECT SourceId, COUNT(*) AS PostCount, MAX(CollectedAt) AS LastScraped
@@ -477,6 +486,12 @@ export async function listSources(): Promise<SourceWithStats[]> {
       INNER JOIN PainPointMentions m ON r.RawPostId = m.RawPostId
       GROUP BY r.SourceId
     ) pp ON s.SourceId = pp.SourceId
+    LEFT JOIN (
+      SELECT COUNT(*) AS SubmissionCount,
+             SUM(CASE WHEN Status = 'accepted' THEN 1 ELSE 0 END) AS AcceptedCount,
+             MAX(CreatedAt) AS LastSubmission
+      FROM UserSubmissions
+    ) us ON s.SourceType = 'community'
     ORDER BY s.SourceName
   `);
 

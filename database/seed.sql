@@ -12,7 +12,8 @@ INSERT INTO Sources (SourceId, SourceType, SourceName, SourceUrl, IsActive) VALU
 ('src-github-azure-cli',  'github',  'azure/azure-cli Issues', 'https://github.com/azure/azure-cli/issues',        1),
 ('src-github-docs',       'github',  'MicrosoftDocs Issues',   'https://github.com/MicrosoftDocs/azure-docs/issues',0),
 ('src-forum-spiceworks',  'forum',   'Spiceworks Community',   'https://community.spiceworks.com',                 1),
-('src-forum-techcomm',    'forum',   'TechCommunity Forums',   'https://techcommunity.microsoft.com',              1);
+('src-forum-techcomm',    'forum',   'TechCommunity Forums',   'https://techcommunity.microsoft.com',              1),
+('src-problems4us',       'community', 'Problems4Us',          'https://problems4us.com/submit',                   1);
 
 -- ============================================================
 -- PAIN POINTS

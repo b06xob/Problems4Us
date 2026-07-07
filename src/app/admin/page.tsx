@@ -5,7 +5,7 @@ import { SourceIcon } from "@/components/ui/SourceIcon";
 
 interface DataSource {
   SourceId: string;
-  SourceType: "reddit" | "github" | "forum" | "review" | "social";
+  SourceType: "reddit" | "github" | "forum" | "review" | "social" | "community";
   SourceName: string;
   SourceUrl: string;
   IsActive: boolean;
@@ -36,6 +36,7 @@ const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
   forum: "Forum",
   review: "Review",
   social: "Social",
+  community: "Community",
 };
 
 const STATUS_COLORS: Record<DataSource["Status"], string> = {
@@ -80,6 +81,8 @@ function getDefaultConfig(type: SourceType): Record<string, string> {
       return { site: "", product: "", min_rating: "1" };
     case "social":
       return { platform: "", keywords: "", language: "en" };
+    case "community":
+      return { form_url: "/submit" };
   }
 }
 
