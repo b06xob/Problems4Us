@@ -147,25 +147,6 @@ const examplePainPoints = [
   },
 ];
 
-const pricingTiers = [
-  {
-    name: "Free",
-    price: "$0",
-    features: ["50 pain points / month", "3 data sources", "Basic scoring", "Community support"],
-  },
-  {
-    name: "Pro",
-    price: "$49",
-    highlight: true,
-    features: ["Unlimited pain points", "All data sources", "AI product ideas", "Trend alerts", "Priority support"],
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    features: ["Everything in Pro", "Custom data sources", "API access", "Team collaboration", "Dedicated CSM"],
-  },
-];
-
 /* ------------------------------------------------------------------ */
 /*  Helper: score badge class                                          */
 /* ------------------------------------------------------------------ */
@@ -390,64 +371,6 @@ export default function HomePage() {
                     </span>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ============================================================ */}
-      {/*  Pricing                                                     */}
-      {/* ============================================================ */}
-      <section className="bg-surface-alt py-24">
-        <div className="mx-auto max-w-5xl px-6">
-          <h2 className="text-center text-3xl font-bold tracking-tight sm:text-4xl">
-            Simple Pricing
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-text-secondary">
-            Start free. Upgrade when you&apos;re ready.
-          </p>
-
-          <div className="relative mt-14 grid gap-6 lg:grid-cols-3">
-            {pricingTiers.map((tier) => (
-              <div
-                key={tier.name}
-                className={`card relative flex flex-col items-center text-center ${
-                  tier.highlight
-                    ? "ring-2 ring-brand-500 shadow-lg"
-                    : ""
-                }`}
-              >
-                {tier.highlight && (
-                  <span className="absolute -top-3 rounded-full bg-brand-600 px-3 py-0.5 text-xs font-semibold text-white">
-                    Most Popular
-                  </span>
-                )}
-
-                <h3 className="text-lg font-semibold">{tier.name}</h3>
-                <p className="mt-2 text-3xl font-extrabold">
-                  {tier.price}
-                  {tier.price !== "Custom" && (
-                    <span className="text-base font-normal text-text-muted">
-                      /mo
-                    </span>
-                  )}
-                </p>
-
-                <ul className="mt-6 w-full space-y-2.5 text-left text-sm text-text-secondary">
-                  {tier.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="shrink-0 text-brand-600" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <span className="mt-8 badge bg-surface-alt text-text-muted dark:bg-surface-hover">
-                  Coming Soon
-                </span>
               </div>
             ))}
           </div>
