@@ -1,0 +1,19 @@
+---
+description: Commit, push, and report GitHub Actions status for every change
+alwaysApply: true
+---
+
+# Commit and Deploy Workflow
+
+For this project, every code change must be committed and pushed without asking the user first.
+
+After pushing to `main`:
+
+1. Commit with a clear message describing why the change was made.
+2. Push to `origin main`.
+3. Poll the latest GitHub Actions run (`gh run list` then `gh run watch <run-id> --exit-status`) until it completes.
+4. Report back to the user with commit hash, run status (success/failure), and deploy duration when relevant.
+
+Do not leave uncommitted work at the end of a task unless the user explicitly says not to deploy.
+
+Production URL: https://problems4us.com
