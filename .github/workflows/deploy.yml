@@ -60,4 +60,18 @@ jobs:
 
       - name: Deploy to Azure Web App
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --src-path deploy.zip --type zip --async true
+        run: |
+          az webapp config appsettings set \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false \
+            --output none
+          az webapp deploy \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --src-path deploy.zip \
+            --type zip \
+            --clean true \
+            --restart true \
+            --timeout 900
+
