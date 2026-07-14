@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminAuth } from "@/lib/admin-auth";
 import {
   getSourceById,
   updateSource,
@@ -9,6 +10,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   try {
     const { id } = await params;
     const source = await getSourceById(id);
@@ -34,6 +38,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -66,6 +73,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   try {
     const { id } = await params;
     const deleted = await deleteSource(id);

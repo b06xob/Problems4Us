@@ -124,13 +124,15 @@ export async function validateAndClearState(incomingState: string): Promise<bool
   return true;
 }
 
+/**
+ * Store only non-secret identity fields in the browser cookie.
+ * OAuth access/refresh tokens must never be persisted in clear JSON cookies.
+ */
 export async function setSessionCookie(tokens: RedditOAuthTokens, username: string): Promise<void> {
   const jar = await cookies();
   const payload = JSON.stringify({
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
-    expires_at: Date.now() + tokens.expires_in * 1000,
     username,
+    expires_at: Date.now() + tokens.expires_in * 1000,
   });
 
   jar.set(SESSION_COOKIE, payload, {
@@ -143,17 +145,35 @@ export async function setSessionCookie(tokens: RedditOAuthTokens, username: stri
 }
 
 export async function getSession(): Promise<{
-  access_token: string;
-  refresh_token?: string;
-  expires_at: number;
   username: string;
+  expires_at: number;
 } | null> {
   const jar = await cookies();
   const raw = jar.get(SESSION_COOKIE)?.value;
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw) as {
+      username?: string;
+      expires_at?: number;
+      access_token?: string;
+      refresh_token?: string;
+    };
+
+    // Drop any legacy cookie that still carries OAuth tokens.
+    if (parsed.access_token || parsed.refresh_token) {
+      jar.delete(SESSION_COOKIE);
+      return null;
+    }
+
+    if (!parsed.username || typeof parsed.expires_at !== 'number') {
+      return null;
+    }
+
+    return {
+      username: parsed.username,
+      expires_at: parsed.expires_at,
+    };
   } catch {
     return null;
   }

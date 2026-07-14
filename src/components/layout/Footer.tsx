@@ -30,7 +30,6 @@ export function Footer() {
                 { label: "Community Problems", href: "/submissions" },
                 { label: "Submit a Problem", href: "/submit" },
                 { label: "Product Ideas", href: "/ideas" },
-                { label: "Data Sources", href: "/admin" },
               ].map((item) => (
                 <li key={item.href}>
                   <a

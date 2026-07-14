@@ -57,6 +57,7 @@ Copy `.env.example` to `.env.local` and configure:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `AI_PROVIDER` | AI provider: `mock`, `azure-openai`, `openai` | `mock` |
+| `ADMIN_API_KEY` | Owner key for admin/ingest/AI tool APIs | — |
 | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint URL | — |
 | `AZURE_OPENAI_API_KEY` | Azure OpenAI API key | — |
 | `AZURE_OPENAI_DEPLOYMENT` | Azure OpenAI deployment name | — |

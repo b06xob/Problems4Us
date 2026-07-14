@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/admin-auth";
 import {
   listUserSubmissions,
   createUserSubmissionDb,
 } from "@/lib/db-service";
 import { SUBMISSION_CATEGORIES } from "@/lib/user-submissions";
-import type { CreateSubmissionInput, SubmissionUrgency } from "@/lib/types";
+import type {
+  CreateSubmissionInput,
+  SubmissionUrgency,
+  UserProblemSubmission,
+} from "@/lib/types";
 
 const VALID_URGENCIES: SubmissionUrgency[] = ['low', 'medium', 'high', 'critical'];
+
+function toPublicSubmission(submission: UserProblemSubmission): Omit<
+  UserProblemSubmission,
+  "SubmitterEmail"
+> & { SubmitterEmail?: never } {
+  const { SubmitterEmail: _email, ...publicFields } = submission;
+  void _email;
+  return publicFields;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +33,12 @@ export async function GET(request: NextRequest) {
       search: searchParams.get("search") ?? undefined,
     });
 
-    return NextResponse.json({ data, total: data.length });
+    // Emails are owner-only. Public community browse never receives SubmitterEmail.
+    const payload = isAdminRequest(request)
+      ? data
+      : data.map(toPublicSubmission);
+
+    return NextResponse.json({ data: payload, total: payload.length });
   } catch (error) {
     console.error("Failed to fetch submissions:", error);
     return NextResponse.json(
@@ -90,7 +109,11 @@ export async function POST(request: NextRequest) {
       submitterEmail: email,
     });
 
-    return NextResponse.json({ data: submission }, { status: 201 });
+    // Never echo submitter email back to the browser.
+    return NextResponse.json(
+      { data: toPublicSubmission(submission) },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Failed to create submission:", error);
     return NextResponse.json(

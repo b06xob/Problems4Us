@@ -17,15 +17,6 @@ interface DataSource {
   Config: Record<string, string>;
 }
 
-
-const activityLog = [
-  { time: "2026-07-03 14:22", message: "Scraped r/sysadmin — 12 new posts, 3 pain points extracted" },
-  { time: "2026-07-03 13:15", message: "Scraped r/azure — 8 new posts, 2 pain points extracted" },
-  { time: "2026-07-03 12:00", message: "Error scraping Twitter/X: Rate limit exceeded" },
-  { time: "2026-07-02 23:00", message: "Scraped Spiceworks Community — 15 new posts, 5 pain points extracted" },
-  { time: "2026-07-02 22:30", message: "Scraped azure-cli Issues — 4 new issues, 1 pain point extracted" },
-];
-
 type SourceType = DataSource["SourceType"];
 type StatusFilter = DataSource["Status"] | "all";
 type TypeFilter = SourceType | "all";
@@ -134,7 +125,34 @@ function mapSourceFromApi(s: {
   };
 }
 
+const ADMIN_KEY_STORAGE = "p4u_admin_api_key";
+
+function getStoredAdminKey(): string {
+  if (typeof window === "undefined") return "";
+  return sessionStorage.getItem(ADMIN_KEY_STORAGE) ?? "";
+}
+
+function storeAdminKey(key: string) {
+  sessionStorage.setItem(ADMIN_KEY_STORAGE, key);
+}
+
+function clearStoredAdminKey() {
+  sessionStorage.removeItem(ADMIN_KEY_STORAGE);
+}
+
+function adminHeaders(key: string, json = false): HeadersInit {
+  const headers: Record<string, string> = {
+    "x-admin-api-key": key,
+  };
+  if (json) headers["Content-Type"] = "application/json";
+  return headers;
+}
+
 export default function AdminDataSourcesPage() {
+  const [adminKey, setAdminKey] = useState("");
+  const [keyInput, setKeyInput] = useState("");
+  const [unlockError, setUnlockError] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
   const [sources, setSources] = useState<DataSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -143,21 +161,65 @@ export default function AdminDataSourcesPage() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
-  const loadSources = useCallback(async () => {
+  const loadSources = useCallback(async (key: string) => {
     try {
-      const res = await fetch("/api/sources");
+      const res = await fetch("/api/sources", {
+        headers: adminHeaders(key),
+      });
+      if (res.status === 401 || res.status === 503) {
+        clearStoredAdminKey();
+        setUnlocked(false);
+        setAdminKey("");
+        setUnlockError(
+          res.status === 503
+            ? "ADMIN_API_KEY is not configured on the server."
+            : "Invalid admin API key."
+        );
+        setSources([]);
+        return;
+      }
       const json = await res.json();
       setSources((json.data ?? []).map(mapSourceFromApi));
+      setUnlocked(true);
+      setUnlockError("");
     } catch {
       setSources([]);
+      setUnlockError("Failed to reach the sources API.");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadSources();
+    const stored = getStoredAdminKey();
+    if (!stored) {
+      setLoading(false);
+      return;
+    }
+    setAdminKey(stored);
+    void loadSources(stored);
   }, [loadSources]);
+
+  async function handleUnlock(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = keyInput.trim();
+    if (!trimmed) {
+      setUnlockError("Enter the owner ADMIN_API_KEY.");
+      return;
+    }
+    setLoading(true);
+    storeAdminKey(trimmed);
+    setAdminKey(trimmed);
+    await loadSources(trimmed);
+  }
+
+  function handleLock() {
+    clearStoredAdminKey();
+    setAdminKey("");
+    setKeyInput("");
+    setUnlocked(false);
+    setSources([]);
+  }
 
   const stats = useMemo(() => {
     const total = sources.length;
@@ -216,7 +278,7 @@ export default function AdminDataSourcesPage() {
       if (editingId) {
         await fetch(`/api/sources/${editingId}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: adminHeaders(adminKey, true),
           body: JSON.stringify({
             SourceName: form.SourceName,
             SourceUrl: form.SourceUrl,
@@ -226,7 +288,7 @@ export default function AdminDataSourcesPage() {
       } else {
         await fetch("/api/sources", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: adminHeaders(adminKey, true),
           body: JSON.stringify({
             SourceType: form.SourceType,
             SourceName: form.SourceName,
@@ -234,7 +296,7 @@ export default function AdminDataSourcesPage() {
           }),
         });
       }
-      await loadSources();
+      await loadSources(adminKey);
       closeForm();
     } catch {
       alert("Failed to save source.");
@@ -247,10 +309,10 @@ export default function AdminDataSourcesPage() {
     try {
       await fetch(`/api/sources/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: adminHeaders(adminKey, true),
         body: JSON.stringify({ IsActive: !source.IsActive }),
       });
-      await loadSources();
+      await loadSources(adminKey);
     } catch {
       alert("Failed to update source.");
     }
@@ -261,11 +323,48 @@ export default function AdminDataSourcesPage() {
     if (!source) return;
     if (!window.confirm(`Delete "${source.SourceName}"? This action cannot be undone.`)) return;
     try {
-      await fetch(`/api/sources/${id}`, { method: "DELETE" });
-      await loadSources();
+      await fetch(`/api/sources/${id}`, {
+        method: "DELETE",
+        headers: adminHeaders(adminKey),
+      });
+      await loadSources(adminKey);
     } catch {
       alert("Failed to delete source.");
     }
+  }
+
+  if (!unlocked) {
+    return (
+      <div className="mx-auto max-w-md space-y-6 py-16">
+        <div>
+          <h1 className="text-3xl font-bold text-text-primary">Owner access</h1>
+          <p className="mt-2 text-sm text-text-secondary">
+            Data source management is owner-only. Enter the server{" "}
+            <code className="text-xs">ADMIN_API_KEY</code> to continue. This page is
+            excluded from public navigation and search indexing.
+          </p>
+        </div>
+        <form onSubmit={handleUnlock} className="card space-y-4">
+          <label className="block text-sm font-medium text-text-primary">
+            Admin API key
+            <input
+              type="password"
+              autoComplete="off"
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
+              className="input mt-1.5 w-full"
+              placeholder="Paste ADMIN_API_KEY"
+            />
+          </label>
+          {unlockError && (
+            <p className="text-sm text-red-600 dark:text-red-400">{unlockError}</p>
+          )}
+          <button type="submit" className="btn-primary w-full" disabled={loading}>
+            {loading ? "Checking…" : "Unlock"}
+          </button>
+        </form>
+      </div>
+    );
   }
 
   if (loading) {
@@ -289,12 +388,17 @@ export default function AdminDataSourcesPage() {
           <h1 className="text-3xl font-bold text-text-primary">Data Sources</h1>
           <p className="mt-1 text-text-secondary">Configure and manage data collection sources</p>
         </div>
-        <button onClick={openAddForm} className="btn-primary gap-2">
-          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Add Source
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={handleLock} className="btn-secondary">
+            Lock
+          </button>
+          <button onClick={openAddForm} className="btn-primary gap-2">
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add Source
+          </button>
+        </div>
       </div>
 
       {/* Stats Bar */}
@@ -624,22 +728,10 @@ export default function AdminDataSourcesPage() {
       {/* Activity Log */}
       <div className="card">
         <h2 className="mb-4 text-lg font-semibold text-text-primary">Activity Log</h2>
-        <div className="space-y-2">
-          {activityLog.map((entry, i) => {
-            const isError = entry.message.toLowerCase().includes("error");
-            return (
-              <div
-                key={i}
-                className={`flex gap-3 rounded-lg px-3 py-2 text-sm ${isError ? "bg-red-50 dark:bg-red-900/10" : "bg-surface-alt"}`}
-              >
-                <span className="shrink-0 font-mono text-text-muted">[{entry.time}]</span>
-                <span className={isError ? "text-red-600 dark:text-red-400" : "text-text-secondary"}>
-                  {entry.message}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <p className="text-sm text-text-secondary">
+          No recorded scrape activity yet. When scheduled ingestion is connected, real
+          collection events will appear here. Fabricated status entries are not shown.
+        </p>
       </div>
     </div>
   );

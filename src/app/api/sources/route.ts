@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminAuth } from "@/lib/admin-auth";
 import {
   listSources,
   createSource,
 } from "@/lib/db-service";
 import type { SourceType } from "@/lib/types";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   try {
     const data = await listSources();
     return NextResponse.json({ data });
@@ -19,6 +23,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json();
 

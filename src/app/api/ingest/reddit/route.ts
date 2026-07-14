@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminAuth } from '@/lib/admin-auth';
 import {
   ingestSubreddit,
   ingestAllSubreddits,
@@ -9,7 +10,10 @@ import {
 } from '@/lib/data-ingestion';
 import { TARGET_SUBREDDITS } from '@/lib/reddit-client';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json().catch(() => ({}));
 
@@ -97,7 +101,10 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   return NextResponse.json({
     status: 'ready',
     availableSubreddits: TARGET_SUBREDDITS.map((s) => ({

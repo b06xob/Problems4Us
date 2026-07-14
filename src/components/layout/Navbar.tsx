@@ -11,7 +11,6 @@ const navItems = [
   { href: "/problems", label: "Problems" },
   { href: "/submissions", label: "Community" },
   { href: "/ideas", label: "Ideas" },
-  { href: "/admin", label: "Sources" },
 ];
 
 export function Navbar() {

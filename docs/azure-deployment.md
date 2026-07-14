@@ -143,8 +143,11 @@ az webapp config appsettings set \
     AZURE_OPENAI_DEPLOYMENT=gpt-4 \
     AZURE_OPENAI_API_VERSION=2024-02-01 \
     AZURE_SQL_CONNECTION_STRING="Server=tcp:problems4us-sql.database.windows.net,1433;Database=problems4us;..." \
+    ADMIN_API_KEY="<generate-a-long-random-secret>" \
     NEXT_PUBLIC_APP_URL=https://problems4us.com
 ```
+
+`ADMIN_API_KEY` protects owner-only endpoints (`/api/sources*`, `/api/ingest/*`, `/api/ai/*`) and the `/admin` console. Without it, those endpoints return `503`. Public browse APIs remain open.
 
 ### Build & Deploy
 

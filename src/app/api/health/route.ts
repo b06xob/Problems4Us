@@ -8,7 +8,6 @@ export async function GET() {
     status: dbConnected ? "healthy" : "degraded",
     version: "1.0.0",
     timestamp: new Date().toISOString(),
-    ai_provider: process.env.AI_PROVIDER ?? "mock",
     database: dbConnected ? "connected" : "disconnected",
   });
 }
