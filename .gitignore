@@ -8,3 +8,6 @@ next-env.d.ts
 deploy.zip
 deploy-clean/
 applogs.zip
+
+# Intercom agent rules — local-only for now
+.cursor/rules/inter-agent-communication*.mdc
