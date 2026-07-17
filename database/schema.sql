@@ -133,3 +133,25 @@ CREATE INDEX IX_UserSubmissions_Category ON UserSubmissions(Category);
 CREATE INDEX IX_UserSubmissions_Urgency ON UserSubmissions(Urgency);
 CREATE INDEX IX_UserSubmissions_Status ON UserSubmissions(Status);
 CREATE INDEX IX_UserSubmissions_CreatedAt ON UserSubmissions(CreatedAt DESC);
+
+-- WaitlistEntries: Early-access / monetization waitlist (M1.4)
+CREATE TABLE WaitlistEntries (
+    WaitlistId      NVARCHAR(50)   PRIMARY KEY,
+    Email           NVARCHAR(200)  NOT NULL,
+    Source          NVARCHAR(50)   NOT NULL DEFAULT 'other',
+    CreatedAt       DATETIME2      DEFAULT GETUTCDATE()
+);
+
+CREATE UNIQUE INDEX UX_WaitlistEntries_Email ON WaitlistEntries(Email);
+CREATE INDEX IX_WaitlistEntries_CreatedAt ON WaitlistEntries(CreatedAt DESC);
+
+-- ConversionEvents: Funnel instrumentation (waitlist / pricing CTAs)
+CREATE TABLE ConversionEvents (
+    EventId         NVARCHAR(50)   PRIMARY KEY,
+    EventName       NVARCHAR(80)   NOT NULL,
+    Path            NVARCHAR(500),
+    PropsJson       NVARCHAR(MAX),
+    CreatedAt       DATETIME2      DEFAULT GETUTCDATE()
+);
+
+CREATE INDEX IX_ConversionEvents_Name_Created ON ConversionEvents(EventName, CreatedAt DESC);

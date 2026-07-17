@@ -413,8 +413,14 @@ export default function HomePage() {
             opportunities.
           </p>
 
-          <div className="mt-8 flex justify-center">
-            <EmailSignup />
+          <div className="mt-8 flex flex-col items-center gap-4">
+            <EmailSignup source="landing" />
+            <Link
+              href="/pricing"
+              className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
+            >
+              See early-access pricing →
+            </Link>
           </div>
         </div>
       </section>

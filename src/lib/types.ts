@@ -140,3 +140,18 @@ export interface CreateSubmissionInput {
   submitterName?: string;
   submitterEmail?: string;
 }
+
+export interface WaitlistEntry {
+  WaitlistId: string;
+  Email: string;
+  Source: string;
+  CreatedAt: string;
+}
+
+export interface ConversionEventRecord {
+  EventId: string;
+  EventName: string;
+  Path: string;
+  PropsJson: string;
+  CreatedAt: string;
+}

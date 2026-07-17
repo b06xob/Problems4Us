@@ -243,8 +243,22 @@ az webapp config appsettings set \
 |----------|-----|----------------------|
 | App Service | B1 | ~$13 |
 | SQL Database | S0 (10 DTU) | ~$15 |
-| Azure OpenAI | Pay-per-use | ~$5-50 (varies) |
+| Azure OpenAI | Pay-as-you-go | ~$5-50 (varies) |
 | **Total** | | **~$33-78/month** |
+
+## Waitlist + pricing funnel (M1.4)
+
+Production auto-creates `WaitlistEntries` and `ConversionEvents` on first write.
+Optional manual migration: `database/migrations/20260717_waitlist_pricing.sql`.
+
+| Endpoint | Auth | Purpose |
+|----------|------|---------|
+| `POST /api/waitlist` | Public | Persist early-access email (`source`: landing/pricing-*) |
+| `GET /api/waitlist` | `ADMIN_API_KEY` | List / count waitlist |
+| `POST /api/events` | Public | Funnel events (`pricing_view`, `waitlist_success`, …) |
+| `/pricing` | Public | Early-access pricing surface |
+
+Owner ops: `curl -H "x-admin-api-key: $ADMIN_API_KEY" https://problems4us.com/api/waitlist?countOnly=1`
 
 ## CI/CD with GitHub Actions
 

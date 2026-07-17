@@ -1,15 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { WaitlistSource } from "@/lib/waitlist";
+import { trackConversion } from "@/lib/conversion-events";
 
-export function EmailSignup() {
+interface EmailSignupProps {
+  source?: WaitlistSource;
+  ctaLabel?: string;
+  onSuccess?: () => void;
+}
+
+export function EmailSignup({
+  source = "landing",
+  ctaLabel = "Get Early Access",
+  onSuccess,
+}: EmailSignupProps) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [alreadyJoined, setAlreadyJoined] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    trackConversion("waitlist_view", { source });
+  }, [source]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) return;
-    setSubmitted(true);
+    if (!email || pending) return;
+
+    setPending(true);
+    setError(null);
+    trackConversion("waitlist_submit", { source });
+
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source }),
+      });
+      const payload = (await res.json()) as {
+        error?: string;
+        created?: boolean;
+        message?: string;
+      };
+
+      if (!res.ok) {
+        setError(payload.error ?? "Could not join waitlist. Try again.");
+        return;
+      }
+
+      setAlreadyJoined(payload.created === false);
+      setSubmitted(true);
+      trackConversion("waitlist_success", {
+        source,
+        created: payload.created !== false,
+      });
+      onSuccess?.();
+    } catch {
+      setError("Network error — please try again.");
+    } finally {
+      setPending(false);
+    }
   }
 
   if (submitted) {
@@ -20,14 +72,16 @@ export function EmailSignup() {
           <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
         <p className="text-sm font-medium text-brand-800 dark:text-brand-300">
-          You&apos;re on the list! We&apos;ll notify you when we launch.
+          {alreadyJoined
+            ? "You were already on the list — we will email you at launch."
+            : "You're on the list! We'll notify you when early access opens."}
         </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:gap-2">
+    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3 sm:flex-row sm:gap-2">
       <input
         type="email"
         required
@@ -35,10 +89,15 @@ export function EmailSignup() {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@company.com"
         className="input sm:min-w-[320px]"
+        disabled={pending}
+        autoComplete="email"
       />
-      <button type="submit" className="btn-primary whitespace-nowrap">
-        Get Early Access
+      <button type="submit" className="btn-primary whitespace-nowrap" disabled={pending}>
+        {pending ? "Joining…" : ctaLabel}
       </button>
+      {error ? (
+        <p className="w-full text-sm text-red-600 dark:text-red-400 sm:basis-full">{error}</p>
+      ) : null}
     </form>
   );
 }

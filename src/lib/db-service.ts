@@ -11,7 +11,11 @@ import type {
   CreateSubmissionInput,
   SubmissionStatus,
   TrendDirection,
+  WaitlistEntry,
+  ConversionEventRecord,
 } from './types';
+import type { WaitlistSource } from './waitlist';
+import type { ConversionEventName } from './conversion-events';
 
 export interface PainPointListItem extends PainPoint {
   SourceType: SourceType | string;
@@ -852,4 +856,138 @@ export async function updateSubmissionStatusDb(
   if (rows === 0) return undefined;
   const all = await listUserSubmissions();
   return all.find((s) => s.SubmissionId === id);
+}
+
+let waitlistTablesReady: Promise<void> | null = null;
+
+async function ensureWaitlistTables(): Promise<void> {
+  if (!waitlistTablesReady) {
+    waitlistTablesReady = (async () => {
+      await execute(`
+        IF OBJECT_ID(N'dbo.WaitlistEntries', N'U') IS NULL
+        BEGIN
+          CREATE TABLE dbo.WaitlistEntries (
+            WaitlistId   NVARCHAR(50)  NOT NULL PRIMARY KEY,
+            Email        NVARCHAR(200) NOT NULL,
+            Source       NVARCHAR(50)  NOT NULL CONSTRAINT DF_Waitlist_Source DEFAULT ('other'),
+            CreatedAt    DATETIME2     NOT NULL CONSTRAINT DF_Waitlist_CreatedAt DEFAULT (GETUTCDATE())
+          );
+          CREATE UNIQUE INDEX UX_WaitlistEntries_Email ON dbo.WaitlistEntries(Email);
+          CREATE INDEX IX_WaitlistEntries_CreatedAt ON dbo.WaitlistEntries(CreatedAt DESC);
+        END
+      `);
+      await execute(`
+        IF OBJECT_ID(N'dbo.ConversionEvents', N'U') IS NULL
+        BEGIN
+          CREATE TABLE dbo.ConversionEvents (
+            EventId      NVARCHAR(50)  NOT NULL PRIMARY KEY,
+            EventName    NVARCHAR(80)  NOT NULL,
+            Path         NVARCHAR(500) NULL,
+            PropsJson    NVARCHAR(MAX) NULL,
+            CreatedAt    DATETIME2     NOT NULL CONSTRAINT DF_ConversionEvents_CreatedAt DEFAULT (GETUTCDATE())
+          );
+          CREATE INDEX IX_ConversionEvents_Name_Created
+            ON dbo.ConversionEvents(EventName, CreatedAt DESC);
+        END
+      `);
+    })().catch((err) => {
+      waitlistTablesReady = null;
+      throw err;
+    });
+  }
+  await waitlistTablesReady;
+}
+
+export async function createWaitlistEntryDb(
+  email: string,
+  source: WaitlistSource
+): Promise<{ entry: WaitlistEntry; created: boolean }> {
+  await ensureWaitlistTables();
+
+  const existing = await queryOne<{ WaitlistId: string; Email: string; Source: string; CreatedAt: Date | string }>(
+    `SELECT TOP 1 WaitlistId, Email, Source, CreatedAt FROM WaitlistEntries WHERE Email = @email`,
+    { email }
+  );
+
+  if (existing) {
+    return {
+      created: false,
+      entry: {
+        WaitlistId: existing.WaitlistId,
+        Email: existing.Email,
+        Source: existing.Source,
+        CreatedAt: new Date(existing.CreatedAt).toISOString(),
+      },
+    };
+  }
+
+  const waitlistId = `wl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const now = new Date().toISOString();
+
+  await execute(
+    `INSERT INTO WaitlistEntries (WaitlistId, Email, Source, CreatedAt)
+     VALUES (@waitlistId, @email, @source, @now)`,
+    { waitlistId, email, source, now }
+  );
+
+  return {
+    created: true,
+    entry: {
+      WaitlistId: waitlistId,
+      Email: email,
+      Source: source,
+      CreatedAt: now,
+    },
+  };
+}
+
+export async function listWaitlistEntriesDb(): Promise<WaitlistEntry[]> {
+  await ensureWaitlistTables();
+  const rows = await query<{
+    WaitlistId: string;
+    Email: string;
+    Source: string;
+    CreatedAt: Date | string;
+  }>(`SELECT WaitlistId, Email, Source, CreatedAt FROM WaitlistEntries ORDER BY CreatedAt DESC`);
+
+  return rows.map((row) => ({
+    WaitlistId: row.WaitlistId,
+    Email: row.Email,
+    Source: row.Source,
+    CreatedAt: new Date(row.CreatedAt).toISOString(),
+  }));
+}
+
+export async function countWaitlistEntriesDb(): Promise<number> {
+  await ensureWaitlistTables();
+  const row = await queryOne<{ cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM WaitlistEntries`
+  );
+  return row?.cnt ?? 0;
+}
+
+export async function insertConversionEventDb(
+  eventName: ConversionEventName,
+  path: string,
+  props: Record<string, unknown>
+): Promise<ConversionEventRecord> {
+  await ensureWaitlistTables();
+
+  const eventId = `evt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const now = new Date().toISOString();
+  const propsJson = JSON.stringify(props ?? {});
+
+  await execute(
+    `INSERT INTO ConversionEvents (EventId, EventName, Path, PropsJson, CreatedAt)
+     VALUES (@eventId, @eventName, @path, @propsJson, @now)`,
+    { eventId, eventName, path: path.slice(0, 500), propsJson, now }
+  );
+
+  return {
+    EventId: eventId,
+    EventName: eventName,
+    Path: path,
+    PropsJson: propsJson,
+    CreatedAt: now,
+  };
 }
