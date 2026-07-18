@@ -133,9 +133,17 @@ export async function createBuilderCheckoutSession(
     return { ok: false, status: 400, error: "Only tier=builder is supported" };
   }
 
+  // Email is required so paid webhooks can grant PlanEntitlements (M2.2).
   const email =
     typeof input.email === "string" ? input.email.trim().toLowerCase() : "";
-  if (email && !isValidEmail(email)) {
+  if (!email) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Email is required to start Builder checkout",
+    };
+  }
+  if (!isValidEmail(email)) {
     return { ok: false, status: 400, error: "Invalid email" };
   }
 
@@ -150,9 +158,7 @@ export async function createBuilderCheckoutSession(
   params.set("line_items[0][quantity]", "1");
   params.set("metadata[tier]", "builder");
   params.set("metadata[product]", "Problems4Us");
-  if (email) {
-    params.set("customer_email", email);
-  }
+  params.set("customer_email", email);
 
   const response = await fetchImpl("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",

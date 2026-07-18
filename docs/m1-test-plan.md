@@ -92,3 +92,7 @@ curl -s "https://problems4us.com/api/checkout/entitlements?email=pilot@example.c
 ```
 
 Hourly evidence (cos-hourly-pulse-20260718T084502Z): shipped M2.2 entitlement grant + admin `GET /api/checkout/entitlements`.
+
+Hourly evidence (cos-hourly-pulse-20260718T094503Z):
+- Checkout session create **requires email** (entitlement grant path).
+- Builder-gated brief export: `GET /api/builder/briefs?email=&problemId=` (403 without active Builder seat).

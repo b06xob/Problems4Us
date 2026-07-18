@@ -1,9 +1,11 @@
 import {
+  decideBuilderGate,
   decidePaidBuilderGrant,
   hasActiveBuilderAccess,
   isEntitlementEmail,
   normalizeEntitlementEmail,
 } from "@/lib/entitlements";
+import { formatOpportunityBriefMarkdown } from "@/lib/opportunity-brief";
 
 describe("M2.2 plan entitlements", () => {
   it("normalizes entitlement emails", () => {
@@ -68,5 +70,55 @@ describe("M2.2 plan entitlements", () => {
       hasActiveBuilderAccess({ Tier: "explorer", Status: "active" })
     ).toBe(false);
     expect(hasActiveBuilderAccess(null)).toBe(false);
+  });
+
+  it("decideBuilderGate requires email and active Builder entitlement", () => {
+    expect(decideBuilderGate("", null)).toEqual({
+      ok: false,
+      status: 400,
+      error: "Valid email required for Builder access",
+    });
+    expect(decideBuilderGate("pilot@example.com", null)).toEqual({
+      ok: false,
+      status: 403,
+      error: "Builder early-access entitlement required",
+    });
+    expect(
+      decideBuilderGate("Pilot@Example.com", {
+        Tier: "builder",
+        Status: "active",
+      })
+    ).toEqual({ ok: true, email: "pilot@example.com" });
+  });
+});
+
+describe("Builder opportunity brief (M3.1 prep)", () => {
+  it("formats markdown with score facets and ideas", () => {
+    const markdown = formatOpportunityBriefMarkdown(
+      {
+        PainPointId: "pp-1",
+        Title: "Invoice chasing is manual",
+        Summary: "SMBs lose hours chasing late invoices.",
+        Category: "Finance",
+        OpportunityScore: 82,
+        SeverityScore: 70,
+        FrequencyScore: 80,
+        WillingnessToPayScore: 75,
+        TrendDirection: "rising",
+      },
+      [
+        {
+          Name: "Collections Copilot",
+          Description: "Automate polite follow-ups.",
+          TargetCustomer: "SMB finance teams",
+          RecommendedFirstFeature: "Email chase sequences",
+          RevenuePotentialScore: 70,
+        },
+      ]
+    );
+    expect(markdown).toContain("# Opportunity brief: Invoice chasing is manual");
+    expect(markdown).toContain("**Opportunity score:** 82");
+    expect(markdown).toContain("### 1. Collections Copilot");
+    expect(markdown).toContain("Email chase sequences");
   });
 });

@@ -138,6 +138,25 @@ describe("Stripe checkout gate (G7 prep)", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects missing email before calling Stripe", async () => {
+    const fetchImpl = jest.fn();
+    const result = await createBuilderCheckoutSession(
+      {
+        secretKey: "sk_test_x",
+        priceBuilderMonthly: "price_builder",
+        appUrl: "https://problems4us.com",
+      },
+      {},
+      fetchImpl as unknown as typeof fetch
+    );
+    expect(result).toEqual({
+      ok: false,
+      status: 400,
+      error: "Email is required to start Builder checkout",
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it("rejects invalid email before calling Stripe", async () => {
     const fetchImpl = jest.fn();
     const result = await createBuilderCheckoutSession(
@@ -167,7 +186,7 @@ describe("Stripe checkout gate (G7 prep)", () => {
         priceBuilderMonthly: "price_builder",
         appUrl: "https://problems4us.com",
       },
-      {},
+      { email: "pilot@example.com" },
       fetchImpl as unknown as typeof fetch
     );
 

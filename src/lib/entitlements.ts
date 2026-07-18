@@ -80,3 +80,33 @@ export function hasActiveBuilderAccess(
   if (!entitlement) return false;
   return entitlement.Tier === "builder" && entitlement.Status === "active";
 }
+
+export type BuilderGateResult =
+  | { ok: true; email: string }
+  | { ok: false; status: 400 | 403; error: string };
+
+/**
+ * Gate a paid Builder surface by email + PlanEntitlement row.
+ * Public explore APIs stay open; Builder-only routes call this.
+ */
+export function decideBuilderGate(
+  email: string | null | undefined,
+  entitlement: Pick<PlanEntitlement, "Tier" | "Status"> | null | undefined
+): BuilderGateResult {
+  if (!email || !isEntitlementEmail(email)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Valid email required for Builder access",
+    };
+  }
+  const normalized = normalizeEntitlementEmail(email);
+  if (!hasActiveBuilderAccess(entitlement)) {
+    return {
+      ok: false,
+      status: 403,
+      error: "Builder early-access entitlement required",
+    };
+  }
+  return { ok: true, email: normalized };
+}
