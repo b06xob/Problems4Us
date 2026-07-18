@@ -17,6 +17,8 @@ Month-1 production foundation: deploy health, SQL-backed waitlist funnel, AI ana
 | G5 Unit suite | `npm test` | All Jest suites green | Run each ship |
 | G6 AI analyze | Admin `POST /api/ai/analyze` | 200 + `provider` field | Code path wired; prod still `AI_PROVIDER=mock` until Azure OpenAI secrets set |
 | G7 Paid checkout | Stripe / marketplace | Charge succeeds | Blocked — Month-2 (merchant account) |
+| G8 Admin ingest guards | Unit `ingest-guards` + unauth `POST /api/ingest/reddit` | Jest green; prod returns 401 without key | Pass (2026-07-18) |
+| G9 Ops runbook | `docs/ops-runbook-admin-ingest.md` | Documented dry-run + triage | Pass (2026-07-18) |
 
 ## Commands
 

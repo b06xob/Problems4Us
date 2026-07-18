@@ -189,8 +189,9 @@ export async function ingestSubreddit(
   const rawPosts = redditContentToRawPosts(content, sourceId);
   const painSignalPosts = filterForPainSignals(rawPosts);
 
+  const dryRun = Boolean(options.dryRun);
   let painPoints: PainPoint[] = [];
-  if (!options.dryRun && painSignalPosts.length > 0) {
+  if (!dryRun && painSignalPosts.length > 0) {
     try {
       painPoints = await extractPainPointsFromPosts(painSignalPosts);
       for (const pp of painPoints) {
@@ -205,11 +206,13 @@ export async function ingestSubreddit(
     }
   }
 
-  for (const post of rawPosts) {
-    try {
-      await insertRawPost(post);
-    } catch {
-      // duplicate or constraint — keep in memory for session
+  if (!dryRun) {
+    for (const post of rawPosts) {
+      try {
+        await insertRawPost(post);
+      } catch {
+        // duplicate or constraint — keep in memory for session
+      }
     }
   }
 
@@ -220,7 +223,7 @@ export async function ingestSubreddit(
     source: subredditName,
     postsCollected: content.posts.length,
     commentsCollected: content.comments.length,
-    rawPostsCreated: rawPosts.length,
+    rawPostsCreated: dryRun ? 0 : rawPosts.length,
     painPointsExtracted: painPoints.length,
     errors,
     duration: Date.now() - startTime,
@@ -245,10 +248,11 @@ export async function ingestAllSubreddits(
 export async function searchAndIngest(
   subreddits: string[],
   keywords: string[] = PAIN_KEYWORDS.slice(0, 10),
-  options: { limit?: number; timeframe?: string } = {}
+  options: { limit?: number; timeframe?: string; dryRun?: boolean } = {}
 ): Promise<IngestionResult[]> {
   const results: IngestionResult[] = [];
   const startTime = Date.now();
+  const dryRun = Boolean(options.dryRun);
 
   for (const subreddit of subreddits) {
     const target = TARGET_SUBREDDITS.find(
@@ -292,7 +296,8 @@ export async function searchAndIngest(
 
     let painPoints: PainPoint[] = [];
     const painSignalPosts = filterForPainSignals(unique);
-    if (painSignalPosts.length > 0) {
+    // Honor dryRun: collect/search only — no AI extraction or DB pain-point writes.
+    if (!dryRun && painSignalPosts.length > 0) {
       try {
         painPoints = await extractPainPointsFromPosts(painSignalPosts.slice(0, 20));
         for (const pp of painPoints) {
@@ -307,11 +312,13 @@ export async function searchAndIngest(
       }
     }
 
-    for (const post of unique) {
-      try {
-        await insertRawPost(post);
-      } catch {
-        // skip duplicates
+    if (!dryRun) {
+      for (const post of unique) {
+        try {
+          await insertRawPost(post);
+        } catch {
+          // skip duplicates
+        }
       }
     }
 
@@ -322,7 +329,7 @@ export async function searchAndIngest(
       source: subreddit,
       postsCollected: unique.length,
       commentsCollected: 0,
-      rawPostsCreated: unique.length,
+      rawPostsCreated: dryRun ? 0 : unique.length,
       painPointsExtracted: painPoints.length,
       errors,
       duration: Date.now() - startTime,
