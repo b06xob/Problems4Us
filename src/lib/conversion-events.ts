@@ -11,6 +11,7 @@ export const CONVERSION_EVENT_NAMES = [
   "paid_early_access",
   "admin_pilot_grant",
   "admin_pilot_revoke",
+  "admin_pilot_revoke_all",
 ] as const;
 
 export type ConversionEventName = (typeof CONVERSION_EVENT_NAMES)[number];

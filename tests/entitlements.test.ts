@@ -1,6 +1,7 @@
 import {
   decideAdminPilotGrant,
   decideAdminPilotRevoke,
+  decideAdminPilotRevokeAll,
   decideBuilderGate,
   decidePaidBuilderGrant,
   filterEntitlementList,
@@ -8,6 +9,7 @@ import {
   isAdminPilotSessionId,
   isEntitlementEmail,
   normalizeEntitlementEmail,
+  REVOKE_ALL_PILOTS_CONFIRM,
   toEntitlementListItem,
 } from "@/lib/entitlements";
 import { formatOpportunityBriefMarkdown } from "@/lib/opportunity-brief";
@@ -180,6 +182,19 @@ describe("M2.2 plan entitlements", () => {
     expect(filterEntitlementList(rows, { limit: 1 }).map((r) => r.email)).toEqual([
       "pilot@example.com",
     ]);
+  });
+
+  it("bulk revoke all pilots requires exact confirm token", () => {
+    expect(decideAdminPilotRevokeAll({ confirm: "nope" }).ok).toBe(false);
+    expect(
+      decideAdminPilotRevokeAll({ confirm: REVOKE_ALL_PILOTS_CONFIRM })
+    ).toEqual({ ok: true, dryRun: false });
+    expect(
+      decideAdminPilotRevokeAll({
+        confirm: REVOKE_ALL_PILOTS_CONFIRM,
+        dryRun: true,
+      })
+    ).toEqual({ ok: true, dryRun: true });
   });
 });
 

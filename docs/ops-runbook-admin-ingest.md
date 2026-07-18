@@ -88,4 +88,14 @@ curl -s -X POST https://problems4us.com/api/checkout/entitlements \
 
 # Expect 200 + markdown when seat active and problemId exists
 curl -s "https://problems4us.com/api/builder/briefs?email=pilot@example.com&problemId=<id>"
+
+# After smoke: dry-run then wipe leftover pilot seats only (paid Stripe seats untouched)
+curl -s -X POST https://problems4us.com/api/checkout/entitlements \
+  -H "x-admin-api-key: $ADMIN_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"action":"revoke_all_pilots","confirm":"REVOKE_ALL_PILOTS","dryRun":true}'
+curl -s -X POST https://problems4us.com/api/checkout/entitlements \
+  -H "x-admin-api-key: $ADMIN_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"action":"revoke_all_pilots","confirm":"REVOKE_ALL_PILOTS"}'
 ```

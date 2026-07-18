@@ -123,8 +123,20 @@ curl -s -X POST https://problems4us.com/api/checkout/entitlements \
   -H "x-admin-api-key: $ADMIN_API_KEY" \
   -H "content-type: application/json" \
   -d '{"action":"revoke","email":"pilot@example.com"}'
+
+# Dry-run / wipe leftover pilot seats only (never paid Stripe seats)
+curl -s -X POST https://problems4us.com/api/checkout/entitlements \
+  -H "x-admin-api-key: $ADMIN_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"action":"revoke_all_pilots","confirm":"REVOKE_ALL_PILOTS","dryRun":true}'
+curl -s -X POST https://problems4us.com/api/checkout/entitlements \
+  -H "x-admin-api-key: $ADMIN_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"action":"revoke_all_pilots","confirm":"REVOKE_ALL_PILOTS"}'
 ```
 
 Hourly evidence (cos-hourly-pulse-20260718T104502Z): shipped admin `POST` grant/revoke + `pilotGrant` flag on lookup.
 
 Hourly evidence (cos-hourly-pulse-20260718T114502Z): admin `?list=1` / `pilotOnly` cohort list; summary includes `activePilotSeats`; grant/revoke writes `admin_pilot_grant` / `admin_pilot_revoke` funnel events.
+
+Hourly evidence (cos-hourly-pulse-20260718T124504Z): `revoke_all_pilots` with confirm token + dry-run; paid Stripe seats untouched; `admin_pilot_revoke_all` funnel event.

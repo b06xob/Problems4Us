@@ -24,6 +24,7 @@ import { buildConversionFunnelCounts } from './conversion-events';
 import {
   decideAdminPilotGrant,
   decideAdminPilotRevoke,
+  decideAdminPilotRevokeAll,
   decidePaidBuilderGrant,
   normalizeEntitlementEmail,
   type PlanEntitlement,
@@ -1377,6 +1378,63 @@ export async function revokeBuilderEntitlementDb(input: {
       Status: decision.status,
       UpdatedAt: now,
     }),
+  };
+}
+
+/**
+ * Bulk cancel every active Builder seat with synthetic admin_pilot: session.
+ * Never touches paid Stripe sessions (cs_…). dryRun returns emails without UPDATE.
+ */
+export async function revokeAllActivePilotBuilderEntitlementsDb(input: {
+  confirm?: string | null;
+  dryRun?: boolean | null;
+}): Promise<
+  | {
+      revoked: true;
+      dryRun: boolean;
+      count: number;
+      emails: string[];
+    }
+  | { revoked: false; reason: string }
+> {
+  const decision = decideAdminPilotRevokeAll(input);
+  if (!decision.ok) {
+    return { revoked: false, reason: decision.reason };
+  }
+
+  await ensureWaitlistTables();
+
+  const rows = await query<{ Email: string }>(
+    `SELECT Email FROM PlanEntitlements
+     WHERE Tier = N'builder' AND Status = N'active'
+       AND StripeSessionId LIKE N'admin_pilot:%'
+     ORDER BY UpdatedAt DESC`
+  );
+  const emails = rows.map((r) => r.Email);
+
+  if (decision.dryRun || emails.length === 0) {
+    return {
+      revoked: true,
+      dryRun: decision.dryRun,
+      count: emails.length,
+      emails,
+    };
+  }
+
+  const now = new Date().toISOString();
+  await execute(
+    `UPDATE PlanEntitlements
+     SET Status = N'canceled', UpdatedAt = @now
+     WHERE Tier = N'builder' AND Status = N'active'
+       AND StripeSessionId LIKE N'admin_pilot:%'`,
+    { now }
+  );
+
+  return {
+    revoked: true,
+    dryRun: false,
+    count: emails.length,
+    emails,
   };
 }
 

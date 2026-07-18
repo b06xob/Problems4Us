@@ -6,6 +6,7 @@ import {
   getPlanEntitlementByEmailDb,
   insertConversionEventDb,
   listActiveBuilderEntitlementsDb,
+  revokeAllActivePilotBuilderEntitlementsDb,
   revokeBuilderEntitlementDb,
   toPlanEntitlement,
   upsertAdminPilotBuilderEntitlementDb,
@@ -28,7 +29,8 @@ import {
  * POST /api/checkout/entitlements
  * Admin pilot grant/revoke while G7 Stripe keys pending:
  *   { "action":"grant"|"revoke", "email":"...", "note":"optional" }
- * Records admin_pilot_grant / admin_pilot_revoke funnel events.
+ *   { "action":"revoke_all_pilots", "confirm":"REVOKE_ALL_PILOTS", "dryRun":true|false }
+ * Records admin_pilot_grant / admin_pilot_revoke / admin_pilot_revoke_all funnel events.
  */
 export async function GET(request: NextRequest) {
   const unauthorized = requireAdminAuth(request);
@@ -122,12 +124,20 @@ export async function POST(request: NextRequest) {
   const unauthorized = requireAdminAuth(request);
   if (unauthorized) return unauthorized;
 
-  let body: { action?: string; email?: string; note?: string };
+  let body: {
+    action?: string;
+    email?: string;
+    note?: string;
+    confirm?: string;
+    dryRun?: boolean;
+  };
   try {
     body = (await request.json()) as {
       action?: string;
       email?: string;
       note?: string;
+      confirm?: string;
+      dryRun?: boolean;
     };
   } catch {
     return NextResponse.json(
@@ -137,17 +147,62 @@ export async function POST(request: NextRequest) {
   }
 
   const action = (body.action || "").trim().toLowerCase();
-  const email = (body.email || "").trim();
+
+  if (action === "revoke_all_pilots") {
+    try {
+      const result = await revokeAllActivePilotBuilderEntitlementsDb({
+        confirm: body.confirm,
+        dryRun: body.dryRun,
+      });
+      if (!result.revoked) {
+        return NextResponse.json(
+          { error: result.reason, gate: "M2.2" },
+          { status: 400 }
+        );
+      }
+      if (!result.dryRun && result.count > 0) {
+        try {
+          await insertConversionEventDb(
+            "admin_pilot_revoke_all",
+            "/api/checkout/entitlements",
+            {
+              count: result.count,
+              emails: result.emails,
+            }
+          );
+        } catch (auditError) {
+          console.error("Failed to record admin_pilot_revoke_all:", auditError);
+        }
+      }
+      return NextResponse.json({
+        ok: true,
+        gate: "M2.2",
+        action: "revoke_all_pilots",
+        dryRun: result.dryRun,
+        count: result.count,
+        emails: result.emails,
+      });
+    } catch (error) {
+      console.error("Failed to bulk revoke pilot entitlements:", error);
+      return NextResponse.json(
+        { error: "Failed to bulk revoke pilot entitlements", gate: "M2.2" },
+        { status: 500 }
+      );
+    }
+  }
 
   if (action !== "grant" && action !== "revoke") {
     return NextResponse.json(
       {
-        error: 'action must be "grant" or "revoke"',
+        error:
+          'action must be "grant", "revoke", or "revoke_all_pilots"',
         gate: "M2.2",
       },
       { status: 400 }
     );
   }
+
+  const email = (body.email || "").trim();
 
   if (!email || !isEntitlementEmail(email)) {
     return NextResponse.json(

@@ -214,3 +214,28 @@ export function filterEntitlementList(
   const filtered = pilotOnly ? rows.filter((r) => r.pilotGrant) : rows;
   return filtered.slice(0, limit);
 }
+
+/** Confirm token required for bulk pilot revoke (prevents accidental wipe). */
+export const REVOKE_ALL_PILOTS_CONFIRM = "REVOKE_ALL_PILOTS";
+
+export type AdminPilotRevokeAllDecision =
+  | { ok: true; dryRun: boolean }
+  | { ok: false; reason: string };
+
+/**
+ * Validate bulk revoke of active admin_pilot seats only (never paid Stripe seats).
+ * Requires exact confirm token; dryRun previews without mutating.
+ */
+export function decideAdminPilotRevokeAll(input: {
+  confirm?: string | null;
+  dryRun?: boolean | null;
+}): AdminPilotRevokeAllDecision {
+  const confirm = (input.confirm || "").trim();
+  if (confirm !== REVOKE_ALL_PILOTS_CONFIRM) {
+    return {
+      ok: false,
+      reason: `confirm must be exactly "${REVOKE_ALL_PILOTS_CONFIRM}"`,
+    };
+  }
+  return { ok: true, dryRun: Boolean(input.dryRun) };
+}
