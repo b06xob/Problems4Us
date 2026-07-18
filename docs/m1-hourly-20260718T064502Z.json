@@ -1,0 +1,30 @@
+{
+  "correlationId": "cos-hourly-pulse-20260718T064502Z",
+  "messageId": "message-3654c9f33773",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "timestampUtc": "2026-07-18T06:48:00Z",
+  "priorHourVerified": {
+    "commit": "bbf0831",
+    "ciRunId": 29632906193,
+    "conclusion": "success",
+    "prodCheckoutStatus": {
+      "gate": "G7",
+      "sessionConfigured": false,
+      "webhookConfigured": false,
+      "checkoutReady": false
+    },
+    "prodCheckoutSession": { "status": 503, "gate": "G7", "configured": false },
+    "health": { "status": 200, "database": "connected", "aiProvider": "mock" },
+    "pricing": { "status": 200 }
+  },
+  "shipped": [
+    "checkoutReady requires sessionConfigured AND webhookConfigured",
+    "GET /api/health includes public checkout G7 booleans",
+    "Unit: session-only secrets keep checkoutReady=false"
+  ],
+  "blockers": [
+    "Azure OpenAI App Service secrets (M1.2)",
+    "Stripe merchant account + keys (G7)"
+  ]
+}

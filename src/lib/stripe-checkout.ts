@@ -88,11 +88,13 @@ export type StripeCheckoutPublicStatus = {
 export function getStripeCheckoutPublicStatus(): StripeCheckoutPublicStatus {
   const sessionConfigured = getStripeCheckoutConfig() !== null;
   const webhookConfigured = getStripeWebhookSecret() !== null;
+  // Ready only when session create AND webhook verify are both configured —
+  // otherwise paid_early_access would never be recorded after checkout.
   return {
     gate: "G7",
     sessionConfigured,
     webhookConfigured,
-    checkoutReady: sessionConfigured,
+    checkoutReady: sessionConfigured && webhookConfigured,
   };
 }
 

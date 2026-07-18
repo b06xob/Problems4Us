@@ -10,7 +10,7 @@ Month-1 production foundation: deploy health, SQL-backed waitlist funnel, AI ana
 
 | Gate | What | Pass criteria | Status |
 |------|------|---------------|--------|
-| G1 Deploy health | `GET /api/health` on production | `status=healthy`, `database=connected` | Pass (2026-07-18) |
+| G1 Deploy health | `GET /api/health` on production | `status=healthy`, `database=connected`; includes public `checkout` G7 booleans | Pass (2026-07-18) |
 | G2 Waitlist write | `POST /api/waitlist` | HTTP 201 + `waitlistId` | Pass (2026-07-18) |
 | G3 Waitlist read | Admin `GET /api/waitlist?countOnly=1` | `total >= 1` | Pass (2026-07-18, total=1) |
 | G4 Pricing surface | `GET /pricing` | HTTP 200 | Pass |
@@ -56,7 +56,7 @@ Month-1 keeps `/pricing` as waitlist CTA only (no charge). Before enabling check
    - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
    - `STRIPE_PRICE_BUILDER_MONTHLY` (Builder Early Access $49/mo)
 3. `POST /api/checkout/session` fail-closes **503** when secrets unset; when set, creates Checkout Session via Stripe REST (no SDK).
-4. `GET /api/checkout/status` returns public booleans (`sessionConfigured`, `webhookConfigured`, `checkoutReady`) — pricing Builder CTA switches to Stripe when ready.
+4. `GET /api/checkout/status` (and `/api/health.checkout`) returns public booleans (`sessionConfigured`, `webhookConfigured`, `checkoutReady`). `checkoutReady` requires **both** session + webhook secrets so paid_early_access can be recorded; pricing Builder CTA switches to Stripe only then.
 5. `POST /api/checkout/webhook` fail-closes **503** until `STRIPE_WEBHOOK_SECRET`; when set, verifies `Stripe-Signature` (HMAC) and records `paid_early_access` on `checkout.session.completed`.
 6. Gate: smoke test charge in Stripe test mode; then flip live keys.
 
@@ -73,4 +73,4 @@ curl -s -X POST https://problems4us.com/api/checkout/webhook \
   -d '{}'
 ```
 
-Hourly evidence (cos-hourly-pulse-20260718T054502Z): prior deploy 2b3f391 CI success (run 29631280729); prod session+webhook **503**; shipped `GET /api/checkout/status` + Builder checkout CTA on `/pricing`.
+Hourly evidence (cos-hourly-pulse-20260718T064502Z): prior deploy bbf0831 CI success (run 29632906193); prod `GET /api/checkout/status` → checkoutReady=false; shipped checkoutReady=session∧webhook + health.checkout G7 flags.

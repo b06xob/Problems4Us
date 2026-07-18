@@ -74,6 +74,18 @@ describe("Stripe checkout gate (G7 prep)", () => {
     });
   });
 
+  it("keeps checkoutReady false until webhook secret is also set", () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_x";
+    process.env.STRIPE_PRICE_BUILDER_MONTHLY = "price_builder";
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    expect(getStripeCheckoutPublicStatus()).toEqual({
+      gate: "G7",
+      sessionConfigured: true,
+      webhookConfigured: false,
+      checkoutReady: false,
+    });
+  });
+
   it("creates a checkout session via Stripe REST when configured", async () => {
     const config = {
       secretKey: "sk_test_x",
