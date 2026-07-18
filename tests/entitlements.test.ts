@@ -288,8 +288,8 @@ describe("M2.2 plan entitlements", () => {
   });
 });
 
-describe("Builder opportunity brief (M3.1 prep)", () => {
-  it("formats markdown with score facets and ideas", () => {
+describe("Builder opportunity brief (M3.1 / M3.2 prep)", () => {
+  it("formats markdown with score facets, explainability, and ideas", () => {
     const markdown = formatOpportunityBriefMarkdown(
       {
         PainPointId: "pp-1",
@@ -300,6 +300,8 @@ describe("Builder opportunity brief (M3.1 prep)", () => {
         SeverityScore: 70,
         FrequencyScore: 80,
         WillingnessToPayScore: 75,
+        TrendScore: 55,
+        MarketSizeScore: 60,
         TrendDirection: "rising",
       },
       [
@@ -314,6 +316,9 @@ describe("Builder opportunity brief (M3.1 prep)", () => {
     );
     expect(markdown).toContain("# Opportunity brief: Invoice chasing is manual");
     expect(markdown).toContain("**Opportunity score:** 82");
+    expect(markdown).toContain("## Why this score");
+    expect(markdown).toContain("Willingness to pay");
+    expect(markdown).toContain("| Factor | Raw (0–100) | Weight | Contribution |");
     expect(markdown).toContain("### 1. Collections Copilot");
     expect(markdown).toContain("Email chase sequences");
   });

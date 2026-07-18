@@ -1,4 +1,10 @@
-import { calculateOpportunityScore, getScoreLabel, getScoreColor } from "@/lib/scoring";
+import {
+  calculateOpportunityScore,
+  explainOpportunityScore,
+  getScoreLabel,
+  getScoreColor,
+  OPPORTUNITY_SCORE_WEIGHTS,
+} from "@/lib/scoring";
 
 describe("calculateOpportunityScore", () => {
   it("returns 0 for all-zero scores", () => {
@@ -65,6 +71,29 @@ describe("calculateOpportunityScore", () => {
       MarketSizeScore: 50,
     });
     expect(highWTP - lowWTP).toBe(30);
+  });
+});
+
+describe("explainOpportunityScore", () => {
+  it("weights sum to 1.0", () => {
+    const sum = Object.values(OPPORTUNITY_SCORE_WEIGHTS).reduce((a, b) => a + b, 0);
+    expect(sum).toBeCloseTo(1, 5);
+  });
+
+  it("names the top weighted driver and matches calculateOpportunityScore", () => {
+    const scores = {
+      FrequencyScore: 80,
+      SeverityScore: 60,
+      WillingnessToPayScore: 90,
+      TrendScore: 40,
+      MarketSizeScore: 50,
+    };
+    const explained = explainOpportunityScore(scores);
+    expect(explained.total).toBe(calculateOpportunityScore(scores));
+    expect(explained.label).toBe("High");
+    expect(explained.topDriver.key).toBe("WillingnessToPayScore");
+    expect(explained.topDriver.weighted).toBe(27);
+    expect(explained.facets).toHaveLength(5);
   });
 });
 

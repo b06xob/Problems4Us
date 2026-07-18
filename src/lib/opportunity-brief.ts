@@ -1,6 +1,12 @@
 /**
- * M3.1 prep — exportable opportunity brief (Markdown) for Builder seats.
+ * M3.1 / M3.2 prep — exportable opportunity brief (Markdown) for Builder seats.
+ * Includes score explainability so builders trust the ranking before they buy.
  */
+
+import {
+  explainOpportunityScore,
+  type OpportunityScores,
+} from "./scoring";
 
 export type BriefPainPoint = {
   PainPointId: string;
@@ -11,6 +17,8 @@ export type BriefPainPoint = {
   SeverityScore: number;
   FrequencyScore: number;
   WillingnessToPayScore: number;
+  TrendScore?: number | null;
+  MarketSizeScore?: number | null;
   TrendDirection?: string | null;
 };
 
@@ -21,6 +29,38 @@ export type BriefIdea = {
   RecommendedFirstFeature?: string | null;
   RevenuePotentialScore?: number | null;
 };
+
+function toOpportunityScores(painPoint: BriefPainPoint): OpportunityScores {
+  return {
+    FrequencyScore: painPoint.FrequencyScore,
+    SeverityScore: painPoint.SeverityScore,
+    WillingnessToPayScore: painPoint.WillingnessToPayScore,
+    TrendScore: Number(painPoint.TrendScore ?? 0),
+    MarketSizeScore: Number(painPoint.MarketSizeScore ?? 0),
+  };
+}
+
+/** Markdown "Why this score" block — pure helper for briefs + unit tests. */
+export function formatScoreExplanationMarkdown(
+  painPoint: BriefPainPoint
+): string {
+  const explained = explainOpportunityScore(toOpportunityScores(painPoint));
+  const lines: string[] = [
+    "## Why this score",
+    "",
+    `Composite **${explained.total}/100** (${explained.label}). Top driver: **${explained.topDriver.label}** (weight ${(explained.topDriver.weight * 100).toFixed(0)}%, contributes ${explained.topDriver.weighted} pts).`,
+    "",
+    "| Factor | Raw (0–100) | Weight | Contribution |",
+    "| --- | ---: | ---: | ---: |",
+  ];
+  for (const facet of explained.facets) {
+    lines.push(
+      `| ${facet.label} | ${facet.raw} | ${(facet.weight * 100).toFixed(0)}% | ${facet.weighted} |`
+    );
+  }
+  lines.push("");
+  return lines.join("\n");
+}
 
 export function formatOpportunityBriefMarkdown(
   painPoint: BriefPainPoint,
@@ -38,6 +78,8 @@ export function formatOpportunityBriefMarkdown(
   if (painPoint.TrendDirection) {
     lines.push(`**Trend:** ${painPoint.TrendDirection}`);
   }
+
+  lines.push("", formatScoreExplanationMarkdown(painPoint).trimEnd(), "");
 
   lines.push("", "## Summary", "", painPoint.Summary.trim() || "_(no summary)_", "");
 
