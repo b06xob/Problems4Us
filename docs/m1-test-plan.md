@@ -112,6 +112,12 @@ curl -s -X POST https://problems4us.com/api/checkout/entitlements \
 curl -s "https://problems4us.com/api/checkout/entitlements?email=pilot@example.com" \
   -H "x-admin-api-key: $ADMIN_API_KEY"
 
+# List active seats / pilot-only hygiene
+curl -s "https://problems4us.com/api/checkout/entitlements?summary=1" \
+  -H "x-admin-api-key: $ADMIN_API_KEY"
+curl -s "https://problems4us.com/api/checkout/entitlements?list=1&pilotOnly=1" \
+  -H "x-admin-api-key: $ADMIN_API_KEY"
+
 # Revoke (status=canceled → briefs 403)
 curl -s -X POST https://problems4us.com/api/checkout/entitlements \
   -H "x-admin-api-key: $ADMIN_API_KEY" \
@@ -120,3 +126,5 @@ curl -s -X POST https://problems4us.com/api/checkout/entitlements \
 ```
 
 Hourly evidence (cos-hourly-pulse-20260718T104502Z): shipped admin `POST` grant/revoke + `pilotGrant` flag on lookup.
+
+Hourly evidence (cos-hourly-pulse-20260718T114502Z): admin `?list=1` / `pilotOnly` cohort list; summary includes `activePilotSeats`; grant/revoke writes `admin_pilot_grant` / `admin_pilot_revoke` funnel events.

@@ -172,3 +172,45 @@ export function decideAdminPilotRevoke(
 export function isAdminPilotSessionId(sessionId: string | null | undefined): boolean {
   return Boolean(sessionId?.startsWith(ADMIN_PILOT_SESSION_PREFIX));
 }
+
+/** Public admin list item for entitlement cohort / pilot hygiene. */
+export type EntitlementListItem = {
+  email: string;
+  tier: PlanTier;
+  status: EntitlementStatus;
+  grantedAt: string;
+  updatedAt: string;
+  stripeSessionId: string | null;
+  pilotGrant: boolean;
+};
+
+export function toEntitlementListItem(
+  entitlement: Pick<
+    PlanEntitlement,
+    "Email" | "Tier" | "Status" | "GrantedAt" | "UpdatedAt" | "StripeSessionId"
+  >
+): EntitlementListItem {
+  return {
+    email: entitlement.Email,
+    tier: entitlement.Tier,
+    status: entitlement.Status,
+    grantedAt: entitlement.GrantedAt,
+    updatedAt: entitlement.UpdatedAt,
+    stripeSessionId: entitlement.StripeSessionId,
+    pilotGrant: isAdminPilotSessionId(entitlement.StripeSessionId),
+  };
+}
+
+/**
+ * Filter active Builder seats for admin list (?list=1&pilotOnly=1).
+ * Pure helper so list semantics stay unit-testable without SQL.
+ */
+export function filterEntitlementList(
+  rows: EntitlementListItem[],
+  options?: { pilotOnly?: boolean; limit?: number }
+): EntitlementListItem[] {
+  const pilotOnly = Boolean(options?.pilotOnly);
+  const limit = Math.min(Math.max(options?.limit ?? 50, 1), 200);
+  const filtered = pilotOnly ? rows.filter((r) => r.pilotGrant) : rows;
+  return filtered.slice(0, limit);
+}

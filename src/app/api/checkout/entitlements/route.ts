@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAuth } from "@/lib/admin-auth";
 import {
   countActiveBuilderEntitlementsDb,
+  countActivePilotBuilderEntitlementsDb,
   getPlanEntitlementByEmailDb,
+  insertConversionEventDb,
+  listActiveBuilderEntitlementsDb,
   revokeBuilderEntitlementDb,
   toPlanEntitlement,
   upsertAdminPilotBuilderEntitlementDb,
@@ -11,17 +14,21 @@ import {
   hasActiveBuilderAccess,
   isAdminPilotSessionId,
   isEntitlementEmail,
+  toEntitlementListItem,
 } from "@/lib/entitlements";
 
 /**
  * GET /api/checkout/entitlements
  * Admin: paid Builder cohort (M2.2 entitlement gate).
- *   ?summary=1           → { activeBuilderSeats }
+ *   ?summary=1           → { activeBuilderSeats, activePilotSeats }
+ *   ?list=1              → active seats (newest first)
+ *   ?list=1&pilotOnly=1  → active admin pilot seats only
  *   ?email=user@x.com    → entitlement lookup (no secrets)
  *
  * POST /api/checkout/entitlements
  * Admin pilot grant/revoke while G7 Stripe keys pending:
  *   { "action":"grant"|"revoke", "email":"...", "note":"optional" }
+ * Records admin_pilot_grant / admin_pilot_revoke funnel events.
  */
 export async function GET(request: NextRequest) {
   const unauthorized = requireAdminAuth(request);
@@ -30,11 +37,39 @@ export async function GET(request: NextRequest) {
   try {
     const summary = request.nextUrl.searchParams.get("summary");
     if (summary === "1" || summary === "true") {
-      const activeBuilderSeats = await countActiveBuilderEntitlementsDb();
+      const [activeBuilderSeats, activePilotSeats] = await Promise.all([
+        countActiveBuilderEntitlementsDb(),
+        countActivePilotBuilderEntitlementsDb(),
+      ]);
       return NextResponse.json({
         ok: true,
         gate: "M2.2",
         activeBuilderSeats,
+        activePilotSeats,
+      });
+    }
+
+    const list = request.nextUrl.searchParams.get("list");
+    if (list === "1" || list === "true") {
+      const pilotOnlyRaw = request.nextUrl.searchParams.get("pilotOnly");
+      const pilotOnly =
+        pilotOnlyRaw === "1" || pilotOnlyRaw === "true";
+      const limitRaw = Number(request.nextUrl.searchParams.get("limit") || "50");
+      const limit = Number.isFinite(limitRaw) ? limitRaw : 50;
+      const records = await listActiveBuilderEntitlementsDb({
+        pilotOnly,
+        limit,
+      });
+      const entitlements = records
+        .map(toPlanEntitlement)
+        .filter((e): e is NonNullable<typeof e> => Boolean(e))
+        .map(toEntitlementListItem);
+      return NextResponse.json({
+        ok: true,
+        gate: "M2.2",
+        pilotOnly,
+        count: entitlements.length,
+        entitlements,
       });
     }
 
@@ -42,7 +77,7 @@ export async function GET(request: NextRequest) {
     if (!email) {
       return NextResponse.json(
         {
-          error: "Provide ?summary=1 or ?email=",
+          error: "Provide ?summary=1, ?list=1, or ?email=",
           gate: "M2.2",
         },
         { status: 400 }
@@ -134,6 +169,16 @@ export async function POST(request: NextRequest) {
         );
       }
       const entitlement = toPlanEntitlement(result.entitlement);
+      try {
+        await insertConversionEventDb("admin_pilot_grant", "/api/checkout/entitlements", {
+          email: entitlement?.Email ?? email,
+          created: result.created,
+          note: body.note ?? null,
+          sessionId: entitlement?.StripeSessionId ?? null,
+        });
+      } catch (auditError) {
+        console.error("Failed to record admin_pilot_grant:", auditError);
+      }
       return NextResponse.json({
         ok: true,
         gate: "M2.2",
@@ -162,6 +207,15 @@ export async function POST(request: NextRequest) {
       );
     }
     const entitlement = toPlanEntitlement(result.entitlement);
+    try {
+      await insertConversionEventDb("admin_pilot_revoke", "/api/checkout/entitlements", {
+        email: entitlement?.Email ?? email,
+        found: result.found,
+        wasPilot: isAdminPilotSessionId(entitlement?.StripeSessionId),
+      });
+    } catch (auditError) {
+      console.error("Failed to record admin_pilot_revoke:", auditError);
+    }
     return NextResponse.json({
       ok: true,
       gate: "M2.2",

@@ -1412,6 +1412,53 @@ export async function countActiveBuilderEntitlementsDb(): Promise<number> {
   return row?.cnt ?? 0;
 }
 
+export async function countActivePilotBuilderEntitlementsDb(): Promise<number> {
+  await ensureWaitlistTables();
+  const row = await queryOne<{ cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM PlanEntitlements
+     WHERE Tier = N'builder' AND Status = N'active'
+       AND StripeSessionId LIKE N'admin_pilot:%'`
+  );
+  return row?.cnt ?? 0;
+}
+
+/**
+ * Active Builder seats for admin cohort list (newest first).
+ * When pilotOnly=true, only synthetic admin_pilot: sessions.
+ */
+export async function listActiveBuilderEntitlementsDb(options?: {
+  pilotOnly?: boolean;
+  limit?: number;
+}): Promise<PlanEntitlementRecord[]> {
+  await ensureWaitlistTables();
+  const pilotOnly = Boolean(options?.pilotOnly);
+  const limit = Math.min(Math.max(options?.limit ?? 50, 1), 200);
+
+  const rows = await query<{
+    EntitlementId: string;
+    Email: string;
+    Tier: string;
+    Status: string;
+    StripeSessionId: string | null;
+    StripeEventId: string | null;
+    GrantedAt: Date | string;
+    UpdatedAt: Date | string;
+  }>(
+    pilotOnly
+      ? `SELECT TOP (${limit}) EntitlementId, Email, Tier, Status, StripeSessionId, StripeEventId, GrantedAt, UpdatedAt
+         FROM PlanEntitlements
+         WHERE Tier = N'builder' AND Status = N'active'
+           AND StripeSessionId LIKE N'admin_pilot:%'
+         ORDER BY UpdatedAt DESC`
+      : `SELECT TOP (${limit}) EntitlementId, Email, Tier, Status, StripeSessionId, StripeEventId, GrantedAt, UpdatedAt
+         FROM PlanEntitlements
+         WHERE Tier = N'builder' AND Status = N'active'
+         ORDER BY UpdatedAt DESC`
+  );
+
+  return rows.map(mapPlanEntitlementRow);
+}
+
 /** Narrow PlanEntitlementRecord → PlanEntitlement for access checks. */
 export function toPlanEntitlement(
   record: PlanEntitlementRecord | null

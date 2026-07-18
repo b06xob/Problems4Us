@@ -3,10 +3,12 @@ import {
   decideAdminPilotRevoke,
   decideBuilderGate,
   decidePaidBuilderGrant,
+  filterEntitlementList,
   hasActiveBuilderAccess,
   isAdminPilotSessionId,
   isEntitlementEmail,
   normalizeEntitlementEmail,
+  toEntitlementListItem,
 } from "@/lib/entitlements";
 import { formatOpportunityBriefMarkdown } from "@/lib/opportunity-brief";
 
@@ -121,6 +123,63 @@ describe("M2.2 plan entitlements", () => {
       status: "canceled",
     });
     expect(decideAdminPilotRevoke("").ok).toBe(false);
+  });
+
+  it("toEntitlementListItem marks pilot grants", () => {
+    expect(
+      toEntitlementListItem({
+        Email: "pilot@example.com",
+        Tier: "builder",
+        Status: "active",
+        GrantedAt: "2026-07-18T10:00:00.000Z",
+        UpdatedAt: "2026-07-18T11:00:00.000Z",
+        StripeSessionId: "admin_pilot:hourly-smoke",
+      })
+    ).toEqual({
+      email: "pilot@example.com",
+      tier: "builder",
+      status: "active",
+      grantedAt: "2026-07-18T10:00:00.000Z",
+      updatedAt: "2026-07-18T11:00:00.000Z",
+      stripeSessionId: "admin_pilot:hourly-smoke",
+      pilotGrant: true,
+    });
+  });
+
+  it("filterEntitlementList supports pilotOnly and limit", () => {
+    const rows = [
+      toEntitlementListItem({
+        Email: "pilot@example.com",
+        Tier: "builder",
+        Status: "active",
+        GrantedAt: "a",
+        UpdatedAt: "a",
+        StripeSessionId: "admin_pilot:a",
+      }),
+      toEntitlementListItem({
+        Email: "paid@example.com",
+        Tier: "builder",
+        Status: "active",
+        GrantedAt: "b",
+        UpdatedAt: "b",
+        StripeSessionId: "cs_test_paid",
+      }),
+      toEntitlementListItem({
+        Email: "pilot2@example.com",
+        Tier: "builder",
+        Status: "active",
+        GrantedAt: "c",
+        UpdatedAt: "c",
+        StripeSessionId: "admin_pilot:b",
+      }),
+    ];
+    expect(filterEntitlementList(rows, { pilotOnly: true }).map((r) => r.email)).toEqual([
+      "pilot@example.com",
+      "pilot2@example.com",
+    ]);
+    expect(filterEntitlementList(rows, { limit: 1 }).map((r) => r.email)).toEqual([
+      "pilot@example.com",
+    ]);
   });
 });
 
