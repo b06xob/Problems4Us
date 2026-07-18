@@ -156,6 +156,22 @@ export function decideAdminPilotGrant(
   };
 }
 
+/**
+ * Refuse admin pilot upsert when the email already holds an active non-pilot
+ * Builder seat (paid Stripe cs_…). Re-granting an existing pilot is allowed.
+ */
+export function refusePilotOverwriteReason(
+  existing:
+    | Pick<PlanEntitlement, "Tier" | "Status" | "StripeSessionId">
+    | null
+    | undefined
+): string | null {
+  if (!existing) return null;
+  if (existing.Tier !== "builder" || existing.Status !== "active") return null;
+  if (isAdminPilotSessionId(existing.StripeSessionId)) return null;
+  return "Refusing pilot grant — email already has a paid (or non-pilot) Builder seat";
+}
+
 export function decideAdminPilotRevoke(
   email: string | null | undefined
 ): AdminPilotRevokeDecision {
@@ -167,6 +183,33 @@ export function decideAdminPilotRevoke(
     email: normalizeEntitlementEmail(email),
     status: "canceled",
   };
+}
+
+/** Confirm token required to cancel a paid (non-pilot) Builder seat. */
+export const REVOKE_PAID_CONFIRM = "REVOKE_PAID";
+
+/**
+ * Guard single-email revoke: pilot / missing / canceled seats pass;
+ * active paid seats require exact REVOKE_PAID confirm.
+ */
+export function decidePaidSeatRevokeGuard(input: {
+  stripeSessionId?: string | null;
+  status?: string | null;
+  confirm?: string | null;
+}): { ok: true } | { ok: false; reason: string } {
+  const status = (input.status || "").toLowerCase();
+  const isActivePaid =
+    status === "active" &&
+    Boolean(input.stripeSessionId) &&
+    !isAdminPilotSessionId(input.stripeSessionId);
+  if (!isActivePaid) return { ok: true };
+  if ((input.confirm || "").trim() !== REVOKE_PAID_CONFIRM) {
+    return {
+      ok: false,
+      reason: `Paid Builder seat — confirm must be exactly "${REVOKE_PAID_CONFIRM}"`,
+    };
+  }
+  return { ok: true };
 }
 
 export function isAdminPilotSessionId(sessionId: string | null | undefined): boolean {

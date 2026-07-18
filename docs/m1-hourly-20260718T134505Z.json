@@ -1,0 +1,22 @@
+{
+  "correlationId": "cos-hourly-pulse-20260718T134505Z",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "timestampUtc": "2026-07-18T13:55:00Z",
+  "shipped": [
+    "Pilot grant refuses overwrite of active paid (non-pilot) Builder seats",
+    "Single-email revoke of paid seats requires confirm=REVOKE_PAID"
+  ],
+  "evidence": {
+    "unit": "npm test entitlements — 16/16",
+    "prodHealth": {
+      "status": "healthy",
+      "database": "connected",
+      "checkoutReady": false
+    }
+  },
+  "blockers": [
+    "Stripe merchant keys (G7)",
+    "Azure OpenAI App Service secrets (M1.2)"
+  ]
+}

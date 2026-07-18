@@ -118,11 +118,18 @@ curl -s "https://problems4us.com/api/checkout/entitlements?summary=1" \
 curl -s "https://problems4us.com/api/checkout/entitlements?list=1&pilotOnly=1" \
   -H "x-admin-api-key: $ADMIN_API_KEY"
 
-# Revoke (status=canceled → briefs 403)
+# Revoke (status=canceled → briefs 403). Pilot seats: no confirm.
+# Paid seats require confirm=REVOKE_PAID (prevents wiping a paying customer).
 curl -s -X POST https://problems4us.com/api/checkout/entitlements \
   -H "x-admin-api-key: $ADMIN_API_KEY" \
   -H "content-type: application/json" \
   -d '{"action":"revoke","email":"pilot@example.com"}'
+curl -s -X POST https://problems4us.com/api/checkout/entitlements \
+  -H "x-admin-api-key: $ADMIN_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"action":"revoke","email":"paid@example.com","confirm":"REVOKE_PAID"}'
+
+# Grant refuses to overwrite an active paid (non-pilot) Builder seat.
 
 # Dry-run / wipe leftover pilot seats only (never paid Stripe seats)
 curl -s -X POST https://problems4us.com/api/checkout/entitlements \
@@ -140,3 +147,5 @@ Hourly evidence (cos-hourly-pulse-20260718T104502Z): shipped admin `POST` grant/
 Hourly evidence (cos-hourly-pulse-20260718T114502Z): admin `?list=1` / `pilotOnly` cohort list; summary includes `activePilotSeats`; grant/revoke writes `admin_pilot_grant` / `admin_pilot_revoke` funnel events.
 
 Hourly evidence (cos-hourly-pulse-20260718T124504Z): `revoke_all_pilots` with confirm token + dry-run; paid Stripe seats untouched; `admin_pilot_revoke_all` funnel event.
+
+Hourly evidence (cos-hourly-pulse-20260718T134505Z): pilot grant refuses overwrite of active paid seats; single revoke of paid seats requires `REVOKE_PAID`.

@@ -4,12 +4,15 @@ import {
   decideAdminPilotRevokeAll,
   decideBuilderGate,
   decidePaidBuilderGrant,
+  decidePaidSeatRevokeGuard,
   filterEntitlementList,
   hasActiveBuilderAccess,
   isAdminPilotSessionId,
   isEntitlementEmail,
   normalizeEntitlementEmail,
+  refusePilotOverwriteReason,
   REVOKE_ALL_PILOTS_CONFIRM,
+  REVOKE_PAID_CONFIRM,
   toEntitlementListItem,
 } from "@/lib/entitlements";
 import { formatOpportunityBriefMarkdown } from "@/lib/opportunity-brief";
@@ -195,6 +198,54 @@ describe("M2.2 plan entitlements", () => {
         dryRun: true,
       })
     ).toEqual({ ok: true, dryRun: true });
+  });
+
+  it("refuses pilot overwrite of active paid Builder seats", () => {
+    expect(
+      refusePilotOverwriteReason({
+        Tier: "builder",
+        Status: "active",
+        StripeSessionId: "cs_test_paid",
+      })
+    ).toMatch(/paid/i);
+    expect(
+      refusePilotOverwriteReason({
+        Tier: "builder",
+        Status: "active",
+        StripeSessionId: "admin_pilot:demo",
+      })
+    ).toBeNull();
+    expect(
+      refusePilotOverwriteReason({
+        Tier: "builder",
+        Status: "canceled",
+        StripeSessionId: "cs_test_paid",
+      })
+    ).toBeNull();
+    expect(refusePilotOverwriteReason(null)).toBeNull();
+  });
+
+  it("paid seat revoke requires REVOKE_PAID confirm", () => {
+    expect(
+      decidePaidSeatRevokeGuard({
+        stripeSessionId: "cs_test_paid",
+        status: "active",
+        confirm: "nope",
+      }).ok
+    ).toBe(false);
+    expect(
+      decidePaidSeatRevokeGuard({
+        stripeSessionId: "cs_test_paid",
+        status: "active",
+        confirm: REVOKE_PAID_CONFIRM,
+      })
+    ).toEqual({ ok: true });
+    expect(
+      decidePaidSeatRevokeGuard({
+        stripeSessionId: "admin_pilot:demo",
+        status: "active",
+      })
+    ).toEqual({ ok: true });
   });
 });
 

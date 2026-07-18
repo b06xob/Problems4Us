@@ -29,7 +29,9 @@ import {
  * POST /api/checkout/entitlements
  * Admin pilot grant/revoke while G7 Stripe keys pending:
  *   { "action":"grant"|"revoke", "email":"...", "note":"optional" }
+ *   { "action":"revoke", "email":"...", "confirm":"REVOKE_PAID" }  // required for paid seats
  *   { "action":"revoke_all_pilots", "confirm":"REVOKE_ALL_PILOTS", "dryRun":true|false }
+ * Grant refuses to overwrite an active paid (non-pilot) Builder seat.
  * Records admin_pilot_grant / admin_pilot_revoke / admin_pilot_revoke_all funnel events.
  */
 export async function GET(request: NextRequest) {
@@ -254,7 +256,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const result = await revokeBuilderEntitlementDb({ email });
+    const result = await revokeBuilderEntitlementDb({
+      email,
+      confirm: body.confirm,
+    });
     if (!result.revoked) {
       return NextResponse.json(
         { error: result.reason, gate: "M2.2" },

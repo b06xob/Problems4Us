@@ -26,7 +26,9 @@ import {
   decideAdminPilotRevoke,
   decideAdminPilotRevokeAll,
   decidePaidBuilderGrant,
+  decidePaidSeatRevokeGuard,
   normalizeEntitlementEmail,
+  refusePilotOverwriteReason,
   type PlanEntitlement,
 } from './entitlements';
 
@@ -1264,6 +1266,14 @@ export async function upsertAdminPilotBuilderEntitlementDb(input: {
   );
 
   if (existing) {
+    const overwriteBlock = refusePilotOverwriteReason({
+      Tier: existing.Tier as PlanEntitlement["Tier"],
+      Status: existing.Status as PlanEntitlement["Status"],
+      StripeSessionId: existing.StripeSessionId,
+    });
+    if (overwriteBlock) {
+      return { granted: false, reason: overwriteBlock };
+    }
     await execute(
       `UPDATE PlanEntitlements
        SET Tier = @tier,
@@ -1328,9 +1338,11 @@ export async function upsertAdminPilotBuilderEntitlementDb(input: {
 
 /**
  * Admin revoke: set Builder entitlement to canceled (keeps row for audit).
+ * Paid (non-pilot) seats require confirm=REVOKE_PAID.
  */
 export async function revokeBuilderEntitlementDb(input: {
   email: string;
+  confirm?: string | null;
 }): Promise<
   | { revoked: true; found: boolean; entitlement: PlanEntitlementRecord | null }
   | { revoked: false; reason: string }
@@ -1361,6 +1373,15 @@ export async function revokeBuilderEntitlementDb(input: {
 
   if (!existing) {
     return { revoked: true, found: false, entitlement: null };
+  }
+
+  const paidGuard = decidePaidSeatRevokeGuard({
+    stripeSessionId: existing.StripeSessionId,
+    status: existing.Status,
+    confirm: input.confirm,
+  });
+  if (!paidGuard.ok) {
+    return { revoked: false, reason: paidGuard.reason };
   }
 
   await execute(
