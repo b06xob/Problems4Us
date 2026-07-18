@@ -12,6 +12,7 @@ export const CONVERSION_EVENT_NAMES = [
   "admin_pilot_grant",
   "admin_pilot_revoke",
   "admin_pilot_revoke_all",
+  "builder_brief_export",
 ] as const;
 
 export type ConversionEventName = (typeof CONVERSION_EVENT_NAMES)[number];

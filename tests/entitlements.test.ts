@@ -1,4 +1,5 @@
 import {
+  buildBuilderBriefExportAudit,
   decideAdminPilotGrant,
   decideAdminPilotRevoke,
   decideAdminPilotRevokeAll,
@@ -246,6 +247,44 @@ describe("M2.2 plan entitlements", () => {
         status: "active",
       })
     ).toEqual({ ok: true });
+  });
+
+  it("builds builder brief export audit props", () => {
+    expect(
+      buildBuilderBriefExportAudit({
+        email: "Pilot@Example.com",
+        problemId: "pp-1",
+        ideaCount: 2,
+        stripeSessionId: "admin_pilot:demo",
+      })
+    ).toEqual({
+      email: "pilot@example.com",
+      problemId: "pp-1",
+      ideaCount: 2,
+      pilotGrant: true,
+    });
+    expect(
+      buildBuilderBriefExportAudit({
+        email: "paid@example.com",
+        problemId: "pp-2",
+        ideaCount: 0,
+        stripeSessionId: "cs_test_paid",
+      })?.pilotGrant
+    ).toBe(false);
+    expect(
+      buildBuilderBriefExportAudit({
+        email: "bad",
+        problemId: "pp-1",
+        ideaCount: 1,
+      })
+    ).toBeNull();
+    expect(
+      buildBuilderBriefExportAudit({
+        email: "a@b.co",
+        problemId: "",
+        ideaCount: 1,
+      })
+    ).toBeNull();
   });
 });
 

@@ -282,3 +282,32 @@ export function decideAdminPilotRevokeAll(input: {
   }
   return { ok: true, dryRun: Boolean(input.dryRun) };
 }
+
+/** Funnel props for a successful Builder opportunity-brief export (M3.1). */
+export type BuilderBriefExportAudit = {
+  email: string;
+  problemId: string;
+  ideaCount: number;
+  pilotGrant: boolean;
+};
+
+/**
+ * Build audit payload after a gated brief export succeeds.
+ * Pure helper — route records builder_brief_export via insertConversionEventDb.
+ */
+export function buildBuilderBriefExportAudit(input: {
+  email: string;
+  problemId: string;
+  ideaCount: number;
+  stripeSessionId?: string | null;
+}): BuilderBriefExportAudit | null {
+  if (!input.email || !isEntitlementEmail(input.email)) return null;
+  if (!input.problemId?.trim()) return null;
+  const ideaCount = Number(input.ideaCount);
+  return {
+    email: normalizeEntitlementEmail(input.email),
+    problemId: input.problemId.trim().slice(0, 120),
+    ideaCount: Number.isFinite(ideaCount) ? Math.max(0, Math.floor(ideaCount)) : 0,
+    pilotGrant: isAdminPilotSessionId(input.stripeSessionId),
+  };
+}

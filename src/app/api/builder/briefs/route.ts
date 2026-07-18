@@ -3,15 +3,21 @@ import {
   getPainPointById,
   getPlanEntitlementByEmailDb,
   getProductIdeasForPainPoint,
+  insertConversionEventDb,
   toPlanEntitlement,
 } from "@/lib/db-service";
-import { decideBuilderGate, isEntitlementEmail } from "@/lib/entitlements";
+import {
+  buildBuilderBriefExportAudit,
+  decideBuilderGate,
+  isEntitlementEmail,
+} from "@/lib/entitlements";
 import { formatOpportunityBriefMarkdown } from "@/lib/opportunity-brief";
 
 /**
  * GET /api/builder/briefs?email=&problemId=
  * Builder-gated opportunity brief export (M2.2 gate + M3.1 prep).
  * Header x-builder-email is accepted as an email alternate.
+ * Successful exports record builder_brief_export funnel events (seat → usage).
  */
 export async function GET(request: NextRequest) {
   const emailParam =
@@ -65,6 +71,24 @@ export async function GET(request: NextRequest) {
 
     const ideas = await getProductIdeasForPainPoint(problemId);
     const markdown = formatOpportunityBriefMarkdown(painPoint, ideas);
+
+    const audit = buildBuilderBriefExportAudit({
+      email: gate.email,
+      problemId: painPoint.PainPointId,
+      ideaCount: ideas.length,
+      stripeSessionId: entitlement?.StripeSessionId,
+    });
+    if (audit) {
+      try {
+        await insertConversionEventDb(
+          "builder_brief_export",
+          "/api/builder/briefs",
+          audit
+        );
+      } catch (auditError) {
+        console.error("Failed to record builder_brief_export:", auditError);
+      }
+    }
 
     return NextResponse.json({
       ok: true,

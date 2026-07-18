@@ -149,3 +149,5 @@ Hourly evidence (cos-hourly-pulse-20260718T114502Z): admin `?list=1` / `pilotOnl
 Hourly evidence (cos-hourly-pulse-20260718T124504Z): `revoke_all_pilots` with confirm token + dry-run; paid Stripe seats untouched; `admin_pilot_revoke_all` funnel event.
 
 Hourly evidence (cos-hourly-pulse-20260718T134505Z): pilot grant refuses overwrite of active paid seats; single revoke of paid seats requires `REVOKE_PAID`.
+
+Hourly evidence (cos-hourly-pulse-20260718T144502Z): successful `GET /api/builder/briefs` records `builder_brief_export` funnel event (email, problemId, ideaCount, pilotGrant) so seat → usage is measurable before Stripe keys land.
