@@ -996,6 +996,59 @@ export async function insertConversionEventDb(
   };
 }
 
+/**
+ * Idempotent paid_early_access insert keyed by Stripe event id (webhook retries).
+ * Returns existing row when stripeEventId was already recorded.
+ */
+export async function insertPaidEarlyAccessEventDb(
+  path: string,
+  props: {
+    sessionId: string;
+    email: string | null;
+    tier: string;
+    paymentStatus: string | null;
+    stripeEventId: string | null;
+  }
+): Promise<{ record: ConversionEventRecord; created: boolean }> {
+  await ensureWaitlistTables();
+
+  const stripeEventId = props.stripeEventId?.trim() || "";
+  if (stripeEventId) {
+    const existing = await queryOne<{
+      EventId: string;
+      EventName: string;
+      Path: string | null;
+      PropsJson: string | null;
+      CreatedAt: Date | string;
+    }>(
+      `SELECT TOP 1 EventId, EventName, Path, PropsJson, CreatedAt
+       FROM ConversionEvents
+       WHERE EventName = N'paid_early_access'
+         AND JSON_VALUE(PropsJson, '$.stripeEventId') = @stripeEventId
+       ORDER BY CreatedAt DESC`,
+      { stripeEventId }
+    );
+    if (existing) {
+      return {
+        record: {
+          EventId: existing.EventId,
+          EventName: existing.EventName,
+          Path: existing.Path ?? "",
+          PropsJson: existing.PropsJson ?? "{}",
+          CreatedAt:
+            typeof existing.CreatedAt === "string"
+              ? existing.CreatedAt
+              : existing.CreatedAt.toISOString(),
+        },
+        created: false,
+      };
+    }
+  }
+
+  const record = await insertConversionEventDb("paid_early_access", path, props);
+  return { record, created: true };
+}
+
 /** Admin funnel KPI: conversion event counts in a recent window (default 24h). */
 export async function summarizeConversionEventsDb(
   sinceHours = 24

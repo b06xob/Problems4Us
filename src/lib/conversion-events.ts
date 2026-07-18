@@ -5,6 +5,9 @@ export const CONVERSION_EVENT_NAMES = [
   "pricing_view",
   "pricing_cta_click",
   "early_access_interest",
+  "checkout_session_created",
+  "checkout_return_success",
+  "checkout_return_cancel",
   "paid_early_access",
 ] as const;
 

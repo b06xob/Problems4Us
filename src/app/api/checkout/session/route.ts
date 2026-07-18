@@ -1,23 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+import { insertConversionEventDb } from "@/lib/db-service";
 import {
   createBuilderCheckoutSession,
   getStripeCheckoutConfig,
-  stripeCheckoutNotConfiguredMessage,
+  getStripeCheckoutPublicStatus,
+  stripeCheckoutNotReadyMessage,
 } from "@/lib/stripe-checkout";
 
 /**
  * POST /api/checkout/session
- * Month-1: fail closed (503) until Stripe secrets are set.
- * When secrets are present: create Stripe Checkout Session for Builder tier.
+ * Month-1: fail closed (503) until checkoutReady (session + webhook secrets).
+ * When ready: create Stripe Checkout Session for Builder tier and record funnel event.
  */
 export async function POST(request: NextRequest) {
+  const publicStatus = getStripeCheckoutPublicStatus();
   const config = getStripeCheckoutConfig();
-  if (!config) {
+  if (!publicStatus.checkoutReady || !config) {
     return NextResponse.json(
       {
-        error: stripeCheckoutNotConfiguredMessage(),
+        error: stripeCheckoutNotReadyMessage(publicStatus),
         gate: "G7",
-        configured: false,
+        configured: publicStatus.sessionConfigured,
+        ...publicStatus,
       },
       { status: 503 }
     );
@@ -41,15 +45,32 @@ export async function POST(request: NextRequest) {
         error: result.error,
         gate: "G7",
         configured: true,
+        checkoutReady: true,
       },
       { status: result.status }
     );
+  }
+
+  try {
+    await insertConversionEventDb(
+      "checkout_session_created",
+      "/api/checkout/session",
+      {
+        sessionId: result.sessionId,
+        tier: body.tier || "builder",
+        hasEmail: Boolean(body.email?.trim()),
+      }
+    );
+  } catch (error) {
+    // Session is already created at Stripe — do not fail the redirect.
+    console.error("Failed to record checkout_session_created:", error);
   }
 
   return NextResponse.json({
     gate: "G7",
     configured: true,
     ready: true,
+    checkoutReady: true,
     sessionId: result.sessionId,
     url: result.url,
   });

@@ -51,6 +51,10 @@ describe("conversion events", () => {
     expect(summary.pricing_view).toBe(5);
     expect(summary.pricing_cta_click).toBe(0);
     expect(summary.early_access_interest).toBe(0);
+    expect(summary.checkout_session_created).toBe(0);
+    expect(summary.checkout_return_success).toBe(0);
+    expect(summary.checkout_return_cancel).toBe(0);
+    expect(summary.paid_early_access).toBe(0);
     expect(summary.total).toBe(10 + 3 + 2 + 5 + 99);
   });
 });

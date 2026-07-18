@@ -7,6 +7,7 @@ import {
   getStripeWebhookSecret,
   parseStripeWebhookEvent,
   stripeCheckoutNotConfiguredMessage,
+  stripeCheckoutNotReadyMessage,
   stripeWebhookNotConfiguredMessage,
   verifyStripeWebhookSignature,
 } from "@/lib/stripe-checkout";
@@ -84,6 +85,21 @@ describe("Stripe checkout gate (G7 prep)", () => {
       webhookConfigured: false,
       checkoutReady: false,
     });
+  });
+
+  it("not-ready message names missing webhook when session secrets alone are set", () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_x";
+    process.env.STRIPE_PRICE_BUILDER_MONTHLY = "price_builder";
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    expect(stripeCheckoutNotReadyMessage()).toMatch(/STRIPE_WEBHOOK_SECRET/);
+    expect(stripeCheckoutNotReadyMessage()).toMatch(/not ready/);
+  });
+
+  it("not-ready message is clear when fully ready", () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_x";
+    process.env.STRIPE_PRICE_BUILDER_MONTHLY = "price_builder";
+    process.env.STRIPE_WEBHOOK_SECRET = "whsec_x";
+    expect(stripeCheckoutNotReadyMessage()).toMatch(/ready/i);
   });
 
   it("creates a checkout session via Stripe REST when configured", async () => {

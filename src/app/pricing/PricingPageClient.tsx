@@ -59,6 +59,20 @@ export default function PricingPageClient() {
   }, []);
 
   useEffect(() => {
+    if (checkoutResult === "success") {
+      trackConversion("checkout_return_success", {
+        tier: "builder",
+        page: "pricing",
+      });
+    } else if (checkoutResult === "cancel") {
+      trackConversion("checkout_return_cancel", {
+        tier: "builder",
+        page: "pricing",
+      });
+    }
+  }, [checkoutResult]);
+
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       try {

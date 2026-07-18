@@ -57,8 +57,10 @@ Month-1 keeps `/pricing` as waitlist CTA only (no charge). Before enabling check
    - `STRIPE_PRICE_BUILDER_MONTHLY` (Builder Early Access $49/mo)
 3. `POST /api/checkout/session` fail-closes **503** when secrets unset; when set, creates Checkout Session via Stripe REST (no SDK).
 4. `GET /api/checkout/status` (and `/api/health.checkout`) returns public booleans (`sessionConfigured`, `webhookConfigured`, `checkoutReady`). `checkoutReady` requires **both** session + webhook secrets so paid_early_access can be recorded; pricing Builder CTA switches to Stripe only then.
-5. `POST /api/checkout/webhook` fail-closes **503** until `STRIPE_WEBHOOK_SECRET`; when set, verifies `Stripe-Signature` (HMAC) and records `paid_early_access` on `checkout.session.completed`.
-6. Gate: smoke test charge in Stripe test mode; then flip live keys.
+5. `POST /api/checkout/session` fail-closes **503** unless `checkoutReady` (session alone is not enough). On success, records `checkout_session_created`.
+6. `POST /api/checkout/webhook` fail-closes **503** until `STRIPE_WEBHOOK_SECRET`; when set, verifies `Stripe-Signature` (HMAC) and records `paid_early_access` on `checkout.session.completed` (idempotent by `stripeEventId`).
+7. Pricing return URLs `?checkout=success|cancel` show banners and record `checkout_return_success` / `checkout_return_cancel`.
+8. Gate: smoke test charge in Stripe test mode; then flip live keys.
 
 ```bash
 # Expect 503 until Stripe secrets are set
@@ -73,4 +75,4 @@ curl -s -X POST https://problems4us.com/api/checkout/webhook \
   -d '{}'
 ```
 
-Hourly evidence (cos-hourly-pulse-20260718T064502Z): prior deploy bbf0831 CI success (run 29632906193); prod `GET /api/checkout/status` → checkoutReady=false; shipped checkoutReady=session∧webhook + health.checkout G7 flags.
+Hourly evidence (cos-hourly-pulse-20260718T074502Z): prod `checkoutReady=false`; shipped session gate=`checkoutReady`, webhook idempotency by stripeEventId, checkout return funnel events.

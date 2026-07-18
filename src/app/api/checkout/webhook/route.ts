@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insertConversionEventDb } from "@/lib/db-service";
+import { insertPaidEarlyAccessEventDb } from "@/lib/db-service";
 import {
   extractPaidEarlyAccessFromEvent,
   getStripeWebhookSecret,
@@ -12,7 +12,7 @@ import {
  * POST /api/checkout/webhook
  * Month-1: fail closed until STRIPE_WEBHOOK_SECRET is set.
  * When set: verify Stripe-Signature, ack events, record paid_early_access
- * on checkout.session.completed.
+ * on checkout.session.completed (idempotent by stripeEventId).
  */
 export async function POST(request: NextRequest) {
   const secret = getStripeWebhookSecret();
@@ -63,14 +63,16 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  let created = true;
   try {
-    await insertConversionEventDb("paid_early_access", "/api/checkout/webhook", {
+    const result = await insertPaidEarlyAccessEventDb("/api/checkout/webhook", {
       sessionId: paid.sessionId,
       email: paid.email,
       tier: paid.tier,
       paymentStatus: paid.paymentStatus,
       stripeEventId: paid.eventId,
     });
+    created = result.created;
   } catch (error) {
     console.error("Failed to record paid_early_access:", error);
     return NextResponse.json(
@@ -88,6 +90,7 @@ export async function POST(request: NextRequest) {
     gate: "G7",
     configured: true,
     handled: true,
+    duplicate: !created,
     event: "paid_early_access",
     sessionId: paid.sessionId,
   });

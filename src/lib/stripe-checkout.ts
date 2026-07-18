@@ -98,6 +98,23 @@ export function getStripeCheckoutPublicStatus(): StripeCheckoutPublicStatus {
   };
 }
 
+/** Session create requires checkoutReady (session + webhook), not session alone. */
+export function stripeCheckoutNotReadyMessage(
+  status: StripeCheckoutPublicStatus = getStripeCheckoutPublicStatus()
+): string {
+  if (status.checkoutReady) {
+    return "Stripe checkout is ready.";
+  }
+  const missing: string[] = [];
+  if (!status.sessionConfigured) {
+    missing.push("STRIPE_SECRET_KEY + STRIPE_PRICE_BUILDER_MONTHLY");
+  }
+  if (!status.webhookConfigured) {
+    missing.push("STRIPE_WEBHOOK_SECRET");
+  }
+  return `Stripe checkout is not ready (G7). Missing: ${missing.join("; ") || "configuration"}.`;
+}
+
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
