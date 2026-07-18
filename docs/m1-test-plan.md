@@ -76,3 +76,19 @@ curl -s -X POST https://problems4us.com/api/checkout/webhook \
 ```
 
 Hourly evidence (cos-hourly-pulse-20260718T074502Z): prod `checkoutReady=false`; shipped session gate=`checkoutReady`, webhook idempotency by stripeEventId, checkout return funnel events.
+
+## M2.2 entitlement gate (prep)
+
+On `checkout.session.completed`, after `paid_early_access` is recorded, upsert `PlanEntitlements` (active Builder) when email is present.
+
+```bash
+# Admin cohort count (requires ADMIN_API_KEY)
+curl -s "https://problems4us.com/api/checkout/entitlements?summary=1" \
+  -H "x-admin-api-key: $ADMIN_API_KEY"
+
+# Admin lookup
+curl -s "https://problems4us.com/api/checkout/entitlements?email=pilot@example.com" \
+  -H "x-admin-api-key: $ADMIN_API_KEY"
+```
+
+Hourly evidence (cos-hourly-pulse-20260718T084502Z): shipped M2.2 entitlement grant + admin `GET /api/checkout/entitlements`.

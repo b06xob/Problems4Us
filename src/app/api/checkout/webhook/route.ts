@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insertPaidEarlyAccessEventDb } from "@/lib/db-service";
+import {
+  insertPaidEarlyAccessEventDb,
+  upsertPaidBuilderEntitlementDb,
+} from "@/lib/db-service";
 import {
   extractPaidEarlyAccessFromEvent,
   getStripeWebhookSecret,
@@ -12,7 +15,8 @@ import {
  * POST /api/checkout/webhook
  * Month-1: fail closed until STRIPE_WEBHOOK_SECRET is set.
  * When set: verify Stripe-Signature, ack events, record paid_early_access
- * on checkout.session.completed (idempotent by stripeEventId).
+ * on checkout.session.completed (idempotent by stripeEventId), and grant
+ * Builder PlanEntitlement when email is present (M2.2).
  */
 export async function POST(request: NextRequest) {
   const secret = getStripeWebhookSecret();
@@ -85,6 +89,30 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let entitlement:
+    | { granted: true; created: boolean }
+    | { granted: false; reason: string }
+    | null = null;
+  try {
+    const grant = await upsertPaidBuilderEntitlementDb({
+      email: paid.email || "",
+      sessionId: paid.sessionId,
+      stripeEventId: paid.eventId,
+      paymentStatus: paid.paymentStatus,
+    });
+    if (grant.granted) {
+      entitlement = { granted: true, created: grant.created };
+    } else {
+      entitlement = { granted: false, reason: grant.reason };
+    }
+  } catch (error) {
+    console.error("Failed to grant Builder entitlement:", error);
+    entitlement = {
+      granted: false,
+      reason: "Entitlement upsert failed after paid event recorded",
+    };
+  }
+
   return NextResponse.json({
     received: true,
     gate: "G7",
@@ -93,5 +121,6 @@ export async function POST(request: NextRequest) {
     duplicate: !created,
     event: "paid_early_access",
     sessionId: paid.sessionId,
+    entitlement,
   });
 }

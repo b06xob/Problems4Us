@@ -13,6 +13,7 @@ import type {
   TrendDirection,
   WaitlistEntry,
   ConversionEventRecord,
+  PlanEntitlementRecord,
 } from './types';
 import type { WaitlistSource } from './waitlist';
 import type {
@@ -20,6 +21,11 @@ import type {
   ConversionFunnelCounts,
 } from './conversion-events';
 import { buildConversionFunnelCounts } from './conversion-events';
+import {
+  decidePaidBuilderGrant,
+  normalizeEntitlementEmail,
+  type PlanEntitlement,
+} from './entitlements';
 
 export interface PainPointListItem extends PainPoint {
   SourceType: SourceType | string;
@@ -894,6 +900,23 @@ async function ensureWaitlistTables(): Promise<void> {
             ON dbo.ConversionEvents(EventName, CreatedAt DESC);
         END
       `);
+      await execute(`
+        IF OBJECT_ID(N'dbo.PlanEntitlements', N'U') IS NULL
+        BEGIN
+          CREATE TABLE dbo.PlanEntitlements (
+            EntitlementId    NVARCHAR(50)  NOT NULL PRIMARY KEY,
+            Email            NVARCHAR(200) NOT NULL,
+            Tier             NVARCHAR(40)  NOT NULL,
+            Status           NVARCHAR(40)  NOT NULL,
+            StripeSessionId  NVARCHAR(120) NULL,
+            StripeEventId    NVARCHAR(120) NULL,
+            GrantedAt        DATETIME2     NOT NULL CONSTRAINT DF_PlanEntitlements_GrantedAt DEFAULT (GETUTCDATE()),
+            UpdatedAt        DATETIME2     NOT NULL CONSTRAINT DF_PlanEntitlements_UpdatedAt DEFAULT (GETUTCDATE())
+          );
+          CREATE UNIQUE INDEX UX_PlanEntitlements_Email ON dbo.PlanEntitlements(Email);
+          CREATE INDEX IX_PlanEntitlements_Tier_Status ON dbo.PlanEntitlements(Tier, Status);
+        END
+      `);
     })().catch((err) => {
       waitlistTablesReady = null;
       throw err;
@@ -1069,5 +1092,192 @@ export async function summarizeConversionEventsDb(
     counts: buildConversionFunnelCounts(
       rows.map((r) => ({ eventName: r.EventName, count: Number(r.cnt) || 0 }))
     ),
+  };
+}
+
+function mapPlanEntitlementRow(row: {
+  EntitlementId: string;
+  Email: string;
+  Tier: string;
+  Status: string;
+  StripeSessionId: string | null;
+  StripeEventId: string | null;
+  GrantedAt: Date | string;
+  UpdatedAt: Date | string;
+}): PlanEntitlementRecord {
+  return {
+    EntitlementId: row.EntitlementId,
+    Email: row.Email,
+    Tier: row.Tier,
+    Status: row.Status,
+    StripeSessionId: row.StripeSessionId,
+    StripeEventId: row.StripeEventId,
+    GrantedAt:
+      typeof row.GrantedAt === "string"
+        ? row.GrantedAt
+        : row.GrantedAt.toISOString(),
+    UpdatedAt:
+      typeof row.UpdatedAt === "string"
+        ? row.UpdatedAt
+        : row.UpdatedAt.toISOString(),
+  };
+}
+
+/**
+ * Upsert active Builder entitlement from a paid Stripe checkout (M2.2).
+ * Idempotent by email; refreshes session/event ids on repeat grants.
+ */
+export async function upsertPaidBuilderEntitlementDb(input: {
+  email: string;
+  sessionId: string;
+  stripeEventId: string | null;
+  paymentStatus: string | null;
+}): Promise<
+  | { granted: true; created: boolean; entitlement: PlanEntitlementRecord }
+  | { granted: false; reason: string }
+> {
+  const decision = decidePaidBuilderGrant(input);
+  if (!decision.ok) {
+    return { granted: false, reason: decision.reason };
+  }
+
+  await ensureWaitlistTables();
+
+  const email = decision.email;
+  const now = new Date().toISOString();
+  const existing = await queryOne<{
+    EntitlementId: string;
+    Email: string;
+    Tier: string;
+    Status: string;
+    StripeSessionId: string | null;
+    StripeEventId: string | null;
+    GrantedAt: Date | string;
+    UpdatedAt: Date | string;
+  }>(
+    `SELECT TOP 1 EntitlementId, Email, Tier, Status, StripeSessionId, StripeEventId, GrantedAt, UpdatedAt
+     FROM PlanEntitlements WHERE Email = @email`,
+    { email }
+  );
+
+  if (existing) {
+    await execute(
+      `UPDATE PlanEntitlements
+       SET Tier = @tier,
+           Status = @status,
+           StripeSessionId = @sessionId,
+           StripeEventId = @stripeEventId,
+           UpdatedAt = @now
+       WHERE Email = @email`,
+      {
+        email,
+        tier: decision.tier,
+        status: decision.status,
+        sessionId: input.sessionId,
+        stripeEventId: input.stripeEventId,
+        now,
+      }
+    );
+    return {
+      granted: true,
+      created: false,
+      entitlement: mapPlanEntitlementRow({
+        ...existing,
+        Tier: decision.tier,
+        Status: decision.status,
+        StripeSessionId: input.sessionId,
+        StripeEventId: input.stripeEventId,
+        UpdatedAt: now,
+      }),
+    };
+  }
+
+  const entitlementId = `ent-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  await execute(
+    `INSERT INTO PlanEntitlements
+       (EntitlementId, Email, Tier, Status, StripeSessionId, StripeEventId, GrantedAt, UpdatedAt)
+     VALUES
+       (@entitlementId, @email, @tier, @status, @sessionId, @stripeEventId, @now, @now)`,
+    {
+      entitlementId,
+      email,
+      tier: decision.tier,
+      status: decision.status,
+      sessionId: input.sessionId,
+      stripeEventId: input.stripeEventId,
+      now,
+    }
+  );
+
+  return {
+    granted: true,
+    created: true,
+    entitlement: {
+      EntitlementId: entitlementId,
+      Email: email,
+      Tier: decision.tier,
+      Status: decision.status,
+      StripeSessionId: input.sessionId,
+      StripeEventId: input.stripeEventId,
+      GrantedAt: now,
+      UpdatedAt: now,
+    },
+  };
+}
+
+export async function getPlanEntitlementByEmailDb(
+  email: string
+): Promise<PlanEntitlementRecord | null> {
+  await ensureWaitlistTables();
+  const normalized = normalizeEntitlementEmail(email);
+  if (!normalized) return null;
+
+  const row = await queryOne<{
+    EntitlementId: string;
+    Email: string;
+    Tier: string;
+    Status: string;
+    StripeSessionId: string | null;
+    StripeEventId: string | null;
+    GrantedAt: Date | string;
+    UpdatedAt: Date | string;
+  }>(
+    `SELECT TOP 1 EntitlementId, Email, Tier, Status, StripeSessionId, StripeEventId, GrantedAt, UpdatedAt
+     FROM PlanEntitlements WHERE Email = @email`,
+    { email: normalized }
+  );
+  return row ? mapPlanEntitlementRow(row) : null;
+}
+
+export async function countActiveBuilderEntitlementsDb(): Promise<number> {
+  await ensureWaitlistTables();
+  const row = await queryOne<{ cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM PlanEntitlements WHERE Tier = N'builder' AND Status = N'active'`
+  );
+  return row?.cnt ?? 0;
+}
+
+/** Narrow PlanEntitlementRecord → PlanEntitlement for access checks. */
+export function toPlanEntitlement(
+  record: PlanEntitlementRecord | null
+): PlanEntitlement | null {
+  if (!record) return null;
+  if (record.Tier !== "builder" && record.Tier !== "explorer") return null;
+  if (
+    record.Status !== "active" &&
+    record.Status !== "canceled" &&
+    record.Status !== "past_due"
+  ) {
+    return null;
+  }
+  return {
+    EntitlementId: record.EntitlementId,
+    Email: record.Email,
+    Tier: record.Tier,
+    Status: record.Status,
+    StripeSessionId: record.StripeSessionId,
+    StripeEventId: record.StripeEventId,
+    GrantedAt: record.GrantedAt,
+    UpdatedAt: record.UpdatedAt,
   };
 }

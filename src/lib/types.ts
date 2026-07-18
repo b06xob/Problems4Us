@@ -155,3 +155,14 @@ export interface ConversionEventRecord {
   PropsJson: string;
   CreatedAt: string;
 }
+
+export interface PlanEntitlementRecord {
+  EntitlementId: string;
+  Email: string;
+  Tier: string;
+  Status: string;
+  StripeSessionId: string | null;
+  StripeEventId: string | null;
+  GrantedAt: string;
+  UpdatedAt: string;
+}
