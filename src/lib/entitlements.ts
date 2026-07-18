@@ -110,3 +110,65 @@ export function decideBuilderGate(
   }
   return { ok: true, email: normalized };
 }
+
+/** Synthetic session id prefix for admin pilot grants (not Stripe). */
+export const ADMIN_PILOT_SESSION_PREFIX = "admin_pilot:";
+
+export type AdminPilotGrantDecision =
+  | {
+      ok: true;
+      email: string;
+      tier: "builder";
+      status: "active";
+      sessionId: string;
+    }
+  | { ok: false; reason: string };
+
+export type AdminPilotRevokeDecision =
+  | { ok: true; email: string; status: "canceled" }
+  | { ok: false; reason: string };
+
+/**
+ * Admin pilot grant while G7 Stripe keys are pending.
+ * sessionId is synthetic (admin_pilot:…) — never a real Stripe cs_ id.
+ */
+export function decideAdminPilotGrant(
+  email: string | null | undefined,
+  note?: string | null
+): AdminPilotGrantDecision {
+  if (!email || !isEntitlementEmail(email)) {
+    return { ok: false, reason: "Valid email required for pilot grant" };
+  }
+  const normalized = normalizeEntitlementEmail(email);
+  const safeNote = (note || "manual")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+  const sessionId = `${ADMIN_PILOT_SESSION_PREFIX}${safeNote || "manual"}`;
+  return {
+    ok: true,
+    email: normalized,
+    tier: "builder",
+    status: "active",
+    sessionId,
+  };
+}
+
+export function decideAdminPilotRevoke(
+  email: string | null | undefined
+): AdminPilotRevokeDecision {
+  if (!email || !isEntitlementEmail(email)) {
+    return { ok: false, reason: "Valid email required for pilot revoke" };
+  }
+  return {
+    ok: true,
+    email: normalizeEntitlementEmail(email),
+    status: "canceled",
+  };
+}
+
+export function isAdminPilotSessionId(sessionId: string | null | undefined): boolean {
+  return Boolean(sessionId?.startsWith(ADMIN_PILOT_SESSION_PREFIX));
+}

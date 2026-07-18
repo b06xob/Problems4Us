@@ -75,3 +75,17 @@ After a successful dry-run or live ingest, note in DailyStatus / Progress:
 - HTTP status and `summary.totalPostsCollected`
 - `summary.dryRun` and `summary.errorCount`
 - Correlation id of the directing CoS task
+
+## Builder entitlement pilot (G7 bypass)
+
+While Stripe keys are unset, grant a pilot seat then verify briefs:
+
+```bash
+curl -s -X POST https://problems4us.com/api/checkout/entitlements \
+  -H "x-admin-api-key: $ADMIN_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"action":"grant","email":"pilot@example.com","note":"ops-pilot"}'
+
+# Expect 200 + markdown when seat active and problemId exists
+curl -s "https://problems4us.com/api/builder/briefs?email=pilot@example.com&problemId=<id>"
+```

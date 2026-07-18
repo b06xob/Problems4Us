@@ -96,3 +96,27 @@ Hourly evidence (cos-hourly-pulse-20260718T084502Z): shipped M2.2 entitlement gr
 Hourly evidence (cos-hourly-pulse-20260718T094503Z):
 - Checkout session create **requires email** (entitlement grant path).
 - Builder-gated brief export: `GET /api/builder/briefs?email=&problemId=` (403 without active Builder seat).
+
+## M2.2 admin pilot grant (G7 bypass for ops)
+
+While Stripe merchant keys are pending, ops can grant/revoke Builder seats with admin auth:
+
+```bash
+# Grant pilot Builder seat
+curl -s -X POST https://problems4us.com/api/checkout/entitlements \
+  -H "x-admin-api-key: $ADMIN_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"action":"grant","email":"pilot@example.com","note":"hourly-smoke"}'
+
+# Lookup (pilotGrant=true when session id is admin_pilot:…)
+curl -s "https://problems4us.com/api/checkout/entitlements?email=pilot@example.com" \
+  -H "x-admin-api-key: $ADMIN_API_KEY"
+
+# Revoke (status=canceled → briefs 403)
+curl -s -X POST https://problems4us.com/api/checkout/entitlements \
+  -H "x-admin-api-key: $ADMIN_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"action":"revoke","email":"pilot@example.com"}'
+```
+
+Hourly evidence (cos-hourly-pulse-20260718T104502Z): shipped admin `POST` grant/revoke + `pilotGrant` flag on lookup.

@@ -1,7 +1,10 @@
 import {
+  decideAdminPilotGrant,
+  decideAdminPilotRevoke,
   decideBuilderGate,
   decidePaidBuilderGrant,
   hasActiveBuilderAccess,
+  isAdminPilotSessionId,
   isEntitlementEmail,
   normalizeEntitlementEmail,
 } from "@/lib/entitlements";
@@ -89,6 +92,35 @@ describe("M2.2 plan entitlements", () => {
         Status: "active",
       })
     ).toEqual({ ok: true, email: "pilot@example.com" });
+  });
+
+  it("admin pilot grant uses synthetic session id", () => {
+    const result = decideAdminPilotGrant("Pilot@Example.com", "Hourly Smoke!");
+    expect(result).toEqual({
+      ok: true,
+      email: "pilot@example.com",
+      tier: "builder",
+      status: "active",
+      sessionId: "admin_pilot:hourly-smoke",
+    });
+    if (result.ok) {
+      expect(isAdminPilotSessionId(result.sessionId)).toBe(true);
+    }
+    expect(isAdminPilotSessionId("cs_test_1")).toBe(false);
+  });
+
+  it("admin pilot grant refuses bad email", () => {
+    const result = decideAdminPilotGrant("nope");
+    expect(result.ok).toBe(false);
+  });
+
+  it("admin pilot revoke marks canceled", () => {
+    expect(decideAdminPilotRevoke("Pilot@Example.com")).toEqual({
+      ok: true,
+      email: "pilot@example.com",
+      status: "canceled",
+    });
+    expect(decideAdminPilotRevoke("").ok).toBe(false);
   });
 });
 

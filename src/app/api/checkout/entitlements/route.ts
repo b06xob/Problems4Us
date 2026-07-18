@@ -3,15 +3,25 @@ import { requireAdminAuth } from "@/lib/admin-auth";
 import {
   countActiveBuilderEntitlementsDb,
   getPlanEntitlementByEmailDb,
+  revokeBuilderEntitlementDb,
   toPlanEntitlement,
+  upsertAdminPilotBuilderEntitlementDb,
 } from "@/lib/db-service";
-import { hasActiveBuilderAccess, isEntitlementEmail } from "@/lib/entitlements";
+import {
+  hasActiveBuilderAccess,
+  isAdminPilotSessionId,
+  isEntitlementEmail,
+} from "@/lib/entitlements";
 
 /**
  * GET /api/checkout/entitlements
  * Admin: paid Builder cohort (M2.2 entitlement gate).
  *   ?summary=1           → { activeBuilderSeats }
  *   ?email=user@x.com    → entitlement lookup (no secrets)
+ *
+ * POST /api/checkout/entitlements
+ * Admin pilot grant/revoke while G7 Stripe keys pending:
+ *   { "action":"grant"|"revoke", "email":"...", "note":"optional" }
  */
 export async function GET(request: NextRequest) {
   const unauthorized = requireAdminAuth(request);
@@ -59,8 +69,8 @@ export async function GET(request: NextRequest) {
             status: entitlement.Status,
             grantedAt: entitlement.GrantedAt,
             updatedAt: entitlement.UpdatedAt,
-            // Omit Stripe ids from admin JSON? Keep session id for triage.
             stripeSessionId: entitlement.StripeSessionId,
+            pilotGrant: isAdminPilotSessionId(entitlement.StripeSessionId),
           }
         : null,
     });
@@ -68,6 +78,112 @@ export async function GET(request: NextRequest) {
     console.error("Failed to query entitlements:", error);
     return NextResponse.json(
       { error: "Failed to query entitlements", gate: "M2.2" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const unauthorized = requireAdminAuth(request);
+  if (unauthorized) return unauthorized;
+
+  let body: { action?: string; email?: string; note?: string };
+  try {
+    body = (await request.json()) as {
+      action?: string;
+      email?: string;
+      note?: string;
+    };
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON body", gate: "M2.2" },
+      { status: 400 }
+    );
+  }
+
+  const action = (body.action || "").trim().toLowerCase();
+  const email = (body.email || "").trim();
+
+  if (action !== "grant" && action !== "revoke") {
+    return NextResponse.json(
+      {
+        error: 'action must be "grant" or "revoke"',
+        gate: "M2.2",
+      },
+      { status: 400 }
+    );
+  }
+
+  if (!email || !isEntitlementEmail(email)) {
+    return NextResponse.json(
+      { error: "Valid email required", gate: "M2.2" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    if (action === "grant") {
+      const result = await upsertAdminPilotBuilderEntitlementDb({
+        email,
+        note: body.note,
+      });
+      if (!result.granted) {
+        return NextResponse.json(
+          { error: result.reason, gate: "M2.2" },
+          { status: 400 }
+        );
+      }
+      const entitlement = toPlanEntitlement(result.entitlement);
+      return NextResponse.json({
+        ok: true,
+        gate: "M2.2",
+        action: "grant",
+        created: result.created,
+        activeBuilder: hasActiveBuilderAccess(entitlement),
+        entitlement: entitlement
+          ? {
+              email: entitlement.Email,
+              tier: entitlement.Tier,
+              status: entitlement.Status,
+              grantedAt: entitlement.GrantedAt,
+              updatedAt: entitlement.UpdatedAt,
+              stripeSessionId: entitlement.StripeSessionId,
+              pilotGrant: isAdminPilotSessionId(entitlement.StripeSessionId),
+            }
+          : null,
+      });
+    }
+
+    const result = await revokeBuilderEntitlementDb({ email });
+    if (!result.revoked) {
+      return NextResponse.json(
+        { error: result.reason, gate: "M2.2" },
+        { status: 400 }
+      );
+    }
+    const entitlement = toPlanEntitlement(result.entitlement);
+    return NextResponse.json({
+      ok: true,
+      gate: "M2.2",
+      action: "revoke",
+      found: result.found,
+      activeBuilder: hasActiveBuilderAccess(entitlement),
+      entitlement: entitlement
+        ? {
+            email: entitlement.Email,
+            tier: entitlement.Tier,
+            status: entitlement.Status,
+            grantedAt: entitlement.GrantedAt,
+            updatedAt: entitlement.UpdatedAt,
+            stripeSessionId: entitlement.StripeSessionId,
+            pilotGrant: isAdminPilotSessionId(entitlement.StripeSessionId),
+          }
+        : null,
+    });
+  } catch (error) {
+    console.error("Failed to mutate entitlement:", error);
+    return NextResponse.json(
+      { error: "Failed to mutate entitlement", gate: "M2.2" },
       { status: 500 }
     );
   }

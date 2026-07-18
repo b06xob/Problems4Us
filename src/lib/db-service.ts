@@ -22,6 +22,8 @@ import type {
 } from './conversion-events';
 import { buildConversionFunnelCounts } from './conversion-events';
 import {
+  decideAdminPilotGrant,
+  decideAdminPilotRevoke,
   decidePaidBuilderGrant,
   normalizeEntitlementEmail,
   type PlanEntitlement,
@@ -1222,6 +1224,159 @@ export async function upsertPaidBuilderEntitlementDb(input: {
       GrantedAt: now,
       UpdatedAt: now,
     },
+  };
+}
+
+/**
+ * Admin pilot grant (G7 bypass for ops/pilot while Stripe keys pending).
+ * Uses synthetic admin_pilot: session ids — not Stripe.
+ */
+export async function upsertAdminPilotBuilderEntitlementDb(input: {
+  email: string;
+  note?: string | null;
+}): Promise<
+  | { granted: true; created: boolean; entitlement: PlanEntitlementRecord }
+  | { granted: false; reason: string }
+> {
+  const decision = decideAdminPilotGrant(input.email, input.note);
+  if (!decision.ok) {
+    return { granted: false, reason: decision.reason };
+  }
+
+  await ensureWaitlistTables();
+
+  const email = decision.email;
+  const now = new Date().toISOString();
+  const existing = await queryOne<{
+    EntitlementId: string;
+    Email: string;
+    Tier: string;
+    Status: string;
+    StripeSessionId: string | null;
+    StripeEventId: string | null;
+    GrantedAt: Date | string;
+    UpdatedAt: Date | string;
+  }>(
+    `SELECT TOP 1 EntitlementId, Email, Tier, Status, StripeSessionId, StripeEventId, GrantedAt, UpdatedAt
+     FROM PlanEntitlements WHERE Email = @email`,
+    { email }
+  );
+
+  if (existing) {
+    await execute(
+      `UPDATE PlanEntitlements
+       SET Tier = @tier,
+           Status = @status,
+           StripeSessionId = @sessionId,
+           StripeEventId = NULL,
+           UpdatedAt = @now
+       WHERE Email = @email`,
+      {
+        email,
+        tier: decision.tier,
+        status: decision.status,
+        sessionId: decision.sessionId,
+        now,
+      }
+    );
+    return {
+      granted: true,
+      created: false,
+      entitlement: mapPlanEntitlementRow({
+        ...existing,
+        Tier: decision.tier,
+        Status: decision.status,
+        StripeSessionId: decision.sessionId,
+        StripeEventId: null,
+        UpdatedAt: now,
+      }),
+    };
+  }
+
+  const entitlementId = `ent-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  await execute(
+    `INSERT INTO PlanEntitlements
+       (EntitlementId, Email, Tier, Status, StripeSessionId, StripeEventId, GrantedAt, UpdatedAt)
+     VALUES
+       (@entitlementId, @email, @tier, @status, @sessionId, NULL, @now, @now)`,
+    {
+      entitlementId,
+      email,
+      tier: decision.tier,
+      status: decision.status,
+      sessionId: decision.sessionId,
+      now,
+    }
+  );
+
+  return {
+    granted: true,
+    created: true,
+    entitlement: {
+      EntitlementId: entitlementId,
+      Email: email,
+      Tier: decision.tier,
+      Status: decision.status,
+      StripeSessionId: decision.sessionId,
+      StripeEventId: null,
+      GrantedAt: now,
+      UpdatedAt: now,
+    },
+  };
+}
+
+/**
+ * Admin revoke: set Builder entitlement to canceled (keeps row for audit).
+ */
+export async function revokeBuilderEntitlementDb(input: {
+  email: string;
+}): Promise<
+  | { revoked: true; found: boolean; entitlement: PlanEntitlementRecord | null }
+  | { revoked: false; reason: string }
+> {
+  const decision = decideAdminPilotRevoke(input.email);
+  if (!decision.ok) {
+    return { revoked: false, reason: decision.reason };
+  }
+
+  await ensureWaitlistTables();
+
+  const email = decision.email;
+  const now = new Date().toISOString();
+  const existing = await queryOne<{
+    EntitlementId: string;
+    Email: string;
+    Tier: string;
+    Status: string;
+    StripeSessionId: string | null;
+    StripeEventId: string | null;
+    GrantedAt: Date | string;
+    UpdatedAt: Date | string;
+  }>(
+    `SELECT TOP 1 EntitlementId, Email, Tier, Status, StripeSessionId, StripeEventId, GrantedAt, UpdatedAt
+     FROM PlanEntitlements WHERE Email = @email`,
+    { email }
+  );
+
+  if (!existing) {
+    return { revoked: true, found: false, entitlement: null };
+  }
+
+  await execute(
+    `UPDATE PlanEntitlements
+     SET Status = @status, UpdatedAt = @now
+     WHERE Email = @email`,
+    { email, status: decision.status, now }
+  );
+
+  return {
+    revoked: true,
+    found: true,
+    entitlement: mapPlanEntitlementRow({
+      ...existing,
+      Status: decision.status,
+      UpdatedAt: now,
+    }),
   };
 }
 
