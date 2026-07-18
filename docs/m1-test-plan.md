@@ -56,7 +56,7 @@ Month-1 keeps `/pricing` as waitlist CTA only (no charge). Before enabling check
    - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
    - `STRIPE_PRICE_BUILDER_MONTHLY` (Builder Early Access $49/mo)
 3. `POST /api/checkout/session` fail-closes **503** when secrets unset; when set, creates Checkout Session via Stripe REST (no SDK).
-4. `POST /api/checkout/webhook` fail-closes **503** until `STRIPE_WEBHOOK_SECRET`; next: signature verify + `checkout.session.completed` → `paid_early_access`.
+4. `POST /api/checkout/webhook` fail-closes **503** until `STRIPE_WEBHOOK_SECRET`; when set, verifies `Stripe-Signature` (HMAC) and records `paid_early_access` on `checkout.session.completed`.
 5. Gate: smoke test charge in Stripe test mode; then flip live keys.
 
 ```bash
@@ -70,4 +70,4 @@ curl -s -X POST https://problems4us.com/api/checkout/webhook \
   -d '{}'
 ```
 
-Hourly evidence (cos-hourly-pulse-20260718T034502Z): CI deploy 6739468 success (run 29627714274); prod checkout session **503** gate=G7; session REST create + webhook stub shipped.
+Hourly evidence (cos-hourly-pulse-20260718T044503Z): CI deploy 1c4244d success (run 29629482071); prod webhook+session **503**; shipped Stripe-Signature HMAC verify + `paid_early_access` on `checkout.session.completed` (Jest 55/55).

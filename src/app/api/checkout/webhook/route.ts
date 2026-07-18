@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { insertConversionEventDb } from "@/lib/db-service";
 import {
+  extractPaidEarlyAccessFromEvent,
   getStripeWebhookSecret,
+  parseStripeWebhookEvent,
   stripeWebhookNotConfiguredMessage,
+  verifyStripeWebhookSignature,
 } from "@/lib/stripe-checkout";
 
 /**
  * POST /api/checkout/webhook
  * Month-1: fail closed until STRIPE_WEBHOOK_SECRET is set.
- * Month-2: verify signature and handle checkout.session.completed.
+ * When set: verify Stripe-Signature, ack events, record paid_early_access
+ * on checkout.session.completed.
  */
 export async function POST(request: NextRequest) {
   const secret = getStripeWebhookSecret();
@@ -30,17 +35,60 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Secrets present — signature verification + event handling land with live keys.
-  // Acknowledge receipt shape without marking paid until verifier is wired.
-  await request.text();
-  return NextResponse.json(
-    {
-      error:
-        "Stripe webhook signature verification is not implemented yet. Secret detected; wire verifier next.",
+  const payload = await request.text();
+  const verified = verifyStripeWebhookSignature(payload, signature, secret);
+  if (!verified.ok) {
+    return NextResponse.json(
+      { error: verified.error, gate: "G7" },
+      { status: 400 }
+    );
+  }
+
+  const parsed = parseStripeWebhookEvent(payload);
+  if (!parsed.ok) {
+    return NextResponse.json(
+      { error: parsed.error, gate: "G7" },
+      { status: 400 }
+    );
+  }
+
+  const paid = extractPaidEarlyAccessFromEvent(parsed.event);
+  if (!paid) {
+    return NextResponse.json({
+      received: true,
       gate: "G7",
       configured: true,
-      ready: false,
-    },
-    { status: 501 }
-  );
+      handled: false,
+      type: parsed.event.type || null,
+    });
+  }
+
+  try {
+    await insertConversionEventDb("paid_early_access", "/api/checkout/webhook", {
+      sessionId: paid.sessionId,
+      email: paid.email,
+      tier: paid.tier,
+      paymentStatus: paid.paymentStatus,
+      stripeEventId: paid.eventId,
+    });
+  } catch (error) {
+    console.error("Failed to record paid_early_access:", error);
+    return NextResponse.json(
+      {
+        error: "Verified event but failed to record paid_early_access",
+        gate: "G7",
+        configured: true,
+      },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    received: true,
+    gate: "G7",
+    configured: true,
+    handled: true,
+    event: "paid_early_access",
+    sessionId: paid.sessionId,
+  });
 }

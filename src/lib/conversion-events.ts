@@ -5,6 +5,7 @@ export const CONVERSION_EVENT_NAMES = [
   "pricing_view",
   "pricing_cta_click",
   "early_access_interest",
+  "paid_early_access",
 ] as const;
 
 export type ConversionEventName = (typeof CONVERSION_EVENT_NAMES)[number];

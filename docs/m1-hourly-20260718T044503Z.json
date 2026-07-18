@@ -1,0 +1,39 @@
+{
+  "correlationId": "cos-hourly-pulse-20260718T044503Z",
+  "timestampUtc": "2026-07-18T04:52:00Z",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "verified": {
+    "priorCommit": "1c4244d",
+    "ciDeploy": {
+      "runId": 29629482071,
+      "conclusion": "success",
+      "title": "Wire Stripe Checkout Session create via REST and webhook stub."
+    },
+    "prodHealth": {
+      "status": "healthy",
+      "database": "connected",
+      "aiProvider": "mock"
+    },
+    "prodCheckoutWebhook": {
+      "http": 503,
+      "configured": false,
+      "gate": "G7"
+    },
+    "prodCheckoutSession": {
+      "http": 503,
+      "configured": false,
+      "gate": "G7"
+    }
+  },
+  "shippedThisHour": {
+    "summary": "Stripe webhook HMAC signature verify + checkout.session.completed → paid_early_access funnel event",
+    "files": [
+      "src/lib/stripe-checkout.ts",
+      "src/app/api/checkout/webhook/route.ts",
+      "src/lib/conversion-events.ts",
+      "tests/checkout-session.test.ts",
+      "docs/m1-test-plan.md"
+    ]
+  }
+}

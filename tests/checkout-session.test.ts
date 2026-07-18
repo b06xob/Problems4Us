@@ -1,9 +1,13 @@
+import { createHmac } from "crypto";
 import {
   createBuilderCheckoutSession,
+  extractPaidEarlyAccessFromEvent,
   getStripeCheckoutConfig,
   getStripeWebhookSecret,
+  parseStripeWebhookEvent,
   stripeCheckoutNotConfiguredMessage,
   stripeWebhookNotConfiguredMessage,
+  verifyStripeWebhookSignature,
 } from "@/lib/stripe-checkout";
 
 describe("Stripe checkout gate (G7 prep)", () => {
@@ -121,5 +125,92 @@ describe("Stripe checkout gate (G7 prep)", () => {
       status: 401,
       error: "Invalid API Key provided",
     });
+  });
+});
+
+describe("Stripe webhook signature + paid_early_access (G7 prep)", () => {
+  function sign(payload: string, secret: string, t: number): string {
+    const v1 = createHmac("sha256", secret)
+      .update(`${t}.${payload}`, "utf8")
+      .digest("hex");
+    return `t=${t},v1=${v1}`;
+  }
+
+  it("accepts a valid Stripe-Signature", () => {
+    const secret = "whsec_test";
+    const payload = '{"id":"evt_1","type":"ping"}';
+    const t = 1_700_000_000;
+    const header = sign(payload, secret, t);
+    expect(
+      verifyStripeWebhookSignature(payload, header, secret, {
+        nowSeconds: t,
+      })
+    ).toEqual({ ok: true });
+  });
+
+  it("rejects forged signatures", () => {
+    const secret = "whsec_test";
+    const payload = '{"id":"evt_1"}';
+    const t = 1_700_000_000;
+    const header = sign(payload, "wrong_secret", t);
+    const result = verifyStripeWebhookSignature(payload, header, secret, {
+      nowSeconds: t,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/mismatch/i);
+    }
+  });
+
+  it("rejects timestamps outside tolerance", () => {
+    const secret = "whsec_test";
+    const payload = "{}";
+    const t = 1_700_000_000;
+    const header = sign(payload, secret, t);
+    const result = verifyStripeWebhookSignature(payload, header, secret, {
+      nowSeconds: t + 901,
+      toleranceSeconds: 300,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/tolerance/i);
+    }
+  });
+
+  it("extracts paid_early_access props from checkout.session.completed", () => {
+    const parsed = parseStripeWebhookEvent(
+      JSON.stringify({
+        id: "evt_paid",
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_test_abc",
+            object: "checkout.session",
+            customer_email: "Pilot@Example.com",
+            payment_status: "paid",
+            metadata: { tier: "builder", product: "Problems4Us" },
+          },
+        },
+      })
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(extractPaidEarlyAccessFromEvent(parsed.event)).toEqual({
+      sessionId: "cs_test_abc",
+      email: "pilot@example.com",
+      tier: "builder",
+      paymentStatus: "paid",
+      eventId: "evt_paid",
+    });
+  });
+
+  it("ignores non-checkout events", () => {
+    expect(
+      extractPaidEarlyAccessFromEvent({
+        id: "evt_x",
+        type: "customer.created",
+        data: { object: { id: "cus_1" } },
+      })
+    ).toBeNull();
   });
 });
