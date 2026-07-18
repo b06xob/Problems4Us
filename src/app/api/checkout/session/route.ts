@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: stripeCheckoutNotReadyMessage(publicStatus),
-        gate: "G7",
         configured: publicStatus.sessionConfigured,
         ...publicStatus,
       },
