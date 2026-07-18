@@ -1,0 +1,25 @@
+{
+  "correlationId": "cos-hourly-pulse-20260718T054502Z",
+  "messageId": "message-e69d3f0321e0",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "timestampUtc": "2026-07-18T05:50:00Z",
+  "priorHourVerified": {
+    "commit": "2b3f391",
+    "ciRunId": 29631280729,
+    "conclusion": "success",
+    "prodCheckoutSession": { "status": 503, "gate": "G7", "configured": false },
+    "prodCheckoutWebhook": { "status": 503, "gate": "G7", "configured": false },
+    "health": { "status": 200, "database": "connected", "aiProvider": "mock" }
+  },
+  "shipped": [
+    "GET /api/checkout/status public readiness booleans",
+    "BuilderCheckoutForm — POST session + redirect when checkoutReady",
+    "Pricing page success/cancel banners + Suspense for searchParams",
+    "Unit coverage for getStripeCheckoutPublicStatus"
+  ],
+  "blockers": [
+    "Azure OpenAI App Service secrets (M1.2)",
+    "Stripe merchant account + keys (G7)"
+  ]
+}

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import PricingPageClient from "./PricingPageClient";
 
 export const metadata = {
@@ -7,5 +8,9 @@ export const metadata = {
 };
 
 export default function PricingPage() {
-  return <PricingPageClient />;
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-5xl px-6 py-12">Loading pricing…</div>}>
+      <PricingPageClient />
+    </Suspense>
+  );
 }

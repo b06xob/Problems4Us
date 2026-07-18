@@ -14,9 +14,9 @@ Month-1 production foundation: deploy health, SQL-backed waitlist funnel, AI ana
 | G2 Waitlist write | `POST /api/waitlist` | HTTP 201 + `waitlistId` | Pass (2026-07-18) |
 | G3 Waitlist read | Admin `GET /api/waitlist?countOnly=1` | `total >= 1` | Pass (2026-07-18, total=1) |
 | G4 Pricing surface | `GET /pricing` | HTTP 200 | Pass |
-| G5 Unit suite | `npm test` | All Jest suites green | Pass (2026-07-18T03:48Z — checkout REST create + webhook stub) |
+| G5 Unit suite | `npm test` | All Jest suites green | Pass (2026-07-18T05:48Z — checkout status + Builder CTA) |
 | G6 AI analyze | Admin `POST /api/ai/analyze` | 200 + `provider` field | Code path wired; prod still `AI_PROVIDER=mock` until Azure OpenAI secrets set |
-| G7 Paid checkout | Stripe / marketplace | Charge succeeds | Blocked — merchant keys; session REST create wired; webhook fail-closed 503 until secret |
+| G7 Paid checkout | Stripe / marketplace | Charge succeeds | Blocked — merchant keys; session/webhook wired; `GET /api/checkout/status` + pricing Builder CTA switches when ready |
 | G8 Admin ingest guards | Unit `ingest-guards` + unauth `POST /api/ingest/reddit` | Jest green; prod returns 401 without key | Pass (2026-07-18) |
 | G9 Ops runbook | `docs/ops-runbook-admin-ingest.md` | Documented dry-run + triage | Pass (2026-07-18) |
 | G10 Funnel summary | Admin `GET /api/events?summary=1` | 200 + zero-filled counts; auth required | Pass (prod 2026-07-18T02:48Z — 401 unauth / 200+counts with key) |
@@ -56,8 +56,9 @@ Month-1 keeps `/pricing` as waitlist CTA only (no charge). Before enabling check
    - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
    - `STRIPE_PRICE_BUILDER_MONTHLY` (Builder Early Access $49/mo)
 3. `POST /api/checkout/session` fail-closes **503** when secrets unset; when set, creates Checkout Session via Stripe REST (no SDK).
-4. `POST /api/checkout/webhook` fail-closes **503** until `STRIPE_WEBHOOK_SECRET`; when set, verifies `Stripe-Signature` (HMAC) and records `paid_early_access` on `checkout.session.completed`.
-5. Gate: smoke test charge in Stripe test mode; then flip live keys.
+4. `GET /api/checkout/status` returns public booleans (`sessionConfigured`, `webhookConfigured`, `checkoutReady`) — pricing Builder CTA switches to Stripe when ready.
+5. `POST /api/checkout/webhook` fail-closes **503** until `STRIPE_WEBHOOK_SECRET`; when set, verifies `Stripe-Signature` (HMAC) and records `paid_early_access` on `checkout.session.completed`.
+6. Gate: smoke test charge in Stripe test mode; then flip live keys.
 
 ```bash
 # Expect 503 until Stripe secrets are set
@@ -65,9 +66,11 @@ curl -s -X POST https://problems4us.com/api/checkout/session \
   -H "content-type: application/json" \
   -d '{"tier":"builder"}'
 
+curl -s https://problems4us.com/api/checkout/status
+
 curl -s -X POST https://problems4us.com/api/checkout/webhook \
   -H "content-type: application/json" \
   -d '{}'
 ```
 
-Hourly evidence (cos-hourly-pulse-20260718T044503Z): CI deploy 1c4244d success (run 29629482071); prod webhook+session **503**; shipped Stripe-Signature HMAC verify + `paid_early_access` on `checkout.session.completed` (Jest 55/55).
+Hourly evidence (cos-hourly-pulse-20260718T054502Z): prior deploy 2b3f391 CI success (run 29631280729); prod session+webhook **503**; shipped `GET /api/checkout/status` + Builder checkout CTA on `/pricing`.

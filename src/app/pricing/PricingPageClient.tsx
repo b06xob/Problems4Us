@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { EmailSignup } from "@/components/home/EmailSignup";
+import { BuilderCheckoutForm } from "@/components/pricing/BuilderCheckoutForm";
 import { trackConversion } from "@/lib/conversion-events";
 
 const tiers = [
@@ -39,13 +41,61 @@ const tiers = [
   },
 ];
 
+type CheckoutStatus = {
+  checkoutReady: boolean;
+  sessionConfigured: boolean;
+  webhookConfigured: boolean;
+};
+
 export default function PricingPageClient() {
+  const searchParams = useSearchParams();
+  const checkoutResult = searchParams.get("checkout");
+  const [checkoutStatus, setCheckoutStatus] = useState<CheckoutStatus | null>(
+    null
+  );
+
   useEffect(() => {
     trackConversion("pricing_view", { page: "early-access" });
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/checkout/status");
+        if (!res.ok) return;
+        const data = (await res.json()) as CheckoutStatus;
+        if (!cancelled) setCheckoutStatus(data);
+      } catch {
+        // Keep waitlist CTA if status probe fails.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const builderCheckoutReady = checkoutStatus?.checkoutReady === true;
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
+      {checkoutResult === "success" ? (
+        <p
+          className="mb-8 rounded-xl border border-brand-500/30 bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:bg-brand-900/20 dark:text-brand-300"
+          role="status"
+        >
+          Checkout completed — thank you. We will email Builder onboarding next.
+        </p>
+      ) : null}
+      {checkoutResult === "cancel" ? (
+        <p
+          className="mb-8 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-text-secondary"
+          role="status"
+        >
+          Checkout canceled. You can retry below or join the waitlist.
+        </p>
+      ) : null}
+
       <div className="mb-12 text-center">
         <span className="badge bg-brand-100 text-brand-800 dark:bg-brand-900/30 dark:text-brand-400">
           Early Access
@@ -54,9 +104,9 @@ export default function PricingPageClient() {
           Pricing that funds real discovery
         </h1>
         <p className="mx-auto mt-3 max-w-2xl text-text-secondary">
-          Month-1 monetization surface: join the waitlist now. Builder seats open
-          as Azure OpenAI production scoring goes live — checkout arrives with
-          Stripe in Month 2.
+          {builderCheckoutReady
+            ? "Builder Early Access checkout is ready. Explorer stays on the free waitlist."
+            : "Month-1 monetization surface: join the waitlist now. Builder checkout activates when Stripe keys are set (G7)."}
         </p>
       </div>
 
@@ -99,13 +149,21 @@ export default function PricingPageClient() {
               >
                 {tier.highlighted ? "Recommended for pilots" : "Start here"}
               </button>
-              <EmailSignup
-                source={tier.source}
-                ctaLabel={tier.cta}
-                onSuccess={() =>
-                  trackConversion("early_access_interest", { tier: tier.id })
-                }
-              />
+              {tier.id === "builder" && builderCheckoutReady ? (
+                <BuilderCheckoutForm />
+              ) : (
+                <EmailSignup
+                  source={tier.source}
+                  ctaLabel={
+                    tier.id === "builder" && checkoutStatus
+                      ? "Join Builder waitlist"
+                      : tier.cta
+                  }
+                  onSuccess={() =>
+                    trackConversion("early_access_interest", { tier: tier.id })
+                  }
+                />
+              )}
             </div>
           </section>
         ))}

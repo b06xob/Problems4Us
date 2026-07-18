@@ -77,6 +77,25 @@ export function stripeWebhookNotConfiguredMessage(): string {
   return "Stripe webhook is not configured. Set STRIPE_WEBHOOK_SECRET (Month-2 / G7).";
 }
 
+/** Public readiness flags — never includes secret values. */
+export type StripeCheckoutPublicStatus = {
+  gate: "G7";
+  sessionConfigured: boolean;
+  webhookConfigured: boolean;
+  checkoutReady: boolean;
+};
+
+export function getStripeCheckoutPublicStatus(): StripeCheckoutPublicStatus {
+  const sessionConfigured = getStripeCheckoutConfig() !== null;
+  const webhookConfigured = getStripeWebhookSecret() !== null;
+  return {
+    gate: "G7",
+    sessionConfigured,
+    webhookConfigured,
+    checkoutReady: sessionConfigured,
+  };
+}
+
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }

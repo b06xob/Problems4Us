@@ -3,6 +3,7 @@ import {
   createBuilderCheckoutSession,
   extractPaidEarlyAccessFromEvent,
   getStripeCheckoutConfig,
+  getStripeCheckoutPublicStatus,
   getStripeWebhookSecret,
   parseStripeWebhookEvent,
   stripeCheckoutNotConfiguredMessage,
@@ -49,6 +50,28 @@ describe("Stripe checkout gate (G7 prep)", () => {
     delete process.env.STRIPE_WEBHOOK_SECRET;
     expect(getStripeWebhookSecret()).toBeNull();
     expect(stripeWebhookNotConfiguredMessage()).toMatch(/STRIPE_WEBHOOK_SECRET/);
+  });
+
+  it("exposes public checkout status without secrets", () => {
+    delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.STRIPE_PRICE_BUILDER_MONTHLY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    expect(getStripeCheckoutPublicStatus()).toEqual({
+      gate: "G7",
+      sessionConfigured: false,
+      webhookConfigured: false,
+      checkoutReady: false,
+    });
+
+    process.env.STRIPE_SECRET_KEY = "sk_test_x";
+    process.env.STRIPE_PRICE_BUILDER_MONTHLY = "price_builder";
+    process.env.STRIPE_WEBHOOK_SECRET = "whsec_x";
+    expect(getStripeCheckoutPublicStatus()).toEqual({
+      gate: "G7",
+      sessionConfigured: true,
+      webhookConfigured: true,
+      checkoutReady: true,
+    });
   });
 
   it("creates a checkout session via Stripe REST when configured", async () => {
