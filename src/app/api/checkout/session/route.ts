@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  createBuilderCheckoutSession,
   getStripeCheckoutConfig,
   stripeCheckoutNotConfiguredMessage,
 } from "@/lib/stripe-checkout";
 
 /**
  * POST /api/checkout/session
- * Month-1: fail closed until Stripe secrets are set (G7 prep).
- * Month-2: create Stripe Checkout Session for Builder Early Access.
+ * Month-1: fail closed (503) until Stripe secrets are set.
+ * When secrets are present: create Stripe Checkout Session for Builder tier.
  */
 export async function POST(request: NextRequest) {
   const config = getStripeCheckoutConfig();
@@ -29,23 +30,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const tier = typeof body.tier === "string" ? body.tier.trim() : "builder";
-  if (tier !== "builder") {
+  const result = await createBuilderCheckoutSession(config, {
+    tier: body.tier,
+    email: body.email,
+  });
+
+  if (!result.ok) {
     return NextResponse.json(
-      { error: "Only tier=builder is supported" },
-      { status: 400 }
+      {
+        error: result.error,
+        gate: "G7",
+        configured: true,
+      },
+      { status: result.status }
     );
   }
 
-  // Secrets present but Stripe SDK not wired yet — still fail closed with a clear signal.
-  return NextResponse.json(
-    {
-      error:
-        "Stripe Checkout Session creation is not implemented yet. Secrets detected; implement session create next.",
-      gate: "G7",
-      configured: true,
-      ready: false,
-    },
-    { status: 501 }
-  );
+  return NextResponse.json({
+    gate: "G7",
+    configured: true,
+    ready: true,
+    sessionId: result.sessionId,
+    url: result.url,
+  });
 }

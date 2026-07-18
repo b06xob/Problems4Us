@@ -1,0 +1,32 @@
+{
+  "correlationId": "cos-hourly-pulse-20260718T034502Z",
+  "messageId": "message-34481d51f138",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "timestampUtc": "2026-07-18T03:48:00Z",
+  "priorHourVerified": {
+    "commit": "6739468",
+    "ciRunId": 29627714274,
+    "conclusion": "success",
+    "prodCheckoutSession": {
+      "status": 503,
+      "gate": "G7",
+      "configured": false
+    },
+    "health": {
+      "status": 200,
+      "database": "connected",
+      "aiProvider": "mock"
+    }
+  },
+  "shipped": [
+    "createBuilderCheckoutSession via Stripe REST (no SDK)",
+    "POST /api/checkout/session creates session when secrets present",
+    "POST /api/checkout/webhook fail-closed 503 until STRIPE_WEBHOOK_SECRET",
+    "Expanded checkout unit tests"
+  ],
+  "blockers": [
+    "Azure OpenAI App Service secrets (M1.2)",
+    "Stripe merchant account + keys (G7)"
+  ]
+}
