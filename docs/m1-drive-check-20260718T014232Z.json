@@ -1,0 +1,32 @@
+{
+  "correlationId": "cos-drive-20260718T014232Z",
+  "checkedAtUtc": "2026-07-18T01:45:30Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "messageId": "message-d910938209e5",
+  "work": {
+    "g5UnitSuite": {
+      "command": "npm test",
+      "suites": 7,
+      "tests": 41,
+      "passed": true
+    },
+    "paidPathPrep": {
+      "updated": ["docs/m1-test-plan.md", ".env.example"],
+      "notes": "G7 Stripe checklist + env placeholders; Month-1 pricing remains waitlist CTA"
+    }
+  },
+  "prod": {
+    "health": {
+      "url": "https://problems4us.com/api/health",
+      "status": 200,
+      "body": {
+        "status": "healthy",
+        "database": "connected",
+        "aiProvider": "mock"
+      }
+    },
+    "pricing": { "url": "https://problems4us.com/pricing", "status": 200 }
+  },
+  "gap": "M1.2 still blocked on Azure OpenAI App Service secrets; G7 blocked on merchant/Stripe account."
+}

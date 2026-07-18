@@ -9,11 +9,35 @@ export const CONVERSION_EVENT_NAMES = [
 
 export type ConversionEventName = (typeof CONVERSION_EVENT_NAMES)[number];
 
+export type ConversionFunnelCounts = Record<ConversionEventName, number> & {
+  total: number;
+};
+
 export function isConversionEventName(value: unknown): value is ConversionEventName {
   return (
     typeof value === "string" &&
     (CONVERSION_EVENT_NAMES as readonly string[]).includes(value)
   );
+}
+
+/** Build a zero-filled funnel summary from DB count rows (unit-testable). */
+export function buildConversionFunnelCounts(
+  rows: Array<{ eventName: string; count: number }>
+): ConversionFunnelCounts {
+  const counts = Object.fromEntries(
+    CONVERSION_EVENT_NAMES.map((name) => [name, 0])
+  ) as Record<ConversionEventName, number>;
+
+  let total = 0;
+  for (const row of rows) {
+    const n = Number(row.count) || 0;
+    if (isConversionEventName(row.eventName)) {
+      counts[row.eventName] += n;
+    }
+    total += n;
+  }
+
+  return { ...counts, total };
 }
 
 /** Fire-and-forget client helper; never throws into UI flows. */

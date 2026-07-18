@@ -14,11 +14,13 @@ Month-1 production foundation: deploy health, SQL-backed waitlist funnel, AI ana
 | G2 Waitlist write | `POST /api/waitlist` | HTTP 201 + `waitlistId` | Pass (2026-07-18) |
 | G3 Waitlist read | Admin `GET /api/waitlist?countOnly=1` | `total >= 1` | Pass (2026-07-18, total=1) |
 | G4 Pricing surface | `GET /pricing` | HTTP 200 | Pass |
-| G5 Unit suite | `npm test` | All Jest suites green | Run each ship |
+| G5 Unit suite | `npm test` | All Jest suites green | Pass (2026-07-18T01:45Z Audi drive — 7 suites / 41 tests) |
 | G6 AI analyze | Admin `POST /api/ai/analyze` | 200 + `provider` field | Code path wired; prod still `AI_PROVIDER=mock` until Azure OpenAI secrets set |
-| G7 Paid checkout | Stripe / marketplace | Charge succeeds | Blocked — Month-2 (merchant account) |
+| G7 Paid checkout | Stripe / marketplace | Charge succeeds | Blocked — Month-2 (merchant account); prep checklist below |
 | G8 Admin ingest guards | Unit `ingest-guards` + unauth `POST /api/ingest/reddit` | Jest green; prod returns 401 without key | Pass (2026-07-18) |
 | G9 Ops runbook | `docs/ops-runbook-admin-ingest.md` | Documented dry-run + triage | Pass (2026-07-18) |
+| G10 Funnel summary | Admin `GET /api/events?summary=1` | 200 + zero-filled counts; auth required | Pass (code + unit; deploy for prod) |
+| G11 Security baseline | `docs/m1-5-security-baseline.md` | Admin fail-closed; secrets out of repo | Pass (2026-07-18) |
 
 ## Commands
 
@@ -44,3 +46,17 @@ curl -s "https://problems4us.com/api/waitlist?countOnly=1" \
 1. Set App Service `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`.
 2. Flip `AI_PROVIDER=azure-openai`.
 3. Re-run G6 and confirm `provider=azure-openai` in analyze response / health.
+
+## Paid-path prep (G7 / Month-2)
+
+Month-1 keeps `/pricing` as waitlist CTA only (no charge). Before enabling checkout:
+
+1. Create Stripe account + activate live/test keys (human / finance).
+2. Set App Service + local secrets (placeholders in `.env.example`):
+   - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
+   - `STRIPE_PRICE_BUILDER_MONTHLY` (Builder Early Access $49/mo)
+3. Implement `POST /api/checkout/session` returning Stripe Checkout URL for Builder tier.
+4. Webhook: `checkout.session.completed` → mark waitlist/lead as `paid_early_access`.
+5. Gate: smoke test charge in Stripe test mode; then flip live keys.
+
+Drive evidence (cos-drive-20260718T014232Z): prod `GET /api/health` → healthy/DB connected/`aiProvider=mock`; `/pricing` → 200; G5 Jest 41/41.

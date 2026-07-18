@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insertConversionEventDb } from "@/lib/db-service";
+import { requireAdminAuth } from "@/lib/admin-auth";
+import {
+  insertConversionEventDb,
+  summarizeConversionEventsDb,
+} from "@/lib/db-service";
 import { isConversionEventName } from "@/lib/conversion-events";
 
+/** Public write path for client funnel instrumentation (no PII). */
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
@@ -46,5 +51,31 @@ export async function POST(request: NextRequest) {
     console.error("Failed to record conversion event:", error);
     // Analytics must not break UX — acknowledge soft failure.
     return NextResponse.json({ ok: false, deferred: true }, { status: 202 });
+  }
+}
+
+/**
+ * Owner funnel summary (M1.4 / M1.5).
+ * GET /api/events?summary=1&hours=24  — requires ADMIN_API_KEY
+ */
+export async function GET(request: NextRequest) {
+  const unauthorized = requireAdminAuth(request);
+  if (unauthorized) return unauthorized;
+
+  try {
+    const hoursParam = request.nextUrl.searchParams.get("hours");
+    const sinceHours = hoursParam ? Number(hoursParam) : 24;
+    const summary = await summarizeConversionEventsDb(sinceHours);
+    return NextResponse.json({
+      ok: true,
+      sinceHours: summary.sinceHours,
+      counts: summary.counts,
+    });
+  } catch (error) {
+    console.error("Failed to summarize conversion events:", error);
+    return NextResponse.json(
+      { error: "Failed to summarize conversion events" },
+      { status: 500 }
+    );
   }
 }

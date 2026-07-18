@@ -15,7 +15,11 @@ import type {
   ConversionEventRecord,
 } from './types';
 import type { WaitlistSource } from './waitlist';
-import type { ConversionEventName } from './conversion-events';
+import type {
+  ConversionEventName,
+  ConversionFunnelCounts,
+} from './conversion-events';
+import { buildConversionFunnelCounts } from './conversion-events';
 
 export interface PainPointListItem extends PainPoint {
   SourceType: SourceType | string;
@@ -989,5 +993,28 @@ export async function insertConversionEventDb(
     Path: path,
     PropsJson: propsJson,
     CreatedAt: now,
+  };
+}
+
+/** Admin funnel KPI: conversion event counts in a recent window (default 24h). */
+export async function summarizeConversionEventsDb(
+  sinceHours = 24
+): Promise<{ sinceHours: number; counts: ConversionFunnelCounts }> {
+  await ensureWaitlistTables();
+
+  const hours = Math.min(Math.max(Math.floor(sinceHours) || 24, 1), 720);
+  const rows = await query<{ EventName: string; cnt: number }>(
+    `SELECT EventName, COUNT(*) AS cnt
+     FROM ConversionEvents
+     WHERE CreatedAt >= DATEADD(hour, -@hours, SYSUTCDATETIME())
+     GROUP BY EventName`,
+    { hours }
+  );
+
+  return {
+    sinceHours: hours,
+    counts: buildConversionFunnelCounts(
+      rows.map((r) => ({ eventName: r.EventName, count: Number(r.cnt) || 0 }))
+    ),
   };
 }

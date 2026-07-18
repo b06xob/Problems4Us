@@ -1,0 +1,37 @@
+{
+  "correlationId": "cos-hourly-pulse-20260718T014501Z",
+  "checkedAtUtc": "2026-07-18T01:51:30Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "messageId": "message-0de6ad1c4150",
+  "work": {
+    "shipped": [
+      "Admin GET /api/events funnel summary (M1.4 read path)",
+      "buildConversionFunnelCounts + unit coverage",
+      "docs/m1-5-security-baseline.md",
+      "G7 Stripe env placeholders (prior drive, committed this hour)"
+    ],
+    "g5UnitSuite": {
+      "command": "npm test",
+      "suites": 7,
+      "tests": 42,
+      "passed": true
+    }
+  },
+  "prod": {
+    "health": {
+      "status": 200,
+      "body": {
+        "status": "healthy",
+        "database": "connected",
+        "aiProvider": "mock"
+      }
+    },
+    "pricing": { "status": 200 },
+    "eventsGetBeforeDeploy": {
+      "status": 405,
+      "note": "Prod still POST-only until this commit deploys; expect 401 without key after deploy"
+    }
+  },
+  "gap": "M1.2 blocked on Azure OpenAI App Service secrets; G7 blocked on Stripe merchant account."
+}
