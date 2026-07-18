@@ -6,11 +6,14 @@ describe("API Routes", () => {
       const mockResponse = {
         status: "healthy",
         version: "1.0.0",
-        ai_provider: "mock",
+        aiProvider: "mock",
+        database: "connected",
       };
 
       expect(mockResponse.status).toBe("healthy");
       expect(mockResponse.version).toBeDefined();
+      expect(mockResponse.aiProvider).toBe("mock");
+      expect(mockResponse.database).toBe("connected");
     });
   });
 

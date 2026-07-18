@@ -1,0 +1,40 @@
+{
+  "correlationId": "cos-hourly-pulse-20260717T235934Z",
+  "checkedAtUtc": "2026-07-18T00:03:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "prod": {
+    "health": {
+      "url": "https://problems4us.com/api/health",
+      "status": 200,
+      "body": {
+        "status": "healthy",
+        "database": "connected"
+      }
+    },
+    "pricing": { "url": "https://problems4us.com/pricing", "status": 200 },
+    "waitlistPost": {
+      "status": 201,
+      "created": true,
+      "waitlistId": "wl-1784332953007-z6w0bm",
+      "emailDomain": "problems4us-test.local"
+    },
+    "waitlistCountOnly": { "status": 200, "total": 1 }
+  },
+  "appService": {
+    "name": "problems4us-linux",
+    "resourceGroup": "rg-problems4us",
+    "AI_PROVIDER": "mock",
+    "AZURE_OPENAI_ENDPOINT": "not_set",
+    "AZURE_OPENAI_API_KEY": "not_set",
+    "AZURE_OPENAI_DEPLOYMENT": "not_set",
+    "AZURE_SQL_CONNECTION_STRING": "set",
+    "ADMIN_API_KEY": "set"
+  },
+  "codeThisHour": {
+    "analyzeRouteUsesGetAIProvider": true,
+    "healthExposesAiProvider": true,
+    "m1TestPlan": "docs/m1-test-plan.md"
+  },
+  "gap": "M1.2 blocked on Azure OpenAI App Service secrets; provider remains mock until set."
+}
