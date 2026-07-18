@@ -1,0 +1,22 @@
+{
+  "correlationId": "cos-hourly-pulse-20260718T164502Z",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "timestampUtc": "2026-07-18T16:55:00Z",
+  "shipped": [
+    "Builder opportunity briefs now mint signed share links (GET /api/share/briefs?token=) so consultants can open a brief without a Builder email"
+  ],
+  "evidence": {
+    "commit": "(pending)",
+    "unit": "npm test — 86/86",
+    "routes": [
+      "GET /api/builder/briefs → shareUrl + shareExpiresAt",
+      "GET /api/share/briefs?token="
+    ],
+    "funnelEvents": ["builder_brief_share", "builder_brief_share_view"]
+  },
+  "blockers": [
+    "Stripe merchant keys (G7)",
+    "Azure OpenAI App Service secrets (M1.2)"
+  ]
+}

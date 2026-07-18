@@ -150,4 +150,4 @@ Hourly evidence (cos-hourly-pulse-20260718T124504Z): `revoke_all_pilots` with co
 
 Hourly evidence (cos-hourly-pulse-20260718T134505Z): pilot grant refuses overwrite of active paid seats; single revoke of paid seats requires `REVOKE_PAID`.
 
-Hourly evidence (cos-hourly-pulse-20260718T144502Z): successful `GET /api/builder/briefs` records `builder_brief_export` funnel event (email, problemId, ideaCount, pilotGrant) so seat → usage is measurable before Stripe keys land.
+Hourly evidence (cos-hourly-pulse-20260718T164502Z): Builder brief export mints a signed `shareUrl` (`GET /api/share/briefs?token=`, HMAC, 7-day TTL). Funnel events: `builder_brief_share` (mint) + `builder_brief_share_view` (open). Secret: `BRIEF_SHARE_SECRET` or fallback `ADMIN_API_KEY`.

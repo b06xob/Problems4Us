@@ -59,6 +59,8 @@ describe("conversion events", () => {
     expect(summary.admin_pilot_revoke).toBe(0);
     expect(summary.admin_pilot_revoke_all).toBe(0);
     expect(summary.builder_brief_export).toBe(0);
+    expect(summary.builder_brief_share).toBe(0);
+    expect(summary.builder_brief_share_view).toBe(0);
     expect(summary.total).toBe(10 + 3 + 2 + 5 + 99);
   });
 });

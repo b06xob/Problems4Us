@@ -11,13 +11,21 @@ import {
   decideBuilderGate,
   isEntitlementEmail,
 } from "@/lib/entitlements";
+import {
+  buildBriefShareAudit,
+  buildBriefShareUrl,
+  createBriefShareToken,
+  getBriefShareSecret,
+  verifyBriefShareToken,
+} from "@/lib/brief-share";
 import { formatOpportunityBriefMarkdown } from "@/lib/opportunity-brief";
 
 /**
  * GET /api/builder/briefs?email=&problemId=
- * Builder-gated opportunity brief export (M2.2 gate + M3.1 prep).
+ * Builder-gated opportunity brief export (M2.2 gate + M3.1 share links).
  * Header x-builder-email is accepted as an email alternate.
- * Successful exports record builder_brief_export funnel events (seat → usage).
+ * Successful exports record builder_brief_export funnel events (seat → usage)
+ * and mint a signed shareUrl (builder_brief_share) when a share secret is set.
  */
 export async function GET(request: NextRequest) {
   const emailParam =
@@ -90,6 +98,39 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    let shareUrl: string | null = null;
+    let shareExpiresAt: number | null = null;
+    const shareSecret = getBriefShareSecret();
+    if (shareSecret) {
+      const token = createBriefShareToken({
+        problemId: painPoint.PainPointId,
+        secret: shareSecret,
+      });
+      if (token) {
+        const checked = verifyBriefShareToken(token, shareSecret);
+        shareUrl = buildBriefShareUrl(token);
+        shareExpiresAt = checked.ok ? checked.exp : null;
+        if (shareExpiresAt != null) {
+          const shareAudit = buildBriefShareAudit({
+            email: gate.email,
+            problemId: painPoint.PainPointId,
+            expiresAt: shareExpiresAt,
+          });
+          if (shareAudit) {
+            try {
+              await insertConversionEventDb(
+                "builder_brief_share",
+                "/api/builder/briefs",
+                shareAudit
+              );
+            } catch (shareError) {
+              console.error("Failed to record builder_brief_share:", shareError);
+            }
+          }
+        }
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       gate: "M2.2",
@@ -99,6 +140,8 @@ export async function GET(request: NextRequest) {
       title: painPoint.Title,
       markdown,
       ideaCount: ideas.length,
+      shareUrl,
+      shareExpiresAt,
     });
   } catch (error) {
     console.error("Failed to build opportunity brief:", error);
