@@ -10,50 +10,55 @@ Auth: `ADMIN_API_KEY` via header `x-admin-api-key` (or `Authorization: Bearer <k
 2. Prefer `dryRun: true` for first smoke after deploy.
 3. Caps (enforced by API): `postLimit` 1–100, max 20 subreddits, max 10 search keywords.
 4. Without `ADMIN_API_KEY` configured, owner endpoints return **503**. Wrong key → **401**.
+5. On Windows PowerShell, always use `curl.exe` (not `curl`). Bare `curl` is an alias for `Invoke-WebRequest`; `curl -s URL` binds `-s` to `-SessionVariable` and leaves `-Uri` empty, which hangs on an interactive `Uri:` prompt.
+
+Set the key once per shell session:
+
+```powershell
+$env:ADMIN_API_KEY = "<secret>"   # or rely on a User env var already set
+```
 
 ## Health first
 
-```bash
-curl -s https://problems4us.com/api/health
+```powershell
+curl.exe -s https://problems4us.com/api/health
 # Expect: status=healthy, database=connected
 ```
 
 ## List configured Reddit targets
 
-```bash
-curl -s https://problems4us.com/api/ingest/reddit \
-  -H "x-admin-api-key: $ADMIN_API_KEY"
+```powershell
+curl.exe -s https://problems4us.com/api/ingest/reddit -H "x-admin-api-key: $env:ADMIN_API_KEY"
 ```
 
 ## Dry-run ingest (collect only, no AI / pain-point writes)
 
-```bash
-curl -s -X POST https://problems4us.com/api/ingest/reddit \
-  -H "x-admin-api-key: $ADMIN_API_KEY" \
-  -H "content-type: application/json" \
+```powershell
+curl.exe -s -X POST https://problems4us.com/api/ingest/reddit `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
   -d '{"mode":"fetch","subreddits":["sysadmin"],"postLimit":10,"dryRun":true}'
 ```
 
 ## Live ingest (writes raw posts + AI extraction when provider configured)
 
-```bash
-curl -s -X POST https://problems4us.com/api/ingest/reddit \
-  -H "x-admin-api-key: $ADMIN_API_KEY" \
-  -H "content-type: application/json" \
+```powershell
+curl.exe -s -X POST https://problems4us.com/api/ingest/reddit `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
   -d '{"mode":"fetch","subreddits":["sysadmin"],"postLimit":25,"dryRun":false}'
 ```
 
 ## Sources CRUD (admin)
 
-```bash
+```powershell
 # List
-curl -s https://problems4us.com/api/sources \
-  -H "x-admin-api-key: $ADMIN_API_KEY"
+curl.exe -s https://problems4us.com/api/sources -H "x-admin-api-key: $env:ADMIN_API_KEY"
 
 # Create
-curl -s -X POST https://problems4us.com/api/sources \
-  -H "x-admin-api-key: $ADMIN_API_KEY" \
-  -H "content-type: application/json" \
+curl.exe -s -X POST https://problems4us.com/api/sources `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
   -d '{"SourceType":"reddit","SourceName":"r/devops","SourceUrl":"https://reddit.com/r/devops"}'
 ```
 
@@ -61,6 +66,7 @@ curl -s -X POST https://problems4us.com/api/sources \
 
 | Symptom | Likely cause | Action |
 |---------|--------------|--------|
+| PowerShell prompts `Uri:` after `curl -s …` | Used `curl` alias (Invoke-WebRequest); `-s` → `-SessionVariable` | Cancel with Ctrl+C; re-run with `curl.exe` |
 | 503 on ingest/sources | `ADMIN_API_KEY` unset in App Service | Set key; restart app |
 | 401 | Wrong/missing key | Rotate check; confirm header name |
 | 400 | Invalid mode / missing subreddits / over caps | Fix JSON body; see GET usage |
@@ -80,22 +86,22 @@ After a successful dry-run or live ingest, note in DailyStatus / Progress:
 
 While Stripe keys are unset, grant a pilot seat then verify briefs:
 
-```bash
-curl -s -X POST https://problems4us.com/api/checkout/entitlements \
-  -H "x-admin-api-key: $ADMIN_API_KEY" \
-  -H "content-type: application/json" \
+```powershell
+curl.exe -s -X POST https://problems4us.com/api/checkout/entitlements `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
   -d '{"action":"grant","email":"pilot@example.com","note":"ops-pilot"}'
 
 # Expect 200 + markdown when seat active and problemId exists
-curl -s "https://problems4us.com/api/builder/briefs?email=pilot@example.com&problemId=<id>"
+curl.exe -s "https://problems4us.com/api/builder/briefs?email=pilot@example.com&problemId=<id>"
 
 # After smoke: dry-run then wipe leftover pilot seats only (paid Stripe seats untouched)
-curl -s -X POST https://problems4us.com/api/checkout/entitlements \
-  -H "x-admin-api-key: $ADMIN_API_KEY" \
-  -H "content-type: application/json" \
+curl.exe -s -X POST https://problems4us.com/api/checkout/entitlements `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
   -d '{"action":"revoke_all_pilots","confirm":"REVOKE_ALL_PILOTS","dryRun":true}'
-curl -s -X POST https://problems4us.com/api/checkout/entitlements \
-  -H "x-admin-api-key: $ADMIN_API_KEY" \
-  -H "content-type: application/json" \
+curl.exe -s -X POST https://problems4us.com/api/checkout/entitlements `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
   -d '{"action":"revoke_all_pilots","confirm":"REVOKE_ALL_PILOTS"}'
 ```

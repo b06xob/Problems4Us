@@ -258,7 +258,7 @@ Optional manual migration: `database/migrations/20260717_waitlist_pricing.sql`.
 | `POST /api/events` | Public | Funnel events (`pricing_view`, `waitlist_success`, …) |
 | `/pricing` | Public | Early-access pricing surface |
 
-Owner ops: `curl -H "x-admin-api-key: $ADMIN_API_KEY" https://problems4us.com/api/waitlist?countOnly=1`
+Owner ops (Windows PowerShell — use `curl.exe`, not `curl`): `curl.exe -H "x-admin-api-key: $env:ADMIN_API_KEY" "https://problems4us.com/api/waitlist?countOnly=1"`
 
 ## CI/CD with GitHub Actions
 

@@ -24,21 +24,23 @@ Month-1 production foundation: deploy health, SQL-backed waitlist funnel, AI ana
 
 ## Commands
 
-```bash
+> Windows PowerShell: use `curl.exe` (not `curl`). Bare `curl -s URL` aliases to `Invoke-WebRequest -SessionVariable URL` and hangs on `Uri:`.
+
+```powershell
 # Local unit
 npm test
 
 # Prod health
-curl -s https://problems4us.com/api/health
+curl.exe -s https://problems4us.com/api/health
 
 # Waitlist smoke (use a unique email)
-curl -s -X POST https://problems4us.com/api/waitlist \
-  -H "content-type: application/json" \
+curl.exe -s -X POST https://problems4us.com/api/waitlist `
+  -H "content-type: application/json" `
   -d '{"email":"smoke+<ts>@example.com","source":"hourly_smoke"}'
 
 # Admin count (requires ADMIN_API_KEY)
-curl -s "https://problems4us.com/api/waitlist?countOnly=1" \
-  -H "x-admin-api-key: $ADMIN_API_KEY"
+curl.exe -s "https://problems4us.com/api/waitlist?countOnly=1" `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY"
 ```
 
 ## Remaining for M1.2
@@ -62,16 +64,16 @@ Month-1 keeps `/pricing` as waitlist CTA only (no charge). Before enabling check
 7. Pricing return URLs `?checkout=success|cancel` show banners and record `checkout_return_success` / `checkout_return_cancel`.
 8. Gate: smoke test charge in Stripe test mode; then flip live keys.
 
-```bash
+```powershell
 # Expect 503 until Stripe secrets are set
-curl -s -X POST https://problems4us.com/api/checkout/session \
-  -H "content-type: application/json" \
+curl.exe -s -X POST https://problems4us.com/api/checkout/session `
+  -H "content-type: application/json" `
   -d '{"tier":"builder"}'
 
-curl -s https://problems4us.com/api/checkout/status
+curl.exe -s https://problems4us.com/api/checkout/status
 
-curl -s -X POST https://problems4us.com/api/checkout/webhook \
-  -H "content-type: application/json" \
+curl.exe -s -X POST https://problems4us.com/api/checkout/webhook `
+  -H "content-type: application/json" `
   -d '{}'
 ```
 
@@ -81,14 +83,14 @@ Hourly evidence (cos-hourly-pulse-20260718T074502Z): prod `checkoutReady=false`;
 
 On `checkout.session.completed`, after `paid_early_access` is recorded, upsert `PlanEntitlements` (active Builder) when email is present.
 
-```bash
+```powershell
 # Admin cohort count (requires ADMIN_API_KEY)
-curl -s "https://problems4us.com/api/checkout/entitlements?summary=1" \
-  -H "x-admin-api-key: $ADMIN_API_KEY"
+curl.exe -s "https://problems4us.com/api/checkout/entitlements?summary=1" `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY"
 
 # Admin lookup
-curl -s "https://problems4us.com/api/checkout/entitlements?email=pilot@example.com" \
-  -H "x-admin-api-key: $ADMIN_API_KEY"
+curl.exe -s "https://problems4us.com/api/checkout/entitlements?email=pilot@example.com" `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY"
 ```
 
 Hourly evidence (cos-hourly-pulse-20260718T084502Z): shipped M2.2 entitlement grant + admin `GET /api/checkout/entitlements`.
@@ -101,44 +103,44 @@ Hourly evidence (cos-hourly-pulse-20260718T094503Z):
 
 While Stripe merchant keys are pending, ops can grant/revoke Builder seats with admin auth:
 
-```bash
+```powershell
 # Grant pilot Builder seat
-curl -s -X POST https://problems4us.com/api/checkout/entitlements \
-  -H "x-admin-api-key: $ADMIN_API_KEY" \
-  -H "content-type: application/json" \
+curl.exe -s -X POST https://problems4us.com/api/checkout/entitlements `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
   -d '{"action":"grant","email":"pilot@example.com","note":"hourly-smoke"}'
 
 # Lookup (pilotGrant=true when session id is admin_pilot:…)
-curl -s "https://problems4us.com/api/checkout/entitlements?email=pilot@example.com" \
-  -H "x-admin-api-key: $ADMIN_API_KEY"
+curl.exe -s "https://problems4us.com/api/checkout/entitlements?email=pilot@example.com" `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY"
 
 # List active seats / pilot-only hygiene
-curl -s "https://problems4us.com/api/checkout/entitlements?summary=1" \
-  -H "x-admin-api-key: $ADMIN_API_KEY"
-curl -s "https://problems4us.com/api/checkout/entitlements?list=1&pilotOnly=1" \
-  -H "x-admin-api-key: $ADMIN_API_KEY"
+curl.exe -s "https://problems4us.com/api/checkout/entitlements?summary=1" `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY"
+curl.exe -s "https://problems4us.com/api/checkout/entitlements?list=1&pilotOnly=1" `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY"
 
 # Revoke (status=canceled → briefs 403). Pilot seats: no confirm.
 # Paid seats require confirm=REVOKE_PAID (prevents wiping a paying customer).
-curl -s -X POST https://problems4us.com/api/checkout/entitlements \
-  -H "x-admin-api-key: $ADMIN_API_KEY" \
-  -H "content-type: application/json" \
+curl.exe -s -X POST https://problems4us.com/api/checkout/entitlements `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
   -d '{"action":"revoke","email":"pilot@example.com"}'
-curl -s -X POST https://problems4us.com/api/checkout/entitlements \
-  -H "x-admin-api-key: $ADMIN_API_KEY" \
-  -H "content-type: application/json" \
+curl.exe -s -X POST https://problems4us.com/api/checkout/entitlements `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
   -d '{"action":"revoke","email":"paid@example.com","confirm":"REVOKE_PAID"}'
 
 # Grant refuses to overwrite an active paid (non-pilot) Builder seat.
 
 # Dry-run / wipe leftover pilot seats only (never paid Stripe seats)
-curl -s -X POST https://problems4us.com/api/checkout/entitlements \
-  -H "x-admin-api-key: $ADMIN_API_KEY" \
-  -H "content-type: application/json" \
+curl.exe -s -X POST https://problems4us.com/api/checkout/entitlements `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
   -d '{"action":"revoke_all_pilots","confirm":"REVOKE_ALL_PILOTS","dryRun":true}'
-curl -s -X POST https://problems4us.com/api/checkout/entitlements \
-  -H "x-admin-api-key: $ADMIN_API_KEY" \
-  -H "content-type: application/json" \
+curl.exe -s -X POST https://problems4us.com/api/checkout/entitlements `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
   -d '{"action":"revoke_all_pilots","confirm":"REVOKE_ALL_PILOTS"}'
 ```
 

@@ -14,9 +14,10 @@ Last updated: 2026-07-18 (Audi / Problems4Us Agent)
 
 ## Funnel ops (M1.4 read path)
 
-```bash
-curl -s "https://problems4us.com/api/events?summary=1&hours=24" \
-  -H "x-admin-api-key: $ADMIN_API_KEY"
+```powershell
+# Use curl.exe on Windows PowerShell (bare curl aliases to Invoke-WebRequest)
+curl.exe -s "https://problems4us.com/api/events?summary=1&hours=24" `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY"
 ```
 
 Returns zero-filled counts for waitlist/pricing conversion events.
