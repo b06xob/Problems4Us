@@ -21,7 +21,7 @@ Month-1 production foundation: deploy health, SQL-backed waitlist funnel, AI ana
 | G9 Ops runbook | `docs/ops-runbook-admin-ingest.md` | Documented dry-run + triage | Pass (2026-07-18) |
 | G10 Funnel summary | Admin `GET /api/events?summary=1` | 200 + zero-filled counts; auth required | Pass (prod 2026-07-18T02:48Z — 401 unauth / 200+counts with key) |
 | G11 Security baseline | `docs/m1-5-security-baseline.md` | Admin fail-closed; secrets out of repo | Pass (2026-07-18) |
-| G12 Shared brief HTML | `GET /share/briefs?token=` | Readable page for consultants; mint path points here | Tested local 2026-07-20 (unit path); prod deploy pending |
+| G12 Shared brief HTML | `GET /share/briefs?token=` | Readable page for consultants; mint path points here | Pass (prod 2026-07-23T22:48Z — HTTP 200 Live; commit e692310) |
 
 ## Commands
 
