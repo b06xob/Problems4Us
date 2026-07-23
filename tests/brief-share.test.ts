@@ -1,4 +1,5 @@
 import {
+  buildBriefShareApiPath,
   buildBriefShareAudit,
   buildBriefSharePath,
   buildBriefShareUrl,
@@ -61,16 +62,19 @@ describe("brief share links (M3.1)", () => {
     expect(verifyBriefShareToken("", secret, nowMs).ok).toBe(false);
   });
 
-  it("builds share path and absolute url", () => {
+  it("builds human share page path and absolute url", () => {
     const token = "v1.abc.def";
     expect(buildBriefSharePath(token)).toBe(
+      "/share/briefs?token=v1.abc.def"
+    );
+    expect(buildBriefShareApiPath(token)).toBe(
       "/api/share/briefs?token=v1.abc.def"
     );
     expect(buildBriefShareUrl(token, "https://problems4us.com/")).toBe(
-      "https://problems4us.com/api/share/briefs?token=v1.abc.def"
+      "https://problems4us.com/share/briefs?token=v1.abc.def"
     );
     expect(buildBriefShareUrl(token, null)).toBe(
-      "/api/share/briefs?token=v1.abc.def"
+      "/share/briefs?token=v1.abc.def"
     );
   });
 

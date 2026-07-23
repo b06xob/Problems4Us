@@ -125,7 +125,13 @@ export function verifyBriefShareToken(
   return { ok: true, problemId, exp };
 }
 
+/** Human-readable share page (consultants open this URL). */
 export function buildBriefSharePath(token: string): string {
+  return `/share/briefs?token=${encodeURIComponent(token)}`;
+}
+
+/** JSON API path for programmatic clients. */
+export function buildBriefShareApiPath(token: string): string {
   return `/api/share/briefs?token=${encodeURIComponent(token)}`;
 }
 
