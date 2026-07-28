@@ -38,12 +38,27 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Compute deploy version
+        id: version
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          DEPLOY_DATE="$(date -u +%Y.%m.%d)"
+          DEPLOYED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          VERSION="v${DEPLOY_DATE}-${SHORT_SHA}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "commit=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "deployed_at=${DEPLOYED_AT}" >> "$GITHUB_OUTPUT"
+          echo "Computed site version ${VERSION} (commit ${GITHUB_SHA})"
+
       - name: Build application
         run: npm run build
         env:
           AI_PROVIDER: mock
           NEXT_PUBLIC_APP_URL: https://problems4us.com
           NEXT_PUBLIC_APP_NAME: Problems4Us
+          NEXT_PUBLIC_APP_VERSION: ${{ steps.version.outputs.version }}
+          NEXT_PUBLIC_GIT_COMMIT: ${{ steps.version.outputs.commit }}
+          NEXT_PUBLIC_DEPLOYED_AT: ${{ steps.version.outputs.deployed_at }}
 
       - name: Prepare standalone deployment package
         run: |

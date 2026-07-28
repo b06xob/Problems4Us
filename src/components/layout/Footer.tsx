@@ -1,4 +1,8 @@
+import { getSiteVersion } from "@/lib/site-version";
+
 export function Footer() {
+  const { version } = getSiteVersion();
+
   return (
     <footer className="border-t border-border bg-surface-alt">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -56,9 +60,12 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <div className="mt-10 border-t border-border pt-6">
+        <div className="mt-10 border-t border-border pt-6 flex flex-col items-center gap-1">
           <p className="text-center text-xs text-text-muted">
             &copy; {new Date().getFullYear()} Problems4Us. All rights reserved.
+          </p>
+          <p className="text-center text-[11px] text-text-muted/80" data-site-version={version}>
+            {version}
           </p>
         </div>
       </div>
