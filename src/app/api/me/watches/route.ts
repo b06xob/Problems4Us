@@ -7,7 +7,7 @@ import {
   unwatchProblemDb,
   watchProblemDb,
 } from "@/lib/alerts-db";
-import { getPainPointDetail } from "@/lib/db-service";
+import { listPainPoints } from "@/lib/db-service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,13 +37,19 @@ export async function POST(request: NextRequest) {
       );
     }
     const painPointId = body.painPointId.trim();
-    const detail = await getPainPointDetail(painPointId);
-    const scores = detail?.painPoint
-      ? {
-          opportunityScore: detail.painPoint.OpportunityScore,
-          trendScore: detail.painPoint.TrendScore,
-        }
-      : undefined;
+    let scores: { opportunityScore?: number; trendScore?: number } | undefined;
+    try {
+      const { data } = await listPainPoints({ page: 1, limit: 100 });
+      const match = data.find((p) => p.PainPointId === painPointId);
+      if (match) {
+        scores = {
+          opportunityScore: match.OpportunityScore,
+          trendScore: match.TrendScore,
+        };
+      }
+    } catch (lookupErr) {
+      console.error("Watch: optional score lookup failed:", lookupErr);
+    }
 
     const { record, created } = await watchProblemDb(
       user.userId,

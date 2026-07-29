@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAuth } from "@/lib/admin-auth";
-import { getPainPointDetail } from "@/lib/db-service";
+import { listPainPoints } from "@/lib/db-service";
 import {
+  ensureAlertTables,
   listWatchedProblemsDb,
   recordScoreMoveAlertDb,
   type AlertEventRecord,
 } from "@/lib/alerts-db";
 import { query } from "@/lib/db";
-import { ensureAlertTables } from "@/lib/alerts-db";
 
 /**
  * Admin: evaluate all watches (or one user) and emit in-app score-change alerts.
@@ -65,16 +65,32 @@ export async function POST(request: NextRequest) {
       }));
     }
 
+    const { data: painPoints } = await listPainPoints({
+      page: 1,
+      limit: 100,
+      sortBy: "OpportunityScore",
+      sortOrder: "desc",
+    });
+    const scoreById = new Map(
+      painPoints.map((p) => [
+        p.PainPointId,
+        {
+          opportunityScore: p.OpportunityScore,
+          trendScore: p.TrendScore,
+        },
+      ])
+    );
+
     const emitted: AlertEventRecord[] = [];
     let checked = 0;
 
     for (const watch of watches) {
       checked += 1;
-      const detail = await getPainPointDetail(watch.PainPointId);
-      if (!detail?.painPoint) continue;
+      const scores = scoreById.get(watch.PainPointId);
+      if (!scores) continue;
 
       const prior = watch.LastOpportunityScore;
-      let next = detail.painPoint.OpportunityScore;
+      let next = scores.opportunityScore;
       if (
         typeof body.forceDelta === "number" &&
         Number.isFinite(body.forceDelta) &&
@@ -88,7 +104,7 @@ export async function POST(request: NextRequest) {
         painPointId: watch.PainPointId,
         priorScore: prior,
         newScore: next,
-        trendScore: detail.painPoint.TrendScore,
+        trendScore: scores.trendScore,
       });
       if (alert) emitted.push(alert);
     }
