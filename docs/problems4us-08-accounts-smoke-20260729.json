@@ -1,0 +1,28 @@
+﻿{
+    "checkedAtUtc":  "2026-07-29T18:44:13Z",
+    "correlationId":  "cos-continuous-work-standing-order-20260729",
+    "deployCommit":  "4f140ece7bcba9c41fda9cc18ef61bdc7b7d304a",
+    "deployRunId":  30480978314,
+    "deployConclusion":  "success",
+    "smoke":  {
+                  "me":  {
+                             "ok":  true,
+                             "activated":  true
+                         },
+                  "saveIdea":  {
+                                   "ok":  true,
+                                   "reason":  "saved_idea_gte_1",
+                                   "activated":  true
+                               },
+                  "register":  {
+                                   "ok":  true,
+                                   "activatedBeforeSave":  false,
+                                   "http":  201
+                               },
+                  "adminActivation":  {
+                                          "totalAccounts":  1,
+                                          "activatedAccounts":  1
+                                      }
+              },
+    "verdict":  "problems4us-08 LIVE on production after deploy 4f140ec"
+}
