@@ -1,0 +1,13 @@
+﻿{
+  "checkedAtUtc": "2026-07-29T19:03:00Z",
+  "correlationId": "cos-continuous-work-standing-order-20260729",
+  "deployCommit": "853897a",
+  "deployRunId": 30482380955,
+  "smoke": {
+    "watch": { "http": 201, "painPointId": "pp-1", "lastOpportunityScore": 84 },
+    "evaluate": { "http": 200, "checked": 1, "emitted": 1, "alertType": "score_change" },
+    "alerts": { "http": 200, "total": 1 }
+  },
+  "verdict": "problems4us-10 in-app score alert path verified for >=1 watched problem",
+  "note": "Email delivery not yet wired; in-app AlertEvents satisfy pilot retention loop criterion"
+}
