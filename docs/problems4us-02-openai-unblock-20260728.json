@@ -1,0 +1,133 @@
+{
+  "correlationId": "cos-drive-problems4us-openai-direct-20260729",
+  "priorCorrelationId": "cos-drive-problems4us-openai-20260728",
+  "checkedAtUtc": "2026-07-29T12:38:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "projectStep": "problems4us-02",
+  "verdict": "OPTION_A_DIRECT_OPENAI_READY_WAITING_ON_API_KEY",
+  "reason": "Prior analysis (2026-07-28) incorrectly presented Azure OpenAI resource creation (Option B) as the only Founder path. Code already implements OpenAIProvider (api.openai.com, gpt-4o-mini) wired via AI_PROVIDER=openai. Unblock requires only OPENAI_API_KEY as an App Service secret — zero Azure Cognitive Services provisioning.",
+  "processLesson": "For future unblock analyses: inspect already-coded provider paths in src/lib/ai-service.ts (and env wiring) before presenting infrastructure-heavy options as the sole Founder decision.",
+  "codePathEvidence": {
+    "file": "src/lib/ai-service.ts",
+    "OpenAIProvider": {
+      "class": "OpenAIProvider",
+      "implements": "AIProvider",
+      "baseUrl": "https://api.openai.com/v1",
+      "model": "gpt-4o-mini",
+      "requiredEnv": ["OPENAI_API_KEY"],
+      "azureResourceRequired": false
+    },
+    "factory": {
+      "function": "getAIProvider()",
+      "AI_PROVIDER=openai": "returns new OpenAIProvider()",
+      "AI_PROVIDER=azure-openai": "returns new AzureOpenAIProvider()",
+      "AI_PROVIDER=mock": "returns new MockAIProvider() (current prod)"
+    },
+    "health": {
+      "route": "src/app/api/health/route.ts",
+      "resolver": "resolveAiProviderName() in src/lib/ai-analyze.ts",
+      "expectedAfterFlip": "aiProvider=openai"
+    },
+    "ingestToScorePath": {
+      "adminAnalyze": "POST /api/ai/analyze → provider.extractPainPoints",
+      "redditIngest": "POST /api/ingest/reddit (dryRun:false) → extractPainPointsFromPosts via getAIProvider()"
+    }
+  },
+  "evidence": {
+    "subscription": {
+      "name": "Pay-as-you-go_XB",
+      "id": "a0c5caaf-1d57-4219-9a96-6e935cbb4b3f",
+      "tenantId": "39a63caa-e66a-46f5-b78f-308d4ef7fcfa",
+      "note": "Azure OpenAI resource still absent; no longer blocking under Option A."
+    },
+    "appService": {
+      "name": "problems4us-linux",
+      "resourceGroup": "rg-problems4us",
+      "checkedAtUtc": "2026-07-29T12:37:30Z",
+      "AI_PROVIDER": "mock",
+      "OPENAI_API_KEY": "not_set",
+      "AZURE_OPENAI_ENDPOINT": "not_set",
+      "AZURE_OPENAI_API_KEY": "not_set",
+      "AZURE_OPENAI_DEPLOYMENT": "not_set",
+      "ADMIN_API_KEY": "set"
+    },
+    "prodHealth": {
+      "url": "https://problems4us.com/api/health",
+      "checkedAtUtc": "2026-07-29T12:37:30Z",
+      "status": 200,
+      "bodyStatus": "healthy",
+      "aiProvider": "mock",
+      "database": "connected",
+      "checkoutReady": false
+    },
+    "localSecretsScan": {
+      "processEnvOPENAI_API_KEY": false,
+      "userEnvOPENAI_API_KEY": false,
+      "appServiceOPENAI_API_KEY": false,
+      "note": "Founder stated business-scoped OpenAI API key is being obtained; not yet delivered to Audi / App Service."
+    }
+  },
+  "recommendedPath": {
+    "option": "A",
+    "name": "Direct OpenAI (already coded)",
+    "whoMustAct": "Xavier Boyd — deliver OPENAI_API_KEY to Problems4Us Agent (Audi) or set on problems4us-linux",
+    "agentActionsWhenKeyAvailable": [
+      {
+        "step": 1,
+        "actor": "Problems4Us Agent (Audi)",
+        "action": "Set App Service settings and restart if needed",
+        "appSettingsToSet": {
+          "AI_PROVIDER": "openai",
+          "OPENAI_API_KEY": "<business-scoped OpenAI API key from Founder>"
+        },
+        "cli": "az webapp config appsettings set --name problems4us-linux --resource-group rg-problems4us --settings AI_PROVIDER=openai OPENAI_API_KEY=<key>"
+      },
+      {
+        "step": 2,
+        "actor": "Problems4Us Agent",
+        "action": "Validate health",
+        "checks": [
+          "GET https://problems4us.com/api/health → aiProvider=openai (not mock)"
+        ]
+      },
+      {
+        "step": 3,
+        "actor": "Problems4Us Agent",
+        "action": "Confirm one real ingest-to-score path",
+        "checks": [
+          "Admin POST /api/ai/analyze with sample text → provider=openai and real extraction (not mock heuristics-only)",
+          "Optional: POST /api/ingest/reddit dryRun:false with small postLimit → pain points extracted via live OpenAI"
+        ]
+      }
+    ],
+    "expectedKeyNames": ["AI_PROVIDER", "OPENAI_API_KEY"],
+    "costNote": "Pay-as-you-go OpenAI API usage (gpt-4o-mini); no Azure Cognitive Services account or provider registration required.",
+    "deadlineNote": "Can close 2026-07-29 18:00 ET deadline without Azure OpenAI resource, Microsoft.CognitiveServices registration, or model deployment wait."
+  },
+  "deferredAlternative": {
+    "option": "B",
+    "name": "Azure OpenAI (Cognitive Services)",
+    "status": "not_required_for_tonight_deadline",
+    "priorVerdict": "OPTION_B_FOUNDER_DECISION_REQUIRED (superseded as sole path)",
+    "whenRelevant": "If company policy later requires data-in-Azure / Azure OpenAI instead of api.openai.com",
+    "summaryRequirements": [
+      "Register Microsoft.CognitiveServices",
+      "Create OpenAI Cognitive Services account",
+      "Deploy gpt-4o-mini",
+      "Set AI_PROVIDER=azure-openai plus AZURE_OPENAI_* secrets"
+    ]
+  },
+  "founderDecisionRequired": {
+    "question": "Deliver business-scoped OPENAI_API_KEY for problems4us-linux (Option A)?",
+    "recommendedChoice": "Provide key to Audi / set App Service secret; agent flips AI_PROVIDER=openai and validates health + one ingest-to-score path.",
+    "whoMustAct": "Xavier Boyd (Founder)",
+    "notRequiredTonight": "Azure OpenAI resource creation, Cognitive Services provider registration, or Azure model deployment."
+  },
+  "blocker": {
+    "status": "Waiting",
+    "humanActionRequired": "Founder deliver OPENAI_API_KEY (business-scoped) for problems4us-linux App Service",
+    "blockedOn": "OPENAI_API_KEY not present in process env, user env, or App Service settings as of 2026-07-29T12:37:30Z"
+  },
+  "outOfScopeThisRun": "Did not invent or guess an API key. Did not flip AI_PROVIDER without OPENAI_API_KEY. Did not create Azure Cognitive Services resources."
+}

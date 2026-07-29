@@ -1,0 +1,47 @@
+﻿{
+    "summary":  "Controlled admin POST /api/ai/analyze after Founder billing/quota fix returned HTTP 200 with provider=openai and 3 extracted pain points. No bulk Reddit ingest performed.",
+    "evidence":  {
+                     "responseBodyLiteral":  {
+                                                 "painPoints":  [
+                                                                    {
+                                                                        "title":  "Double-Booking Issues",
+                                                                        "severity":  85,
+                                                                        "frequency":  77,
+                                                                        "willingnessToPay":  81,
+                                                                        "category":  "usability",
+                                                                        "snippet":  "Our scheduling tool double-books rooms every Friday and nobody gets notified until customers complain. Manual spreadsheet sync takes two hours daily and still misses conflicts."
+                                                                    },
+                                                                    {
+                                                                        "title":  "Lack of Notifications",
+                                                                        "severity":  80,
+                                                                        "frequency":  72,
+                                                                        "willingnessToPay":  76,
+                                                                        "category":  "monitoring",
+                                                                        "snippet":  "Our scheduling tool double-books rooms every Friday and nobody gets notified until customers complain. Manual spreadsheet sync takes two hours daily and still misses conflicts."
+                                                                    },
+                                                                    {
+                                                                        "title":  "Inefficient Manual Syncing",
+                                                                        "severity":  70,
+                                                                        "frequency":  63,
+                                                                        "willingnessToPay":  67,
+                                                                        "category":  "automation",
+                                                                        "snippet":  "Our scheduling tool double-books rooms every Friday and nobody gets notified until customers complain. Manual spreadsheet sync takes two hours daily and still misses conflicts."
+                                                                    }
+                                                                ],
+                                                 "summary":  "Identified 3 pain points from the provided text, spanning usability, monitoring, automation (provider=openai).",
+                                                 "provider":  "openai"
+                                             },
+                     "provider":  "openai",
+                     "url":  "https://problems4us.com/api/ai/analyze",
+                     "painPointCount":  3,
+                     "httpStatus":  200
+                 },
+    "correlationId":  "cos-drive-problems4us-openai-retry-20260729",
+    "verdict":  "OPENAI_ANALYZE_RETRY_SUCCESS",
+    "humanActionRequired":  null,
+    "agent":  "Problems4Us Agent",
+    "replyTo":  "Passport",
+    "checkedAtUtc":  "2026-07-29T18:28:10Z",
+    "host":  "Audi",
+    "secretsHandling":  "ADMIN_API_KEY and OpenAI key values omitted."
+}

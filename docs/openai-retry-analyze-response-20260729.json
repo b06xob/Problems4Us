@@ -1,0 +1,7 @@
+﻿{
+    "checkedAtUtc":  "2026-07-29T18:27:53Z",
+    "correlationId":  "cos-drive-problems4us-openai-retry-20260729",
+    "url":  "https://problems4us.com/api/ai/analyze",
+    "httpStatus":  200,
+    "responseBodyLiteral":  "{\"painPoints\":[{\"title\":\"Double-Booking Issues\",\"severity\":85,\"frequency\":77,\"willingnessToPay\":81,\"category\":\"usability\",\"snippet\":\"Our scheduling tool double-books rooms every Friday and nobody gets notified until customers complain. Manual spreadsheet sync takes two hours daily and still misses conflicts.\"},{\"title\":\"Lack of Notifications\",\"severity\":80,\"frequency\":72,\"willingnessToPay\":76,\"category\":\"monitoring\",\"snippet\":\"Our scheduling tool double-books rooms every Friday and nobody gets notified until customers complain. Manual spreadsheet sync takes two hours daily and still misses conflicts.\"},{\"title\":\"Inefficient Manual Syncing\",\"severity\":70,\"frequency\":63,\"willingnessToPay\":67,\"category\":\"automation\",\"snippet\":\"Our scheduling tool double-books rooms every Friday and nobody gets notified until customers complain. Manual spreadsheet sync takes two hours daily and still misses conflicts.\"}],\"summary\":\"Identified 3 pain points from the provided text, spanning usability, monitoring, automation (provider=openai).\",\"provider\":\"openai\"}"
+}

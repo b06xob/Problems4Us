@@ -1,0 +1,58 @@
+{
+  "contractVersion": "1.0.0-draft",
+  "requestId": "problems4us-06-sample-20260729",
+  "product": "Problems4Us",
+  "domain": "problems.cluster",
+  "asOf": "2026-07-29T18:00:00Z",
+  "scoringPolicy": {
+    "deterministic": true,
+    "compositeWeights": {
+      "relevance": 0.35,
+      "quality": 0.45,
+      "novelty": 0.1,
+      "risk": 0.1
+    },
+    "notes": "Mapped from P4U OpportunityScores (Frequency/Severity/WTP/Trend/Market). composite ≈ calculateOpportunityScore/100. risk starts low until confidence model lands."
+  },
+  "freshness": {
+    "asOf": "2026-07-29T18:00:00Z",
+    "computedAt": "2026-07-29T18:35:00Z",
+    "maxAgeSeconds": 86400,
+    "stale": false
+  },
+  "rankedItems": [
+    {
+      "rank": 1,
+      "candidateId": "p4u-prob-double-booking",
+      "facets": {
+        "relevance": { "value": 0.78, "status": "live" },
+        "quality": { "value": 0.81, "status": "live" },
+        "novelty": { "value": 0.55, "status": "live" },
+        "risk": { "value": 0.12, "status": "live" },
+        "composite": { "value": 0.74, "status": "live" }
+      },
+      "explainability": {
+        "reasons": [
+          {
+            "code": "P4U_TOP_DRIVER",
+            "message": "Willingness to pay is the top weighted driver for this opportunity",
+            "weight": 0.3
+          },
+          {
+            "code": "P4U_SEVERITY",
+            "message": "High severity complaints about double-booking and missed notifications",
+            "weight": 0.25
+          }
+        ],
+        "topFeatures": [
+          { "name": "WillingnessToPayScore", "contribution": 0.243 },
+          { "name": "SeverityScore", "contribution": 0.212 },
+          { "name": "FrequencyScore", "contribution": 0.193 }
+        ],
+        "policyNotes": [
+          "Sample producer payload for contract agreement — not a live API response"
+        ]
+      }
+    }
+  ]
+}

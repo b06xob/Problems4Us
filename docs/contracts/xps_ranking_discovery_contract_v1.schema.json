@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://breivax.local/contracts/xps_ranking_discovery_contract_v1.schema.json",
+  "title": "XPS Ranking Discovery Contract v1 draft",
+  "type": "object",
+  "required": [
+    "contractVersion",
+    "requestId",
+    "product",
+    "domain",
+    "asOf",
+    "scoringPolicy",
+    "freshness",
+    "rankedItems"
+  ],
+  "properties": {
+    "contractVersion": {
+      "type": "string",
+      "const": "1.0.0-draft"
+    },
+    "requestId": { "type": "string", "minLength": 1 },
+    "product": {
+      "type": "string",
+      "enum": ["XPS", "Problems4Us"]
+    },
+    "domain": { "type": "string", "minLength": 1 },
+    "asOf": { "type": "string", "format": "date-time" },
+    "scoringPolicy": {
+      "type": "object",
+      "required": ["compositeWeights", "deterministic"],
+      "properties": {
+        "deterministic": { "type": "boolean", "const": true },
+        "compositeWeights": {
+          "type": "object",
+          "required": ["relevance", "quality", "novelty", "risk"],
+          "properties": {
+            "relevance": { "type": "number", "minimum": 0, "maximum": 1 },
+            "quality": { "type": "number", "minimum": 0, "maximum": 1 },
+            "novelty": { "type": "number", "minimum": 0, "maximum": 1 },
+            "risk": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "additionalProperties": false
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "freshness": {
+      "type": "object",
+      "required": ["asOf", "computedAt", "maxAgeSeconds", "stale"],
+      "properties": {
+        "asOf": { "type": "string", "format": "date-time" },
+        "computedAt": { "type": "string", "format": "date-time" },
+        "maxAgeSeconds": { "type": "integer", "minimum": 0 },
+        "stale": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "rankedItems": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["rank", "candidateId", "facets", "explainability"],
+        "properties": {
+          "rank": { "type": "integer", "minimum": 1 },
+          "candidateId": { "type": "string", "minLength": 1 },
+          "facets": {
+            "type": "object",
+            "required": ["relevance", "quality", "novelty", "risk", "composite"],
+            "properties": {
+              "relevance": { "$ref": "#/$defs/facet" },
+              "quality": { "$ref": "#/$defs/facet" },
+              "novelty": { "$ref": "#/$defs/facet" },
+              "risk": { "$ref": "#/$defs/facet" },
+              "composite": { "$ref": "#/$defs/facet" }
+            },
+            "additionalProperties": false
+          },
+          "explainability": {
+            "type": "object",
+            "required": ["reasons"],
+            "properties": {
+              "reasons": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["code", "message"],
+                  "properties": {
+                    "code": { "type": "string" },
+                    "message": { "type": "string" },
+                    "weight": { "type": "number" }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "topFeatures": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "contribution"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "contribution": { "type": "number" }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "policyNotes": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "facet": {
+      "type": "object",
+      "required": ["value", "status"],
+      "properties": {
+        "value": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["live", "parked", "research"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

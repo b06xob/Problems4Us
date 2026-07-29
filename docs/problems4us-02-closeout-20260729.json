@@ -1,0 +1,25 @@
+﻿{
+    "checkedAtUtc":  "2026-07-29T18:34:27Z",
+    "correlationId":  "cos-continuous-work-standing-order-20260729",
+    "health":  {
+                   "status":  "healthy",
+                   "version":  "1.0.0",
+                   "timestamp":  "2026-07-29T18:34:28.348Z",
+                   "database":  "connected",
+                   "aiProvider":  "openai",
+                   "checkout":  {
+                                    "gate":  "G7",
+                                    "sessionConfigured":  false,
+                                    "webhookConfigured":  false,
+                                    "checkoutReady":  false
+                                }
+               },
+    "analyze":  {
+                    "summary":  "Identified 3 pain points from the provided text, spanning usability, automation (provider=openai).",
+                    "provider":  "openai",
+                    "httpStatus":  200,
+                    "firstTitle":  "Double-booking Rooms",
+                    "painPointCount":  3
+                },
+    "verdict":  "problems4us-02 met via AI_PROVIDER=openai; real admin analyze path verified this session"
+}

@@ -1,0 +1,50 @@
+{
+  "correlationId": "cos-continuous-work-standing-order-20260729",
+  "checkedAtUtc": "2026-07-29T18:36:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "projectStep": "problems4us-07",
+  "verdict": "MONTH1_DONE_WHEN_MET",
+  "summary": "Month-1 done-when criteria met: prod healthy with SQL connected; real AI score path via AI_PROVIDER=openai (admin analyze verified); waitlist/pricing instrumented; secrets baseline documented; XPS ranking contract accepted for M2.",
+  "checklist": {
+    "prodUrlLive": {
+      "ok": true,
+      "url": "https://problems4us.com",
+      "health": "https://problems4us.com/api/health"
+    },
+    "healthGreen": {
+      "ok": true,
+      "status": "healthy",
+      "database": "connected",
+      "aiProvider": "openai"
+    },
+    "realIngestScorePath": {
+      "ok": true,
+      "note": "Admin POST /api/ai/analyze returns provider=openai with real pain-point extraction (not mock). Direct OpenAI path; Azure OpenAI not required.",
+      "evidence": [
+        "Problems4US/docs/problems4us-02-closeout-20260729.json",
+        "Problems4US/docs/problems4us-02-directpath-20260729.json"
+      ]
+    },
+    "waitlistPricingInstrumented": {
+      "ok": true,
+      "evidence": "Problems4US/docs/m1-2-prod-check-20260718.json (pricing 200, waitlist POST 201); funnel events via conversion-events"
+    },
+    "secretsOutOfRepo": {
+      "ok": true,
+      "evidence": "Problems4US/docs/m1-5-security-baseline.md; tests/admin-auth.test.ts"
+    },
+    "xpsContractSpike": {
+      "ok": true,
+      "step": "problems4us-06",
+      "evidence": "Problems4US/docs/contracts/PROBLEMS4US_XPS_RANKING_CONTRACT_ACCEPTANCE.md"
+    }
+  },
+  "planUpdates": {
+    "problems4us-02": "done",
+    "problems4us-06": "done",
+    "problems4us-07": "done"
+  },
+  "nextEligible": ["problems4us-08", "problems4us-11", "problems4us-17"],
+  "humanActionRequired": null
+}

@@ -1,0 +1,65 @@
+{
+  "correlationId": "cos-drive-problems4us-openai-direct-20260729",
+  "checkedAtUtc": "2026-07-29T13:07:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "projectStep": "problems4us-02",
+  "verdict": "WIRED_HEALTH_OPENAI_LIVE_CALL_BLOCKED_ON_QUOTA",
+  "summary": "OPENAI_API_KEY retrieved from Azure Key Vault BoydAKV secret openai-api-key and set on problems4us-linux with AI_PROVIDER=openai. Production health now reports aiProvider=openai. Live OpenAI chat completion fails with insufficient_quota (HTTP 429), so ingest-to-score path cannot complete until Founder adds billing/credits on the OpenAI account for that key.",
+  "stepsCompleted": [
+    {
+      "step": 1,
+      "action": "az keyvault list --subscription a0c5caaf-1d57-4219-9a96-6e935cbb4b3f",
+      "result": "Vaults: BoydAKV, xpsview-kv-eastus, BoydDeployKV, breivax-kv-eastus"
+    },
+    {
+      "step": 2,
+      "action": "Locate secret openai-api-key",
+      "result": "Found in BoydAKV (Prius_RG). Other vaults Forbidden/AccessDenied or no match."
+    },
+    {
+      "step": 3,
+      "action": "az keyvault secret show --vault-name BoydAKV --name openai-api-key",
+      "result": "Retrieved OK (prefix sk-proj, length 164). Value not written to repo or Intercom."
+    },
+    {
+      "step": 4,
+      "action": "az webapp config appsettings set --name problems4us-linux --resource-group rg-problems4us",
+      "settingsApplied": ["AI_PROVIDER=openai", "OPENAI_API_KEY=<from BoydAKV>"],
+      "result": "Succeeded"
+    },
+    {
+      "step": 5,
+      "action": "az webapp restart + GET https://problems4us.com/api/health",
+      "before": { "aiProvider": "mock" },
+      "after": {
+        "status": "healthy",
+        "database": "connected",
+        "aiProvider": "openai",
+        "checkoutReady": false,
+        "checkedAtUtc": "2026-07-29T13:05:21Z"
+      },
+      "result": "PASS — aiProvider flipped from mock to openai"
+    },
+    {
+      "step": 6,
+      "action": "POST /api/ai/analyze (admin) + direct api.openai.com chat/completions smoke",
+      "analyzeHttpStatus": 500,
+      "analyzeBody": { "error": "Failed to analyze text" },
+      "directOpenAi": {
+        "httpStatus": 429,
+        "errorType": "insufficient_quota",
+        "errorCode": "insufficient_quota",
+        "message": "You exceeded your current quota, please check your plan and billing details."
+      },
+      "result": "FAIL — key authenticates but account has no usable quota/billing"
+    }
+  ],
+  "notDone": [
+    "Real ingest-to-score path with provider=openai and non-mock extraction (blocked on OpenAI quota)"
+  ],
+  "humanActionRequired": "Xavier Boyd — add billing/credits (or replace key) on the OpenAI platform account that owns the BoydAKV secret openai-api-key, then notify Problems4Us Agent to re-run POST /api/ai/analyze",
+  "blockedOn": "OpenAI API insufficient_quota for retrieved key",
+  "secretsHandling": "API key and ADMIN_API_KEY values intentionally omitted from this artifact and Intercom events.",
+  "replyTo": "Passport"
+}

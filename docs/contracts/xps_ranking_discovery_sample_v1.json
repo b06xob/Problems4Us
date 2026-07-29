@@ -1,0 +1,80 @@
+{
+  "contractVersion": "1.0.0-draft",
+  "requestId": "xps-core-05-sample-20260729",
+  "product": "XPS",
+  "domain": "problems.discovery.sample",
+  "asOf": "2026-07-29T16:00:00Z",
+  "scoringPolicy": {
+    "deterministic": true,
+    "compositeWeights": {
+      "relevance": 0.4,
+      "quality": 0.3,
+      "novelty": 0.2,
+      "risk": 0.1
+    },
+    "notes": "risk is subtracted in composite: composite = 0.4*rel + 0.3*qual + 0.2*nov - 0.1*risk (clipped 0..1)"
+  },
+  "freshness": {
+    "asOf": "2026-07-29T16:00:00Z",
+    "computedAt": "2026-07-29T17:05:00Z",
+    "maxAgeSeconds": 86400,
+    "stale": false
+  },
+  "rankedItems": [
+    {
+      "rank": 1,
+      "candidateId": "prob-1001",
+      "facets": {
+        "relevance": { "value": 0.82, "status": "live" },
+        "quality": { "value": 0.74, "status": "live" },
+        "novelty": { "value": 0.61, "status": "live" },
+        "risk": { "value": 0.18, "status": "live" },
+        "composite": { "value": 0.73, "status": "live" }
+      },
+      "explainability": {
+        "reasons": [
+          {
+            "code": "TOPIC_MATCH",
+            "message": "Strong match to requested discovery cluster",
+            "weight": 0.45
+          },
+          {
+            "code": "QUALITY_PEER",
+            "message": "Above-median quality facet vs peer set",
+            "weight": 0.3
+          }
+        ],
+        "topFeatures": [
+          { "name": "cluster_affinity", "contribution": 0.28 },
+          { "name": "recency_boost", "contribution": 0.11 }
+        ],
+        "policyNotes": [
+          "Sample only — not a live Problems4Us score"
+        ]
+      }
+    },
+    {
+      "rank": 2,
+      "candidateId": "prob-1002",
+      "facets": {
+        "relevance": { "value": 0.71, "status": "live" },
+        "quality": { "value": null, "status": "parked" },
+        "novelty": { "value": 0.55, "status": "live" },
+        "risk": { "value": 0.22, "status": "live" },
+        "composite": { "value": 0.58, "status": "live" }
+      },
+      "explainability": {
+        "reasons": [
+          {
+            "code": "QUALITY_PARKED",
+            "message": "Quality facet parked pending gate receipt (analogous to XPS AUC>0.55 unpark)",
+            "weight": 0.5
+          }
+        ],
+        "policyNotes": [
+          "Parked facets must not be treated as live signal"
+        ]
+      }
+    }
+  ]
+}

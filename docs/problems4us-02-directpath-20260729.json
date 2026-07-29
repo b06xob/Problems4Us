@@ -1,0 +1,67 @@
+{
+  "correlationId": "cos-drive-problems4us-directpath-20260729",
+  "checkedAtUtc": "2026-07-29T18:26:30Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "projectStep": "problems4us-02",
+  "replyTo": "Passport",
+  "verdict": "DIRECT_OPENAI_LIVE_OPPORTUNITY_ANALYSIS_WORKING",
+  "summary": "Correction applied: Azure OpenAI resource create is not required. OPENAI_API_KEY already exists in BoydAKV (secret openai-api-key) and on problems4us-linux App Service. AI_PROVIDER=openai already set. Production health reports aiProvider=openai. Direct api.openai.com smoke HTTP 200. Admin POST /api/ai/analyze returns provider=openai with real pain-point extraction — customer opportunity analysis path is live.",
+  "answersToCos": {
+    "openaiApiKeyExists": true,
+    "locations": [
+      "Azure Key Vault BoydAKV secret name=openai-api-key (enabled, updated 2026-07-29T12:54:48Z)",
+      "App Service problems4us-linux setting OPENAI_API_KEY (present)"
+    ],
+    "missingValueBlocker": null,
+    "appServiceWiringReady": true,
+    "appServiceWiringState": {
+      "AI_PROVIDER": "openai",
+      "OPENAI_API_KEY": "set",
+      "deployYmlOverwritesAiSettings": false
+    }
+  },
+  "evidence": {
+    "health": {
+      "url": "https://problems4us.com/api/health",
+      "status": "healthy",
+      "database": "connected",
+      "aiProvider": "openai",
+      "checkedAtUtc": "2026-07-29T18:25:33.962Z"
+    },
+    "directOpenAiSmoke": {
+      "url": "https://api.openai.com/v1/chat/completions",
+      "model": "gpt-4o-mini",
+      "httpStatus": 200,
+      "note": "Prior run earlier today returned insufficient_quota 429; quota now recovered."
+    },
+    "adminAnalyze": {
+      "url": "https://problems4us.com/api/ai/analyze",
+      "httpStatus": 200,
+      "provider": "openai",
+      "painPointCount": 3,
+      "summary": "Identified 3 pain points from the provided text, spanning usability, automation (provider=openai).",
+      "firstPainPoint": {
+        "title": "Double-Booking Issues",
+        "category": "usability",
+        "severity": 85
+      }
+    },
+    "codePath": {
+      "file": "src/lib/ai-service.ts",
+      "class": "OpenAIProvider",
+      "factory": "AI_PROVIDER=openai → new OpenAIProvider()",
+      "endpoint": "https://api.openai.com/v1",
+      "model": "gpt-4o-mini"
+    }
+  },
+  "deliverable": "Real AI opportunity analysis via OpenAIProvider is live on production for admin analyze path.",
+  "notRequired": [
+    "Azure OpenAI / Cognitive Services resource create",
+    "AZURE_OPENAI_* App Service secrets"
+  ],
+  "humanActionRequired": null,
+  "blockedOn": null,
+  "secretsHandling": "API key and ADMIN_API_KEY values intentionally omitted from this artifact and Intercom events.",
+  "priorIncorrectFraming": "Earlier materials treated Azure OpenAI resource create as the only unblock; that was incorrect — direct OpenAI path was already implemented."
+}
