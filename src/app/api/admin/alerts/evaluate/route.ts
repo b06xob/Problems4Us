@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       const detail = await getPainPointDetail(watch.PainPointId);
       if (!detail?.painPoint) continue;
 
-      let prior = watch.LastOpportunityScore;
+      const prior = watch.LastOpportunityScore;
       let next = detail.painPoint.OpportunityScore;
       if (
         typeof body.forceDelta === "number" &&
