@@ -8,6 +8,7 @@ import {
   unwatchProblemDb,
   updateWatchPreferencesDb,
   watchProblemDb,
+  type AlertFrequency,
 } from "@/lib/alerts-db";
 import { listPainPoints } from "@/lib/db-service";
 
@@ -93,10 +94,10 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    let frequency: ReturnType<typeof normalizeAlertFrequency> = undefined;
+    let frequency: AlertFrequency | undefined;
     if (body.frequency !== undefined) {
-      frequency = normalizeAlertFrequency(body.frequency);
-      if (!frequency) {
+      const parsed = normalizeAlertFrequency(body.frequency);
+      if (!parsed) {
         return NextResponse.json(
           {
             error:
@@ -105,6 +106,7 @@ export async function PATCH(request: NextRequest) {
           { status: 400 }
         );
       }
+      frequency = parsed;
     }
 
     if (
