@@ -3,9 +3,11 @@ import { requireAdminAuth } from "@/lib/admin-auth";
 import { listPainPoints } from "@/lib/db-service";
 import {
   ensureAlertTables,
+  isWatchMuted,
   listWatchedProblemsDb,
   recordScoreMoveAlertDb,
   type AlertEventRecord,
+  type WatchedProblemRecord,
 } from "@/lib/alerts-db";
 import { query } from "@/lib/db";
 
@@ -40,11 +42,16 @@ export async function POST(request: NextRequest) {
         LastTrendScore: number | null;
         CreatedAt: Date | string;
         UpdatedAt: Date | string;
+        Muted: boolean | number | null;
+        AlertFrequency: string | null;
+        MutedUntil: Date | string | null;
       }>(
         body.painPointId
-          ? `SELECT WatchId, UserId, PainPointId, LastOpportunityScore, LastTrendScore, CreatedAt, UpdatedAt
+          ? `SELECT WatchId, UserId, PainPointId, LastOpportunityScore, LastTrendScore,
+                    CreatedAt, UpdatedAt, Muted, AlertFrequency, MutedUntil
              FROM WatchedProblems WHERE PainPointId = @painPointId`
-          : `SELECT WatchId, UserId, PainPointId, LastOpportunityScore, LastTrendScore, CreatedAt, UpdatedAt
+          : `SELECT WatchId, UserId, PainPointId, LastOpportunityScore, LastTrendScore,
+                    CreatedAt, UpdatedAt, Muted, AlertFrequency, MutedUntil
              FROM WatchedProblems`,
         body.painPointId ? { painPointId: body.painPointId } : undefined
       );
@@ -62,6 +69,13 @@ export async function POST(request: NextRequest) {
           typeof r.UpdatedAt === "string"
             ? r.UpdatedAt
             : r.UpdatedAt.toISOString(),
+        Muted: Boolean(r.Muted) || r.AlertFrequency === "muted",
+        AlertFrequency: (r.AlertFrequency || "immediate") as WatchedProblemRecord["AlertFrequency"],
+        MutedUntil: r.MutedUntil
+          ? typeof r.MutedUntil === "string"
+            ? r.MutedUntil
+            : r.MutedUntil.toISOString()
+          : null,
       }));
     }
 
@@ -83,8 +97,13 @@ export async function POST(request: NextRequest) {
 
     const emitted: AlertEventRecord[] = [];
     let checked = 0;
+    let skippedMuted = 0;
 
     for (const watch of watches) {
+      if (isWatchMuted(watch)) {
+        skippedMuted += 1;
+        continue;
+      }
       checked += 1;
       const scores = scoreById.get(watch.PainPointId);
       if (!scores) continue;
@@ -112,6 +131,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       checked,
+      skippedMuted,
       emitted: emitted.length,
       alerts: emitted,
     });

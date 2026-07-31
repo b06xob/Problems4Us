@@ -8,6 +8,10 @@ import {
   verifyBriefShareToken,
 } from "@/lib/brief-share";
 import {
+  isBriefShareTokenRevokedDb,
+  stripShareBriefPii,
+} from "@/lib/brief-share-revoke";
+import {
   getPainPointById,
   getProductIdeasForPainPoint,
   insertConversionEventDb,
@@ -92,6 +96,15 @@ export async function loadSharedBrief(
   }
 
   try {
+    if (await isBriefShareTokenRevokedDb(token || "")) {
+      return {
+        ok: false,
+        status: 403,
+        error: "share link revoked",
+        gate: "M3.1",
+      };
+    }
+
     const raw = await getPainPointById(verified.problemId);
     if (!raw) {
       return {
@@ -103,10 +116,21 @@ export async function loadSharedBrief(
     }
 
     const painPoint = toBriefPainPoint(raw);
-    const ideas = (await getProductIdeasForPainPoint(
-      verified.problemId
-    )) as BriefIdea[];
-    const markdown = formatOpportunityBriefMarkdown(painPoint, ideas);
+    painPoint.Title = stripShareBriefPii(painPoint.Title);
+    painPoint.Summary = stripShareBriefPii(painPoint.Summary);
+    const ideas = (
+      (await getProductIdeasForPainPoint(verified.problemId)) as BriefIdea[]
+    ).map((idea) => ({
+      ...idea,
+      Name: stripShareBriefPii(idea.Name),
+      Description: stripShareBriefPii(idea.Description),
+      TargetCustomer: idea.TargetCustomer
+        ? stripShareBriefPii(idea.TargetCustomer)
+        : idea.TargetCustomer,
+    }));
+    const markdown = stripShareBriefPii(
+      formatOpportunityBriefMarkdown(painPoint, ideas)
+    );
     const scoreExplanation = explainOpportunityScore({
       FrequencyScore: painPoint.FrequencyScore,
       SeverityScore: painPoint.SeverityScore,

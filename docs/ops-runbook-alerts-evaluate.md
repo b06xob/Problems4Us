@@ -37,3 +37,24 @@ gh workflow run "Scheduled alert evaluation" --repo b06xob/Problems4Us
 ```
 
 Escalate Warning to Passport if the scheduled job fails twice in a row.
+
+## User preferences (problems4us-10c)
+
+Authenticated users manage mute/frequency on watches:
+
+```powershell
+# List watches (includes Muted, AlertFrequency, MutedUntil)
+curl.exe -s https://problems4us.com/api/me/watches -H "cookie: p4u_session=..."
+
+# Mute or set frequency
+curl.exe -s -X PATCH https://problems4us.com/api/me/watches `
+  -H "cookie: p4u_session=..." `
+  -H "content-type: application/json" `
+  -d '{"painPointId":"pp-1","frequency":"muted"}'
+
+# Remove a bad watch
+curl.exe -s -X DELETE "https://problems4us.com/api/me/watches?painPointId=pp-1" `
+  -H "cookie: p4u_session=..."
+```
+
+Evaluate skips muted watches and returns `skippedMuted` count.

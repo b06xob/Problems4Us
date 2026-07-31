@@ -72,6 +72,29 @@ describe("calculateOpportunityScore", () => {
     });
     expect(highWTP - lowWTP).toBe(30);
   });
+
+  it("clamps out-of-range and non-finite facet inputs via explain path", () => {
+    const explained = explainOpportunityScore({
+      FrequencyScore: Number.NaN,
+      SeverityScore: 150,
+      WillingnessToPayScore: -20,
+      TrendScore: Number.POSITIVE_INFINITY,
+      MarketSizeScore: 40,
+    });
+    expect(explained.facets.find((f) => f.key === "FrequencyScore")?.raw).toBe(0);
+    expect(explained.facets.find((f) => f.key === "SeverityScore")?.raw).toBe(100);
+    expect(explained.facets.find((f) => f.key === "WillingnessToPayScore")?.raw).toBe(0);
+    expect(explained.facets.find((f) => f.key === "TrendScore")?.raw).toBe(0);
+    expect(explained.total).toBe(
+      calculateOpportunityScore({
+        FrequencyScore: 0,
+        SeverityScore: 100,
+        WillingnessToPayScore: 0,
+        TrendScore: 0,
+        MarketSizeScore: 40,
+      })
+    );
+  });
 });
 
 describe("explainOpportunityScore", () => {

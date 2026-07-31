@@ -1,0 +1,22 @@
+{
+  "stepId": "problems4us-13b",
+  "alsoCloses": ["problems4us-13"],
+  "checkedAtUtc": "2026-07-31T17:53:00Z",
+  "correlationId": "cos-hourly-pulse-20260731T174502Z",
+  "verdict": "XPS Core Intercom ack already published 2026-07-29; P4U closes 13b and rollup 13",
+  "xpsCoreAck": {
+    "eventFile": "Intercom/events/inbox/20260729T195442Z__XPS__XPS-Core-Agent__TaskCompleted__cos-collapse-roadmap-months-20260729.json",
+    "agentName": "XPS Core Agent",
+    "eventType": "TaskCompleted",
+    "timestampUtc": "2026-07-29T19:54:42Z",
+    "summary": "XPS Core closed xps-core-13: validated M1.5 ranking contract fixtures + live P4U /api/ranking/discovery 1.0.0-draft ack.",
+    "explicitReference": "Passport-scorable ack for problems4us-13/13b"
+  },
+  "liveRecheck": {
+    "url": "https://problems4us.com/api/ranking/discovery?limit=1",
+    "contractVersion": "1.0.0-draft",
+    "http": 200,
+    "checkedAtUtc": "2026-07-31T17:47:39Z"
+  },
+  "smokePass": true
+}

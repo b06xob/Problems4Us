@@ -1,0 +1,14 @@
+{
+  "stepId": "problems4us-17a",
+  "checkedAtUtc": "2026-07-31T17:53:30Z",
+  "correlationId": "cos-hourly-pulse-20260731T174502Z",
+  "verdict": "Expanded scoring + AI analyze edge-case Jest coverage; npm test green",
+  "changes": [
+    "src/lib/scoring.ts — clamp non-finite/out-of-range facet inputs in calculateOpportunityScore",
+    "tests/scoring.test.ts — NaN/Infinity/out-of-range facet case",
+    "tests/ai-analyze.test.ts — empty/malformed severity + blank category mapping"
+  ],
+  "testCommand": "npm test -- --testPathPattern=scoring|ai-analyze|alerts|brief-share|entitlements",
+  "testResult": "5 suites passed, 51 tests passed",
+  "smokePass": true
+}

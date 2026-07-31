@@ -1,0 +1,22 @@
+{
+  "stepId": "problems4us-15a",
+  "alsoSupports": ["problems4us-33"],
+  "checkedAtUtc": "2026-07-31T17:48:55Z",
+  "correlationId": "cos-hourly-pulse-20260731T174502Z",
+  "verdict": "Authenticated Builder markdown brief export live for real scored opportunity pp-1",
+  "smoke": {
+    "email": "hourly-smoke-20260731T1748@problems4us.internal",
+    "grantHttp": 200,
+    "briefHttp": 200,
+    "format": "markdown",
+    "problemId": "pp-1",
+    "title": "Azure Reserved Instance Cost Surprises",
+    "markdownLen": 1557,
+    "ideaCount": 2,
+    "shareUrlPresent": true,
+    "emailInMarkdown": false,
+    "revokeHttp": 200,
+    "noSeatBriefHttp": 403
+  },
+  "smokePass": true
+}

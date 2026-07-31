@@ -1,0 +1,15 @@
+{
+  "stepId": "problems4us-25",
+  "checkedAtUtc": "2026-07-31T17:48:30Z",
+  "correlationId": "cos-hourly-pulse-20260731T174502Z",
+  "verdict": "Pilot wipe dry-run path proven; runbook documents dry-run + confirm token; paid seats untouched",
+  "dryRun": {
+    "action": "revoke_all_pilots",
+    "confirm": "REVOKE_ALL_PILOTS",
+    "http": 200,
+    "body": { "ok": true, "gate": "M2.2", "action": "revoke_all_pilots", "dryRun": true, "count": 0, "emails": [] }
+  },
+  "runbook": "docs/ops-runbook-invite-cohort.md (Wipe leftover pilot seats safely)",
+  "codePath": "decideAdminPilotRevokeAll + revokeAllActivePilotBuilderEntitlementsDb",
+  "smokePass": true
+}

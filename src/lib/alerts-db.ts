@@ -9,7 +9,40 @@ export type WatchedProblemRecord = {
   LastTrendScore: number | null;
   CreatedAt: string;
   UpdatedAt: string;
+  Muted: boolean;
+  AlertFrequency: AlertFrequency;
+  MutedUntil: string | null;
 };
+
+export type AlertFrequency = "immediate" | "daily" | "weekly" | "muted";
+
+export const ALERT_FREQUENCIES: AlertFrequency[] = [
+  "immediate",
+  "daily",
+  "weekly",
+  "muted",
+];
+
+export function normalizeAlertFrequency(
+  value: unknown
+): AlertFrequency | null {
+  if (typeof value !== "string") return null;
+  const v = value.trim().toLowerCase();
+  return (ALERT_FREQUENCIES as string[]).includes(v)
+    ? (v as AlertFrequency)
+    : null;
+}
+
+/** True when frequency is muted or MutedUntil is still in the future. */
+export function isWatchMuted(
+  watch: { Muted?: boolean; AlertFrequency?: string; MutedUntil?: string | null },
+  nowMs = Date.now()
+): boolean {
+  if (watch.Muted || watch.AlertFrequency === "muted") return true;
+  if (!watch.MutedUntil) return false;
+  const until = Date.parse(watch.MutedUntil);
+  return Number.isFinite(until) && until > nowMs;
+}
 
 export type AlertEventRecord = {
   AlertId: string;
@@ -45,6 +78,21 @@ export async function ensureAlertTables(): Promise<void> {
           CREATE INDEX IX_WatchedProblems_UserId ON dbo.WatchedProblems(UserId);
         END
       `);
+      // Preference columns for problems4us-10c (mute / frequency).
+      await execute(`
+        IF COL_LENGTH('dbo.WatchedProblems', 'Muted') IS NULL
+          ALTER TABLE dbo.WatchedProblems ADD Muted BIT NOT NULL
+            CONSTRAINT DF_WatchedProblems_Muted DEFAULT (0);
+      `);
+      await execute(`
+        IF COL_LENGTH('dbo.WatchedProblems', 'AlertFrequency') IS NULL
+          ALTER TABLE dbo.WatchedProblems ADD AlertFrequency NVARCHAR(20) NOT NULL
+            CONSTRAINT DF_WatchedProblems_AlertFrequency DEFAULT (N'immediate');
+      `);
+      await execute(`
+        IF COL_LENGTH('dbo.WatchedProblems', 'MutedUntil') IS NULL
+          ALTER TABLE dbo.WatchedProblems ADD MutedUntil DATETIME2 NULL;
+      `);
       await execute(`
         IF OBJECT_ID(N'dbo.AlertEvents', N'U') IS NULL
         BEGIN
@@ -76,36 +124,51 @@ function iso(value: Date | string): string {
   return value.toISOString();
 }
 
+type WatchRow = {
+  WatchId: string;
+  UserId: string;
+  PainPointId: string;
+  LastOpportunityScore: number | null;
+  LastTrendScore: number | null;
+  CreatedAt: Date | string;
+  UpdatedAt: Date | string;
+  Muted?: boolean | number | null;
+  AlertFrequency?: string | null;
+  MutedUntil?: Date | string | null;
+};
+
+function mapWatchRow(r: WatchRow): WatchedProblemRecord {
+  const frequency = normalizeAlertFrequency(r.AlertFrequency) || "immediate";
+  const mutedFlag = Boolean(r.Muted) || frequency === "muted";
+  return {
+    WatchId: r.WatchId,
+    UserId: r.UserId,
+    PainPointId: r.PainPointId,
+    LastOpportunityScore: r.LastOpportunityScore,
+    LastTrendScore: r.LastTrendScore,
+    CreatedAt: iso(r.CreatedAt),
+    UpdatedAt: iso(r.UpdatedAt),
+    Muted: mutedFlag,
+    AlertFrequency: frequency,
+    MutedUntil: r.MutedUntil ? iso(r.MutedUntil) : null,
+  };
+}
+
 export async function watchProblemDb(
   userId: string,
   painPointId: string,
   scores?: { opportunityScore?: number; trendScore?: number }
 ): Promise<{ record: WatchedProblemRecord; created: boolean }> {
   await ensureAlertTables();
-  const existing = await queryOne<{
-    WatchId: string;
-    UserId: string;
-    PainPointId: string;
-    LastOpportunityScore: number | null;
-    LastTrendScore: number | null;
-    CreatedAt: Date | string;
-    UpdatedAt: Date | string;
-  }>(
-    `SELECT TOP 1 WatchId, UserId, PainPointId, LastOpportunityScore, LastTrendScore, CreatedAt, UpdatedAt
+  const existing = await queryOne<WatchRow>(
+    `SELECT TOP 1 WatchId, UserId, PainPointId, LastOpportunityScore, LastTrendScore,
+            CreatedAt, UpdatedAt, Muted, AlertFrequency, MutedUntil
      FROM WatchedProblems WHERE UserId = @userId AND PainPointId = @painPointId`,
     { userId, painPointId }
   );
   if (existing) {
     return {
-      record: {
-        WatchId: existing.WatchId,
-        UserId: existing.UserId,
-        PainPointId: existing.PainPointId,
-        LastOpportunityScore: existing.LastOpportunityScore,
-        LastTrendScore: existing.LastTrendScore,
-        CreatedAt: iso(existing.CreatedAt),
-        UpdatedAt: iso(existing.UpdatedAt),
-      },
+      record: mapWatchRow(existing),
       created: false,
     };
   }
@@ -132,6 +195,9 @@ export async function watchProblemDb(
       LastTrendScore: scores?.trendScore ?? null,
       CreatedAt: new Date().toISOString(),
       UpdatedAt: new Date().toISOString(),
+      Muted: false,
+      AlertFrequency: "immediate",
+      MutedUntil: null,
     },
     created: true,
   };
@@ -153,28 +219,69 @@ export async function listWatchedProblemsDb(
   userId: string
 ): Promise<WatchedProblemRecord[]> {
   await ensureAlertTables();
-  const rows = await query<{
-    WatchId: string;
-    UserId: string;
-    PainPointId: string;
-    LastOpportunityScore: number | null;
-    LastTrendScore: number | null;
-    CreatedAt: Date | string;
-    UpdatedAt: Date | string;
-  }>(
-    `SELECT WatchId, UserId, PainPointId, LastOpportunityScore, LastTrendScore, CreatedAt, UpdatedAt
+  const rows = await query<WatchRow>(
+    `SELECT WatchId, UserId, PainPointId, LastOpportunityScore, LastTrendScore,
+            CreatedAt, UpdatedAt, Muted, AlertFrequency, MutedUntil
      FROM WatchedProblems WHERE UserId = @userId ORDER BY CreatedAt DESC`,
     { userId }
   );
-  return rows.map((r) => ({
-    WatchId: r.WatchId,
-    UserId: r.UserId,
-    PainPointId: r.PainPointId,
-    LastOpportunityScore: r.LastOpportunityScore,
-    LastTrendScore: r.LastTrendScore,
-    CreatedAt: iso(r.CreatedAt),
-    UpdatedAt: iso(r.UpdatedAt),
-  }));
+  return rows.map(mapWatchRow);
+}
+
+export async function updateWatchPreferencesDb(input: {
+  userId: string;
+  painPointId: string;
+  muted?: boolean;
+  frequency?: AlertFrequency;
+  mutedUntil?: string | null;
+}): Promise<WatchedProblemRecord | null> {
+  await ensureAlertTables();
+  const existing = await queryOne<WatchRow>(
+    `SELECT TOP 1 WatchId, UserId, PainPointId, LastOpportunityScore, LastTrendScore,
+            CreatedAt, UpdatedAt, Muted, AlertFrequency, MutedUntil
+     FROM WatchedProblems WHERE UserId = @userId AND PainPointId = @painPointId`,
+    { userId: input.userId, painPointId: input.painPointId }
+  );
+  if (!existing) return null;
+
+  const frequency =
+    input.frequency ??
+    normalizeAlertFrequency(existing.AlertFrequency) ??
+    "immediate";
+  const muted =
+    typeof input.muted === "boolean"
+      ? input.muted
+      : frequency === "muted" || Boolean(existing.Muted);
+  const mutedUntil =
+    input.mutedUntil === undefined
+      ? existing.MutedUntil
+        ? iso(existing.MutedUntil)
+        : null
+      : input.mutedUntil;
+
+  await execute(
+    `UPDATE WatchedProblems
+     SET Muted = @muted,
+         AlertFrequency = @frequency,
+         MutedUntil = @mutedUntil,
+         UpdatedAt = GETUTCDATE()
+     WHERE UserId = @userId AND PainPointId = @painPointId`,
+    {
+      userId: input.userId,
+      painPointId: input.painPointId,
+      muted: muted || frequency === "muted" ? 1 : 0,
+      frequency,
+      mutedUntil,
+    }
+  );
+
+  return mapWatchRow({
+    ...existing,
+    Muted: muted || frequency === "muted",
+    AlertFrequency: frequency,
+    MutedUntil: mutedUntil,
+    UpdatedAt: new Date().toISOString(),
+  });
 }
 
 export async function listAlertEventsDb(

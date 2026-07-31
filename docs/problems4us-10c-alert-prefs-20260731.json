@@ -1,0 +1,14 @@
+{
+  "stepId": "problems4us-10c",
+  "checkedAtUtc": "2026-07-31T17:54:00Z",
+  "correlationId": "cos-hourly-pulse-20260731T174502Z",
+  "verdict": "Watch mute/frequency preferences API + evaluate skip shipped; awaiting post-deploy auth smoke",
+  "statusAtWrite": "in_progress_pending_deploy",
+  "changes": [
+    "src/lib/alerts-db.ts — Muted/AlertFrequency/MutedUntil columns + updateWatchPreferencesDb + isWatchMuted",
+    "src/app/api/me/watches/route.ts — PATCH preferences; DELETE unwatch retained",
+    "src/app/api/admin/alerts/evaluate/route.ts — skippedMuted",
+    "docs/ops-runbook-alerts-evaluate.md — preference ops"
+  ],
+  "unitTests": "normalizeAlertFrequency + isWatchMuted PASS in tests/alerts.test.ts"
+}

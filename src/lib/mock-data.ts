@@ -1,3 +1,7 @@
+/**
+ * Local demo fixtures only — production UI/API paths must read Azure SQL via db-service.
+ * problems4us-24: no app route may import this module as live truth.
+ */
 import type {
   Source,
   PainPoint,

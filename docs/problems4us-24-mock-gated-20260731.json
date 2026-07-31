@@ -1,0 +1,12 @@
+{
+  "stepId": "problems4us-24",
+  "checkedAtUtc": "2026-07-31T17:53:00Z",
+  "correlationId": "cos-hourly-pulse-20260731T174502Z",
+  "verdict": "Production problems/ideas/dashboard APIs read Azure SQL via db-service; mock-data.ts has zero app imports",
+  "evidence": {
+    "apiProblemsSample": "GET /api/problems?limit=2 returns PainPointId pp-1 Azure Reserved Instance Cost Surprises from SQL",
+    "importScan": "rg found no from '@/lib/mock-data' in src/app or other modules",
+    "moduleGuardComment": "src/lib/mock-data.ts header states production must not import as live truth"
+  },
+  "smokePass": true
+}

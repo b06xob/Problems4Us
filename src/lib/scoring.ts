@@ -49,11 +49,15 @@ function clampScore(n: number): number {
 
 export function calculateOpportunityScore(scores: OpportunityScores): number {
   const raw =
-    scores.FrequencyScore * OPPORTUNITY_SCORE_WEIGHTS.FrequencyScore +
-    scores.SeverityScore * OPPORTUNITY_SCORE_WEIGHTS.SeverityScore +
-    scores.WillingnessToPayScore * OPPORTUNITY_SCORE_WEIGHTS.WillingnessToPayScore +
-    scores.TrendScore * OPPORTUNITY_SCORE_WEIGHTS.TrendScore +
-    scores.MarketSizeScore * OPPORTUNITY_SCORE_WEIGHTS.MarketSizeScore;
+    clampScore(Number(scores.FrequencyScore)) *
+      OPPORTUNITY_SCORE_WEIGHTS.FrequencyScore +
+    clampScore(Number(scores.SeverityScore)) *
+      OPPORTUNITY_SCORE_WEIGHTS.SeverityScore +
+    clampScore(Number(scores.WillingnessToPayScore)) *
+      OPPORTUNITY_SCORE_WEIGHTS.WillingnessToPayScore +
+    clampScore(Number(scores.TrendScore)) * OPPORTUNITY_SCORE_WEIGHTS.TrendScore +
+    clampScore(Number(scores.MarketSizeScore)) *
+      OPPORTUNITY_SCORE_WEIGHTS.MarketSizeScore;
 
   return Math.round(Math.min(100, Math.max(0, raw)));
 }
