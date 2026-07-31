@@ -12,6 +12,12 @@ import {
   filterRedditContent,
   type QualityFilterStats,
 } from './reddit-quality-filters';
+import {
+  fetchRepoIssues,
+  parseRepoTarget,
+  TARGET_GITHUB_REPOS,
+  type GitHubIssue,
+} from './github-client';
 import { getAIProvider } from './ai-service';
 import { calculateOpportunityScore } from './scoring';
 
@@ -371,4 +377,140 @@ export function getIngestionSources(): Source[] {
     IsActive: true,
     CreatedAt: new Date().toISOString(),
   }));
+}
+
+function githubIssuesToRawPosts(
+  issues: GitHubIssue[],
+  sourceId: string
+): RawPost[] {
+  return issues.map((issue) => ({
+    RawPostId: generateId('gh'),
+    SourceId: sourceId,
+    ExternalId: `github-issue-${issue.id}`,
+    Title: issue.title || '',
+    Body: issue.body || '',
+    Author: issue.user?.login || 'unknown',
+    Url: issue.html_url,
+    PublishedAt: issue.created_at,
+    CollectedAt: new Date().toISOString(),
+  }));
+}
+
+export type GitHubIngestOptions = {
+  /** owner/repo or full github.com URL */
+  repo: string;
+  sourceId?: string;
+  perPage?: number;
+  maxPages?: number;
+  state?: 'open' | 'closed' | 'all';
+  dryRun?: boolean;
+};
+
+/**
+ * Ingest GitHub Issues for a repo/org target (problems4us-11b).
+ */
+export async function ingestGitHubRepo(
+  options: GitHubIngestOptions
+): Promise<IngestionResult> {
+  const startTime = Date.now();
+  const errors: string[] = [];
+  const parsed = parseRepoTarget(options.repo);
+  if (!parsed) {
+    return {
+      source: options.repo,
+      postsCollected: 0,
+      commentsCollected: 0,
+      rawPostsCreated: 0,
+      painPointsExtracted: 0,
+      errors: [`Invalid GitHub repo target: ${options.repo}`],
+      duration: Date.now() - startTime,
+    };
+  }
+
+  const known = TARGET_GITHUB_REPOS.find(
+    (r) =>
+      r.owner.toLowerCase() === parsed.owner.toLowerCase() &&
+      r.repo.toLowerCase() === parsed.repo.toLowerCase()
+  );
+  const sourceId =
+    options.sourceId ??
+    known?.sourceId ??
+    `src-github-${parsed.owner.toLowerCase()}-${parsed.repo.toLowerCase()}`;
+
+  let issues: GitHubIssue[] = [];
+  try {
+    const fetched = await fetchRepoIssues(parsed.owner, parsed.repo, {
+      state: options.state ?? 'open',
+      perPage: options.perPage ?? 30,
+      maxPages: options.maxPages ?? 1,
+    });
+    issues = fetched.issues;
+  } catch (error) {
+    return {
+      source: `${parsed.owner}/${parsed.repo}`,
+      postsCollected: 0,
+      commentsCollected: 0,
+      rawPostsCreated: 0,
+      painPointsExtracted: 0,
+      errors: [
+        error instanceof Error ? error.message : String(error),
+      ],
+      duration: Date.now() - startTime,
+    };
+  }
+
+  const rawPosts = githubIssuesToRawPosts(issues, sourceId);
+  const { unique, dropped } = dedupeByExternalId(rawPosts);
+  const dryRun = Boolean(options.dryRun);
+  let painPoints: PainPoint[] = [];
+  const painSignalPosts = filterForPainSignals(unique);
+
+  if (!dryRun && painSignalPosts.length > 0) {
+    try {
+      painPoints = await extractPainPointsFromPosts(painSignalPosts.slice(0, 20));
+      for (const pp of painPoints) {
+        try {
+          await insertPainPoint(pp);
+        } catch {
+          // skip duplicates
+        }
+      }
+    } catch (error) {
+      errors.push(
+        `AI extraction failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  if (!dryRun) {
+    for (const post of unique) {
+      try {
+        await insertRawPost(post);
+      } catch {
+        // skip duplicates
+      }
+    }
+  }
+
+  collectedRawPosts.push(...unique);
+  extractedPainPoints.push(...painPoints);
+
+  return {
+    source: `${parsed.owner}/${parsed.repo}`,
+    postsCollected: unique.length,
+    commentsCollected: 0,
+    rawPostsCreated: dryRun ? 0 : unique.length,
+    painPointsExtracted: painPoints.length,
+    errors,
+    duration: Date.now() - startTime,
+    qualityFilter: {
+      postsIn: issues.length,
+      postsOut: unique.length,
+      commentsIn: 0,
+      commentsOut: 0,
+      droppedLowEngagement: 0,
+      droppedDenylist: 0,
+      droppedDedupe: dropped,
+    },
+  };
 }

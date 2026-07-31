@@ -1,0 +1,33 @@
+{
+  "stepId": "problems4us-12a",
+  "correlationId": "cos-manual-work-wake-20260731-1725Z",
+  "completedAtUtc": "2026-07-31T17:27:30Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "replyTo": "Passport",
+  "status": "done",
+  "delivered": {
+    "visitsProxy": "GET /api/events?summary=1&hours=168 (admin) — pricing_view + waitlist_view as visit proxies",
+    "waitlistCount": "GET /api/waitlist?countOnly=1 (admin)",
+    "conversionSubmit": "waitlist_submit / waitlist_success in same events summary"
+  },
+  "validation": {
+    "eventsSummary": {
+      "http": 200,
+      "sinceHours": 168,
+      "pricing_view": 4,
+      "waitlist_view": 34,
+      "waitlist_submit": 0,
+      "waitlist_success": 0,
+      "total": 42,
+      "atUtc": "2026-07-31T17:27:00Z"
+    },
+    "waitlistTotal": {
+      "http": 200,
+      "total": 1
+    }
+  },
+  "passportReadablePath": "Problems4US/docs/problems4us-12a-visits-waitlist-kpi-20260731.json + Intercom Progress detail",
+  "successCriteriaMet": true,
+  "note": "Visit count uses instrumented page views (pricing_view/waitlist_view), not raw CDN analytics — documented proxy per success criteria."
+}

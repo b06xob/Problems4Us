@@ -28,6 +28,25 @@ Auth: `ADMIN_API_KEY` via header `x-admin-api-key` (or `Authorization: Bearer <k
 
 Defaults (code): `minPostScore=2`, `minPostComments=1`, `minCommentScore=1`, denylist includes spam/promo phrases (`upvote if`, giveaways, crypto airdrops, etc.).
 
+## GitHub Issues ingest (problems4us-11b)
+
+| Control | Implementation |
+|---------|----------------|
+| Auth | Optional `GITHUB_TOKEN` Bearer on App Service; unauthenticated works with lower rate limit |
+| User-Agent | `Problems4Us/1.0 (Data Collection Bot)` |
+| 429/403 | Honor `Retry-After` / retry once (`github-client`) |
+| Caps | Max 10 repos/request; `perPage` ≤100; `maxPages` ≤5 |
+| Quality | Drops PRs, short titles; ExternalId dedupe `github-issue-{id}` |
+| Admin path | `GET/POST /api/ingest/github` (ADMIN_API_KEY) |
+
+```powershell
+# Dry-run default Azure/azure-cli issues
+curl.exe -s -X POST https://problems4us.com/api/ingest/github `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
+  -d '{"repo":"Azure/azure-cli","perPage":10,"dryRun":true}'
+```
+
 Set the key once per shell session:
 
 ```powershell
