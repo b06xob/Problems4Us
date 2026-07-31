@@ -35,7 +35,7 @@ function wrapLine(line: string, maxChars: number): string[] {
 export function briefMarkdownToPdfLines(markdown: string): string[] {
   const lines: string[] = [];
   for (const raw of markdown.split(/\r?\n/)) {
-    let line = raw
+    const line = raw
       .replace(/^#{1,6}\s+/, "")
       .replace(/\*\*([^*]+)\*\*/g, "$1")
       .replace(/_([^_]+)_/g, "$1")
@@ -61,7 +61,6 @@ function utf8Bytes(s: string): Uint8Array {
   if (typeof Buffer !== "undefined") {
     return Buffer.from(s, "utf8");
   }
-  // eslint-disable-next-line no-undef
   return new TextEncoder().encode(s);
 }
 
@@ -105,7 +104,7 @@ export function buildSimpleTextPdf(
   const contentIds: number[] = [];
 
   for (const pageLines of pages) {
-    let y = pageHeight - margin - fontSize;
+    const y = pageHeight - margin - fontSize;
     const contentOps: string[] = [
       "BT",
       `/F1 ${fontSize} Tf`,
