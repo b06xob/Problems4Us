@@ -1,0 +1,29 @@
+{
+  "stepId": "problems4us-11c",
+  "correlationId": "cos-manual-work-wake-20260731-1725Z",
+  "completedAtUtc": "2026-07-31T17:44:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "status": "done",
+  "delivered": {
+    "source": "Hacker News via Algolia search (forum)",
+    "client": "src/lib/hackernews-client.ts",
+    "adminApi": "GET/POST /api/ingest/hackernews",
+    "ops": "docs/ops-runbook-admin-ingest.md HN section",
+    "tos": "Public API fair use; no HTML scrape; low QPS"
+  },
+  "validation": {
+    "deploy": { "siteVersion": "v2026.07.31-1ee2591", "commit": "1ee2591", "ghRun": 30652028740 },
+    "prodDryRun": { "postsCollected": 16, "dryRun": true, "errorCount": 0 },
+    "prodLive": {
+      "query": "saas pricing frustration",
+      "postsCollected": 10,
+      "rawPostsCreated": 10,
+      "painPointsExtracted": 4,
+      "dryRun": false,
+      "errorCount": 0,
+      "atUtc": "2026-07-31T17:43:40Z"
+    }
+  },
+  "successCriteriaMet": true
+}
