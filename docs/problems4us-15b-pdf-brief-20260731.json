@@ -1,8 +1,8 @@
 {
   "stepId": "problems4us-15b",
-  "checkedAtUtc": "2026-07-31T18:55:00Z",
+  "checkedAtUtc": "2026-07-31T19:08:30Z",
   "correlationId": "cos-hourly-pulse-20260731T184503Z",
-  "verdict": "PDF opportunity brief export added for Builder-gated GET /api/builder/briefs?format=pdf",
+  "verdict": "PDF opportunity brief export live in prod for scored opportunity pp-1",
   "implementation": {
     "lib": "src/lib/opportunity-brief-pdf.ts",
     "route": "src/app/api/builder/briefs/route.ts",
@@ -13,6 +13,15 @@
     "file": "tests/opportunity-brief-pdf.test.ts",
     "result": "passed"
   },
-  "smokePass": "pending_post_deploy",
-  "note": "Post-deploy: grant pilot + GET format=pdf for pp-1; expect application/pdf and %PDF header"
+  "smoke": {
+    "siteVersion": "v2026.07.31-bc25b38",
+    "grantHttp": 200,
+    "pdfHttp": 200,
+    "contentType": "application/pdf",
+    "pdfBytes": 2484,
+    "header": "%PDF-1.4",
+    "problemId": "pp-1",
+    "ideaCount": 2
+  },
+  "smokePass": true
 }

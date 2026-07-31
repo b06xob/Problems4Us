@@ -1,24 +1,23 @@
 {
   "stepId": "problems4us-16a",
-  "checkedAtUtc": "2026-07-31T18:55:00Z",
+  "alsoSupports": ["problems4us-16b"],
+  "checkedAtUtc": "2026-07-31T19:08:30Z",
   "correlationId": "cos-hourly-pulse-20260731T184503Z",
-  "verdict": "Problem detail Score Breakdown shows frequency/severity/willingness/trend/market with canonical weights and contribution pts",
+  "verdict": "Problem detail Score Breakdown shows frequency/severity/willingness/trend/market with canonical weights, contribution pts, and XPS tooltips; detail API restored",
   "implementation": {
     "component": "src/components/problems/ScoreFacetBreakdown.tsx",
-    "page": "src/app/problems/[id]/page.tsx",
-    "weights": {
-      "FrequencyScore": 0.25,
-      "SeverityScore": 0.25,
-      "WillingnessToPayScore": 0.3,
-      "TrendScore": 0.1,
-      "MarketSizeScore": 0.1
-    }
+    "page": "src/app/problems/[id]/page.tsx"
+  },
+  "reliabilityFix": "computeTrendDirection coerces SnapshotDate (mssql Date) before localeCompare — fixed prod GET /api/problems/pp-1 500",
+  "smoke": {
+    "siteVersion": "v2026.07.31-bc25b38",
+    "detailHttp": 200,
+    "problemId": "pp-1",
+    "title": "Azure Reserved Instance Cost Surprises"
   },
   "tests": {
     "file": "tests/score-facet-ui.test.ts",
-    "result": "passed (suite with npm test 136/136)"
+    "result": "passed"
   },
-  "reliabilityFix": "getPainPointDetail hardened against optional SQL failures; cluster query uses distinct @idExclude param",
-  "smokePass": true,
-  "note": "Prod detail API was 500 before this deploy; post-deploy smoke must recheck GET /api/problems/pp-1"
+  "smokePass": true
 }
