@@ -1,0 +1,39 @@
+{
+  "stepId": "problems4us-11b",
+  "correlationId": "cos-manual-work-wake-20260731-1725Z",
+  "completedAtUtc": "2026-07-31T17:35:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "status": "done",
+  "delivered": {
+    "client": "src/lib/github-client.ts",
+    "ingest": "ingestGitHubRepo in data-ingestion.ts",
+    "adminApi": "GET/POST /api/ingest/github",
+    "ops": "docs/ops-runbook-admin-ingest.md GitHub section",
+    "tests": "tests/github-client.test.ts"
+  },
+  "validation": {
+    "deploy": {
+      "siteVersion": "v2026.07.31-c159737",
+      "ghRunFa382c9": 30651506446
+    },
+    "prodDryRun": {
+      "repo": "Azure/azure-cli",
+      "postsCollected": 1,
+      "dryRun": true,
+      "errorCount": 0
+    },
+    "prodLive": {
+      "repo": "Azure/azure-cli",
+      "perPage": 30,
+      "postsCollected": 7,
+      "rawPostsCreated": 7,
+      "painPointsExtracted": 5,
+      "dryRun": false,
+      "errorCount": 0,
+      "atUtc": "2026-07-31T17:34:45Z"
+    }
+  },
+  "tosNotes": "GitHub REST API; optional GITHUB_TOKEN; rate-limit retry; no HTML scrape",
+  "successCriteriaMet": true
+}

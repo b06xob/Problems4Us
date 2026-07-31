@@ -1,0 +1,31 @@
+{
+  "stepId": "problems4us-10b",
+  "correlationId": "cos-manual-work-wake-20260731-1725Z",
+  "completedAtUtc": "2026-07-31T17:33:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "status": "done",
+  "delivered": {
+    "workflow": ".github/workflows/scheduled-alerts-evaluate.yml",
+    "cadence": "cron 15 */6 * * * + workflow_dispatch",
+    "runbook": "docs/ops-runbook-alerts-evaluate.md",
+    "secret": "ADMIN_API_KEY set on GitHub Actions"
+  },
+  "validation": {
+    "unattendedRun": {
+      "ghRunId": 30651585049,
+      "result": "success",
+      "http": 200,
+      "body": {
+        "ok": true,
+        "checked": 1,
+        "emitted": 1,
+        "alertType": "score_change",
+        "painPointId": "pp-1"
+      },
+      "forceDelta": false,
+      "atUtc": "2026-07-31T17:32:59Z"
+    }
+  },
+  "successCriteriaMet": true
+}
