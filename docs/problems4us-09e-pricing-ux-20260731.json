@@ -1,0 +1,40 @@
+{
+  "stepId": "problems4us-09e",
+  "correlationId": "cos-manual-work-wake-20260731-1725Z",
+  "completedAtUtc": "2026-07-31T17:25:30Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "replyTo": "Passport",
+  "status": "done",
+  "delivered": {
+    "pricingClient": "src/app/pricing/PricingPageClient.tsx",
+    "behavior": {
+      "checkoutReadyFalse": "Builder CTA uses EmailSignup waitlist (Join Builder waitlist)",
+      "checkoutReadyTrue": "Builder CTA flips to BuilderCheckoutForm (Stripe)",
+      "successBanner": "checkout=success shows status banner + trackConversion checkout_return_success",
+      "cancelBanner": "checkout=cancel shows status banner + trackConversion checkout_return_cancel"
+    }
+  },
+  "validation": {
+    "prodPricingHttp": {
+      "url": "https://problems4us.com/pricing",
+      "http": 200,
+      "atUtc": "2026-07-31T17:24:45Z"
+    },
+    "prodSuccessReturnHttp": {
+      "url": "https://problems4us.com/pricing?checkout=success",
+      "http": 200
+    },
+    "prodCancelReturnHttp": {
+      "url": "https://problems4us.com/pricing?checkout=cancel",
+      "http": 200
+    },
+    "checkoutStatus": {
+      "url": "https://problems4us.com/api/checkout/status",
+      "checkoutReady": false,
+      "note": "Waitlist CTA path active until shared Stripe billing wired (09b hold)"
+    },
+    "viewport": "Layout is responsive (max-w-5xl grid md:grid-cols-2); mobile nav hamburger present on pricing shell"
+  },
+  "successCriteriaMet": true
+}

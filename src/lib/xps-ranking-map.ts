@@ -8,6 +8,9 @@ import {
   type OpportunityScores,
 } from "./scoring";
 
+/** Pinned XPS ranking/discovery contract version (problems4us-13c). */
+export const XPS_RANKING_CONTRACT_VERSION = "1.0.0-draft" as const;
+
 export type XpsFacetStatus = "live" | "parked" | "research";
 
 export type XpsFacet = {

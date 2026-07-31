@@ -12,6 +12,22 @@ Auth: `ADMIN_API_KEY` via header `x-admin-api-key` (or `Authorization: Bearer <k
 4. Without `ADMIN_API_KEY` configured, owner endpoints return **503**. Wrong key → **401**.
 5. On Windows PowerShell, always use `curl.exe` (not `curl`). Bare `curl` is an alias for `Invoke-WebRequest`; `curl -s URL` binds `-s` to `-SessionVariable` and leaves `-Uri` empty, which hangs on an interactive `Uri:` prompt.
 
+## Reddit ToS + rate-limit mitigations (problems4us-11a)
+
+| Control | Implementation |
+|---------|----------------|
+| Auth | OAuth client credentials / password grant via `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` (optional username/password). Never scrape HTML. |
+| User-Agent | `Problems4Us/1.0 (Data Collection Bot)` on all Reddit HTTP calls (`src/lib/reddit-client.ts`). |
+| 429 handling | On HTTP 429, honor `Retry-After` (default 5s) and retry once (`redditGet`). |
+| Inter-request pacing | ~1200ms between comment-thread fetches; ~2000ms between subreddits in `ingestAllSubreddits`. |
+| Request caps | API clamps `postLimit` ≤100, ≤20 subs, ≤10 search keywords (`ingest-guards`). |
+| Quality filters | Min post score/comments, keyword denylist, ExternalId dedupe (`src/lib/reddit-quality-filters.ts`) before DB/AI writes. |
+| Ops preference | Always dry-run first; avoid tight loops of live ingest against production. |
+
+**Compliance posture:** Public subreddit content only via official Reddit API. Do not increase concurrency without Passport review. Escalate Warning to Passport if repeated 429s or auth failures persist >1 hour.
+
+Defaults (code): `minPostScore=2`, `minPostComments=1`, `minCommentScore=1`, denylist includes spam/promo phrases (`upvote if`, giveaways, crypto airdrops, etc.).
+
 Set the key once per shell session:
 
 ```powershell

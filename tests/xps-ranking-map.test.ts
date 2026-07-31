@@ -5,6 +5,7 @@ import {
   mapOpportunityExplainability,
   mapOpportunityToXpsFacets,
   P4U_TO_XPS_COMPOSITE_WEIGHTS,
+  XPS_RANKING_CONTRACT_VERSION,
 } from "@/lib/xps-ranking-map";
 
 const sample = {
@@ -15,7 +16,11 @@ const sample = {
   MarketSizeScore: 40,
 };
 
-describe("xps-ranking-map", () => {
+describe("xps-ranking-map (problems4us-13c)", () => {
+  it("pins contractVersion to XPS ranking discovery draft", () => {
+    expect(XPS_RANKING_CONTRACT_VERSION).toBe("1.0.0-draft");
+  });
+
   it("maps opportunity scores into XPS facets in 0..1", () => {
     const facets = mapOpportunityToXpsFacets(sample);
     for (const key of ["relevance", "quality", "novelty", "risk", "composite"] as const) {
@@ -23,6 +28,20 @@ describe("xps-ranking-map", () => {
       expect(facets[key].value).toBeGreaterThanOrEqual(0);
       expect(facets[key].value).toBeLessThanOrEqual(1);
     }
+  });
+
+  it("fails if required facet keys are removed (breaking field guard)", () => {
+    const facets = mapOpportunityToXpsFacets(sample);
+    const keys = Object.keys(facets).sort();
+    expect(keys).toEqual(
+      ["composite", "novelty", "quality", "relevance", "risk"].sort()
+    );
+    expect(facets.relevance).toEqual(
+      expect.objectContaining({
+        status: expect.any(String),
+        value: expect.any(Number),
+      })
+    );
   });
 
   it("keeps composite weights summing to 1", () => {

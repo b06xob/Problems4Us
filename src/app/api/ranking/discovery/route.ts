@@ -4,6 +4,7 @@ import {
   mapOpportunityExplainability,
   mapOpportunityToXpsFacets,
   P4U_TO_XPS_COMPOSITE_WEIGHTS,
+  XPS_RANKING_CONTRACT_VERSION,
 } from "@/lib/xps-ranking-map";
 
 /**
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           error: "No scored problems available for ranking payload",
-          contractVersion: "1.0.0-draft",
+          contractVersion: XPS_RANKING_CONTRACT_VERSION,
         },
         { status: 404 }
       );
@@ -55,14 +56,14 @@ export async function GET(request: NextRequest) {
         explainability: {
           ...explainability,
           policyNotes: [
-            "Live P4U→XPS mapper output (contractVersion 1.0.0-draft)",
+            `Live P4U→XPS mapper output (contractVersion ${XPS_RANKING_CONTRACT_VERSION})`,
           ],
         },
       };
     });
 
     return NextResponse.json({
-      contractVersion: "1.0.0-draft",
+      contractVersion: XPS_RANKING_CONTRACT_VERSION,
       requestId,
       product: "Problems4Us",
       domain: "problems.cluster",

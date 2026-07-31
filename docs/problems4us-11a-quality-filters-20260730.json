@@ -1,0 +1,42 @@
+{
+  "stepId": "problems4us-11a",
+  "correlationId": "cos-sweep-chase-20260730T0155Z",
+  "completedAtUtc": "2026-07-30T01:43:30Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "replyTo": "Passport",
+  "status": "in_progress",
+  "whyNotIdle": "problems4us-13b NAMED BLOCKER on XPS Core Intercom ack; parallel pull to 11a per standing continuous-work order",
+  "delivered": {
+    "module": "src/lib/reddit-quality-filters.ts",
+    "wiredInto": "src/lib/data-ingestion.ts (ingestSubreddit + searchAndIngest dedupe)",
+    "tests": "tests/reddit-quality-filters.test.ts — 6/6 PASS",
+    "opsRunbook": "docs/ops-runbook-admin-ingest.md — Reddit ToS + rate-limit mitigations section",
+    "defaults": {
+      "minPostScore": 2,
+      "minPostComments": 1,
+      "minCommentScore": 1,
+      "denylist": "spam/promo phrases (upvote if, giveaways, crypto airdrops, etc.)",
+      "dedupe": "by Reddit id + RawPost ExternalId"
+    }
+  },
+  "validation": {
+    "npmTest": {
+      "command": "npm test -- --testPathPattern=reddit-quality-filters --no-coverage",
+      "result": "PASS 6 tests",
+      "atUtc": "2026-07-30T01:43:00Z"
+    },
+    "prodDryRunLiveSmoke": "PENDING deploy of filter module to problems4us-linux — unit evidence only this wake"
+  },
+  "problems4us13Status": {
+    "problems4us-13": "in_progress (rollup)",
+    "problems4us-13a": "done",
+    "problems4us-13b": "BLOCKED — XPS Core Intercom acknowledgment not found in recent XPS events; deadline 2026-08-01 18:00 ET",
+    "liveProducer": "GET https://problems4us.com/api/ranking/discovery (already shipped)"
+  },
+  "next": [
+    "Deploy quality-filter changes; dry-run then live smoke; mark 11a done",
+    "Continue 11b GitHub Issues ingest OR 17a scoring tests if deploy delayed",
+    "Close 13 only after XPS Core ack Progress/Completed referencing problems4us-13"
+  ]
+}

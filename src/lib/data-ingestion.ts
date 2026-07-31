@@ -7,6 +7,11 @@ import {
   PAIN_KEYWORDS,
   type RedditContent,
 } from './reddit-client';
+import {
+  dedupeByExternalId,
+  filterRedditContent,
+  type QualityFilterStats,
+} from './reddit-quality-filters';
 import { getAIProvider } from './ai-service';
 import { calculateOpportunityScore } from './scoring';
 
@@ -18,6 +23,7 @@ export interface IngestionResult {
   painPointsExtracted: number;
   errors: string[];
   duration: number;
+  qualityFilter?: QualityFilterStats;
 }
 
 export interface IngestionOptions {
@@ -186,8 +192,17 @@ export async function ingestSubreddit(
     };
   }
 
-  const rawPosts = redditContentToRawPosts(content, sourceId);
-  const painSignalPosts = filterForPainSignals(rawPosts);
+  const filtered = filterRedditContent(content);
+  const filteredContent: RedditContent = {
+    ...content,
+    posts: filtered.posts,
+    comments: filtered.comments,
+  };
+  const rawPosts = redditContentToRawPosts(filteredContent, sourceId);
+  const { unique: dedupedRaw, dropped: rawDedupeDropped } =
+    dedupeByExternalId(rawPosts);
+  filtered.stats.droppedDedupe += rawDedupeDropped;
+  const painSignalPosts = filterForPainSignals(dedupedRaw);
 
   const dryRun = Boolean(options.dryRun);
   let painPoints: PainPoint[] = [];
@@ -207,7 +222,7 @@ export async function ingestSubreddit(
   }
 
   if (!dryRun) {
-    for (const post of rawPosts) {
+    for (const post of dedupedRaw) {
       try {
         await insertRawPost(post);
       } catch {
@@ -216,17 +231,18 @@ export async function ingestSubreddit(
     }
   }
 
-  collectedRawPosts.push(...rawPosts);
+  collectedRawPosts.push(...dedupedRaw);
   extractedPainPoints.push(...painPoints);
 
   return {
     source: subredditName,
-    postsCollected: content.posts.length,
-    commentsCollected: content.comments.length,
-    rawPostsCreated: dryRun ? 0 : rawPosts.length,
+    postsCollected: filtered.stats.postsOut,
+    commentsCollected: filtered.stats.commentsOut,
+    rawPostsCreated: dryRun ? 0 : dedupedRaw.length,
     painPointsExtracted: painPoints.length,
     errors,
     duration: Date.now() - startTime,
+    qualityFilter: filtered.stats,
   };
 }
 
@@ -290,9 +306,7 @@ export async function searchAndIngest(
       }
     }
 
-    const unique = Array.from(
-      new Map(allPosts.map((p) => [p.ExternalId, p])).values()
-    );
+    const { unique, dropped } = dedupeByExternalId(allPosts);
 
     let painPoints: PainPoint[] = [];
     const painSignalPosts = filterForPainSignals(unique);
@@ -333,6 +347,15 @@ export async function searchAndIngest(
       painPointsExtracted: painPoints.length,
       errors,
       duration: Date.now() - startTime,
+      qualityFilter: {
+        postsIn: allPosts.length,
+        postsOut: unique.length,
+        commentsIn: 0,
+        commentsOut: 0,
+        droppedLowEngagement: 0,
+        droppedDenylist: 0,
+        droppedDedupe: dropped,
+      },
     });
   }
 
