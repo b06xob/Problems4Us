@@ -1,0 +1,23 @@
+{
+  "stepId": "problems4us-29",
+  "correlationId": "cos-manual-work-wake-20260731-1725Z",
+  "completedAtUtc": "2026-07-31T17:32:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "status": "done",
+  "delivered": {
+    "endpoint": "GET https://problems4us.com/api/version",
+    "footerBadge": "data-site-version on public pages"
+  },
+  "validation": {
+    "live": {
+      "version": "v2026.07.31-7fe4ee3",
+      "commit": "7fe4ee36e22ff0af421a355efa0ebb6cd5e70950",
+      "deployedAt": "2026-07-31T17:27:26Z",
+      "matchesPush": "7fe4ee3"
+    },
+    "health": "healthy / database connected"
+  },
+  "successCriteriaMet": true,
+  "note": "Deploy pipeline embeds NEXT_PUBLIC_APP_VERSION / GIT_COMMIT / DEPLOYED_AT; gap >48h would escalate — currently fresh."
+}
