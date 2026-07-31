@@ -1,0 +1,81 @@
+# Scheduled daily ingest → score (problems4us-11e prep)
+
+# Live POST to GitHub Issues + Hacker News admin ingest (AI extract on write).
+# Reddit is attempted and counted; missing OAuth secrets fail soft so the job
+# can still succeed on the two live sources (>=60% of attempted sources).
+
+name: Scheduled daily ingest
+
+on:
+  schedule:
+    # Daily 06:20 UTC
+    - cron: "20 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  daily-ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ingest watched sources (GitHub + HN + Reddit best-effort)
+        env:
+          ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
+          GITHUB_INGEST_URL: https://problems4us.com/api/ingest/github
+          HN_INGEST_URL: https://problems4us.com/api/ingest/hackernews
+          REDDIT_INGEST_URL: https://problems4us.com/api/ingest/reddit
+        run: |
+          set -euo pipefail
+          if [ -z "${ADMIN_API_KEY:-}" ]; then
+            echo "ADMIN_API_KEY secret missing — cannot ingest unattended"
+            exit 1
+          fi
+
+          ok=0
+          attempted=0
+          mkdir -p /tmp/p4u-ingest
+
+          attempt() {
+            local name="$1"
+            local url="$2"
+            local body="$3"
+            local soft="${4:-0}"
+            attempted=$((attempted + 1))
+            echo "=== ${name} ==="
+            CODE=$(curl -sS -o "/tmp/p4u-ingest/${name}.json" -w "%{http_code}" \
+              -X POST "$url" \
+              -H "x-admin-api-key: ${ADMIN_API_KEY}" \
+              -H "content-type: application/json" \
+              -d "$body" || true)
+            echo "HTTP ${CODE}"
+            cat "/tmp/p4u-ingest/${name}.json" || true
+            echo
+            if [ "$CODE" = "200" ]; then
+              # Treat credential-missing Reddit responses as soft failure even on 200
+              if grep -qi "credentials missing\|REDDIT_CLIENT" "/tmp/p4u-ingest/${name}.json" 2>/dev/null; then
+                echo "${name}: soft-fail (credentials missing in body)"
+                return 0
+              fi
+              ok=$((ok + 1))
+              return 0
+            fi
+            if [ "$soft" = "1" ]; then
+              echo "${name}: soft-fail HTTP ${CODE}"
+              return 0
+            fi
+            echo "${name}: hard-fail HTTP ${CODE}"
+            return 1
+          }
+
+          attempt github "$GITHUB_INGEST_URL" '{"repo":"Azure/azure-cli","perPage":10,"dryRun":false}' 0
+          attempt hackernews "$HN_INGEST_URL" '{"hitsPerPage":10,"dryRun":false}' 0
+          # Soft: Reddit OAuth may be unset (problems4us-11a blocker)
+          attempt reddit "$REDDIT_INGEST_URL" '{"mode":"fetch","subreddits":["sysadmin"],"postLimit":10,"dryRun":false}' 1 || true
+
+          echo "ok=${ok} attempted=${attempted}"
+          # Success when at least 2 of 3 sources fully succeeded (GitHub+HN),
+          # which is >=60% of watched sources while Reddit remains blocked.
+          if [ "$ok" -ge 2 ]; then
+            echo "daily ingest success rate >=60% this run"
+            exit 0
+          fi
+          echo "daily ingest failed: insufficient source successes"
+          exit 1

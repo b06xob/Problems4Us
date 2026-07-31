@@ -134,6 +134,17 @@ After a successful dry-run or live ingest, note in DailyStatus / Progress:
 - `summary.dryRun` and `summary.errorCount`
 - Correlation id of the directing CoS task
 
+## Unattended daily ingest (problems4us-11e prep)
+
+| Item | Value |
+|------|--------|
+| Scheduler | GitHub Actions `.github/workflows/scheduled-daily-ingest.yml` |
+| Cadence | `cron: 20 6 * * *` (daily 06:20 UTC) + `workflow_dispatch` |
+| Sources | GitHub Issues + Hacker News hard-required; Reddit soft-fails while OAuth secrets missing |
+| Secret | Repo secret `ADMIN_API_KEY` (same as alerts evaluate) |
+
+Escalate Warning to Passport if the scheduled job fails twice in a row, or success rate stays below 60% for 2 consecutive days after Reddit secrets are restored.
+
 ## Builder entitlement pilot (G7 bypass)
 
 While Stripe keys are unset, grant a pilot seat then verify briefs:

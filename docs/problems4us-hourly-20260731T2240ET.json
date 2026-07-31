@@ -1,0 +1,64 @@
+{
+  "correlationId": "cos-verify-mustang-clean-retest-20260731",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "atUtc": "2026-07-31T22:55:00Z",
+  "cycle": "hourly-work-1640ET",
+  "prod": {
+    "health": "healthy",
+    "database": "connected",
+    "aiProvider": "openai",
+    "checkoutReady": false,
+    "version": "v2026.07.31-eb43d8e",
+    "healthCheckedAtUtc": "2026-07-31T22:49:50Z"
+  },
+  "azureAppSettings": {
+    "redditOrStripeKeysPresent": false,
+    "queryResult": [],
+    "note": "az webapp config appsettings list filtered to REDDIT*|STRIPE* returned empty array"
+  },
+  "workThisCycle": [
+    {
+      "artifact": "docs/contracts/PROBLEMS4US_CENTRALIZED_STRIPE_WEBHOOK_CONSUMER.md",
+      "advances": ["problems4us-09b", "problems4us-09d"],
+      "closesStep": false,
+      "why": "Prep under HOLD — mirrors XPS View consumer contract; no secrets wired"
+    },
+    {
+      "artifact": ".github/workflows/scheduled-daily-ingest.yml",
+      "advances": ["problems4us-11e"],
+      "closesStep": false,
+      "why": "Unattended GitHub+HN ingest->score; Reddit soft-fail until secrets"
+    },
+    {
+      "artifact": "docs/problems4us-11d-source-tos-compliance-pack-20260731.md",
+      "advances": ["problems4us-11d"],
+      "closesStep": false,
+      "why": "Passport rollup drafted; formal close waits on 11a live smoke"
+    }
+  ],
+  "openPlan": {
+    "done": 54,
+    "blocked": ["problems4us-09", "problems4us-09b", "problems4us-11a"],
+    "notStartedAwaitingDeps": [
+      "problems4us-09d",
+      "problems4us-11",
+      "problems4us-11d",
+      "problems4us-11e",
+      "problems4us-12",
+      "problems4us-12c",
+      "problems4us-14",
+      "problems4us-15",
+      "problems4us-18",
+      "problems4us-18c",
+      "problems4us-19",
+      "problems4us-19b",
+      "problems4us-20",
+      "problems4us-32"
+    ],
+    "leafBlockers": {
+      "problems4us-09b": "Founder HOLD — no isolated Stripe webhook; shared billing.breivax.com not confirmed",
+      "problems4us-11a": "Xavier: set REDDIT_CLIENT_ID + REDDIT_CLIENT_SECRET on problems4us-linux"
+    }
+  }
+}
