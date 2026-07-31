@@ -1,7 +1,10 @@
 import { createHmac } from "crypto";
 import {
+  billingForwardNotConfiguredMessage,
   createBuilderCheckoutSession,
   extractPaidEarlyAccessFromEvent,
+  extractPaidEarlyAccessFromForwardPayload,
+  getBreivaxBillingForwardSecret,
   getStripeCheckoutConfig,
   getStripeCheckoutPublicStatus,
   getStripeWebhookSecret,
@@ -9,6 +12,7 @@ import {
   stripeCheckoutNotConfiguredMessage,
   stripeCheckoutNotReadyMessage,
   stripeWebhookNotConfiguredMessage,
+  verifyBillingForwardSecret,
   verifyStripeWebhookSignature,
 } from "@/lib/stripe-checkout";
 
@@ -282,5 +286,64 @@ describe("Stripe webhook signature + paid_early_access (G7 prep)", () => {
         data: { object: { id: "cus_1" } },
       })
     ).toBeNull();
+  });
+});
+
+describe("Billing forward consumer (G7-forward / problems4us-09d prep)", () => {
+  const original = { ...process.env };
+
+  afterEach(() => {
+    process.env = { ...original };
+  });
+
+  it("forward secret helper is null when unset", () => {
+    delete process.env.BREIVAX_BILLING_FORWARD_SECRET;
+    expect(getBreivaxBillingForwardSecret()).toBeNull();
+    expect(billingForwardNotConfiguredMessage()).toMatch(
+      /BREIVAX_BILLING_FORWARD_SECRET/
+    );
+  });
+
+  it("verifies forward secret with timing-safe compare", () => {
+    expect(verifyBillingForwardSecret("abc", "abc")).toBe(true);
+    expect(verifyBillingForwardSecret("abc", "abd")).toBe(false);
+    expect(verifyBillingForwardSecret(null, "abc")).toBe(false);
+  });
+
+  it("normalizes a valid forward paid payload", () => {
+    expect(
+      extractPaidEarlyAccessFromForwardPayload({
+        product: "Problems4Us",
+        stripeEventId: "evt_forward_1",
+        sessionId: "cs_forward_1",
+        email: "Pilot@Example.com",
+        tier: "builder",
+        paymentStatus: "paid",
+      })
+    ).toEqual({
+      ok: true,
+      paid: {
+        sessionId: "cs_forward_1",
+        email: "pilot@example.com",
+        tier: "builder",
+        paymentStatus: "paid",
+        eventId: "evt_forward_1",
+      },
+    });
+  });
+
+  it("rejects wrong product and missing stripeEventId", () => {
+    expect(
+      extractPaidEarlyAccessFromForwardPayload({
+        product: "XPS",
+        stripeEventId: "evt_1",
+        sessionId: "cs_1",
+      }).ok
+    ).toBe(false);
+    expect(
+      extractPaidEarlyAccessFromForwardPayload({
+        sessionId: "cs_1",
+      }).ok
+    ).toBe(false);
   });
 });

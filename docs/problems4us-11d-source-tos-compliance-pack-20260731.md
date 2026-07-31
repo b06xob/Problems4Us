@@ -1,10 +1,10 @@
 # Source ToS + rate-limit compliance pack (problems4us-11d)
 
-**Status:** Draft filed this cycle — **not closed** until `problems4us-11a` live Reddit smoke completes.  
-**Correlation:** `cos-verify-mustang-clean-retest-20260731`  
+**Status:** Draft filed — **not closed** until `problems4us-11a` live Reddit smoke completes.  
+**Correlation:** `cos-verify-mustang-login-20260731` (prior: `cos-verify-mustang-clean-retest-20260731`)  
 **Owner:** Problems4Us Agent (Audi)  
 **Audience:** Passport / Xavier  
-**As of (UTC):** 2026-07-31
+**As of (UTC):** 2026-07-31T22:58Z
 
 ## Purpose
 
@@ -55,4 +55,5 @@ GitHub + HN hard-required; Reddit soft-fails while OAuth secrets missing.
 - `problems4us-11a-blocked-reddit-secrets-20260731.json`
 - `problems4us-11b-github-ingest-20260731.json`
 - `problems4us-11c-hackernews-ingest-20260731.json`
+- `problems4us-11e-daily-ingest-ledger-20260731.json` (day-1 unattended GitHub+HN; Reddit soft-fail)
 - `docs/contracts/PROBLEMS4US_CENTRALIZED_STRIPE_WEBHOOK_CONSUMER.md` (billing hold — separate workstream)

@@ -324,3 +324,110 @@ export function extractPaidEarlyAccessFromEvent(
     eventId: event.id ? String(event.id) : null,
   };
 }
+
+/**
+ * Company billing forward (HOLD-safe): central verifier at
+ * billing.breivax.com can POST a normalized paid payload without setting a
+ * product-isolated STRIPE_WEBHOOK_SECRET on problems4us-linux.
+ */
+export function getBreivaxBillingForwardSecret(): string | null {
+  const secret = process.env.BREIVAX_BILLING_FORWARD_SECRET?.trim() || "";
+  return secret || null;
+}
+
+export function billingForwardNotConfiguredMessage(): string {
+  return "Billing forward is not configured. Set BREIVAX_BILLING_FORWARD_SECRET (shared company secret — not an isolated Stripe webhook).";
+}
+
+function safeEqualUtf8(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a, "utf8");
+    const bufB = Buffer.from(b, "utf8");
+    if (bufA.length === 0 || bufA.length !== bufB.length) return false;
+    return timingSafeEqual(bufA, bufB);
+  } catch {
+    return false;
+  }
+}
+
+export function verifyBillingForwardSecret(
+  provided: string | null | undefined,
+  expected: string
+): boolean {
+  if (!expected || !provided) return false;
+  return safeEqualUtf8(provided.trim(), expected);
+}
+
+export type BillingForwardPaidPayload = {
+  product?: string;
+  stripeEventId?: string;
+  sessionId?: string;
+  email?: string | null;
+  tier?: string;
+  paymentStatus?: string | null;
+};
+
+/**
+ * Normalize a central-billing forward body into PaidEarlyAccessProps.
+ * Requires product=Problems4Us (or omit) and a stable stripeEventId for idempotency.
+ */
+export function extractPaidEarlyAccessFromForwardPayload(
+  body: BillingForwardPaidPayload
+):
+  | { ok: true; paid: PaidEarlyAccessProps }
+  | { ok: false; error: string } {
+  if (!body || typeof body !== "object") {
+    return { ok: false, error: "Body must be a JSON object" };
+  }
+
+  const product =
+    typeof body.product === "string" ? body.product.trim() : "Problems4Us";
+  if (product !== "Problems4Us") {
+    return {
+      ok: false,
+      error: "product must be Problems4Us (or omitted)",
+    };
+  }
+
+  const stripeEventId =
+    typeof body.stripeEventId === "string" ? body.stripeEventId.trim() : "";
+  if (!stripeEventId) {
+    return { ok: false, error: "stripeEventId is required for idempotency" };
+  }
+
+  const sessionId =
+    typeof body.sessionId === "string" ? body.sessionId.trim() : "";
+  if (!sessionId) {
+    return { ok: false, error: "sessionId is required" };
+  }
+
+  const tierRaw =
+    typeof body.tier === "string" && body.tier.trim()
+      ? body.tier.trim()
+      : "builder";
+  if (tierRaw !== "builder") {
+    return { ok: false, error: "Only tier=builder is supported" };
+  }
+
+  const emailRaw =
+    typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  if (emailRaw && !isValidEmail(emailRaw)) {
+    return { ok: false, error: "Invalid email" };
+  }
+
+  const paymentStatus =
+    typeof body.paymentStatus === "string" && body.paymentStatus.trim()
+      ? body.paymentStatus.trim()
+      : "paid";
+
+  return {
+    ok: true,
+    paid: {
+      sessionId,
+      email: emailRaw || null,
+      tier: tierRaw,
+      paymentStatus,
+      eventId: stripeEventId,
+    },
+  };
+}

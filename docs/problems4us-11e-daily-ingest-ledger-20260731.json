@@ -1,0 +1,41 @@
+{
+  "stepId": "problems4us-11e",
+  "correlationId": "cos-verify-mustang-login-20260731",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "asOfUtc": "2026-07-31T22:58:00Z",
+  "status": "in_progress",
+  "successCriteria": "Scheduled daily job runs ingest->score for watched sources without human poke; success rate >=60% over 3 consecutive days; failure escalates Warning+ to Passport.",
+  "ledger": {
+    "consecutiveCalendarDaysNeeded": 3,
+    "consecutiveCalendarDaysPassed": 1,
+    "days": [
+      {
+        "calendarDayUtc": "2026-07-31",
+        "passed": true,
+        "ok": 2,
+        "attempted": 3,
+        "successRatePct": 66,
+        "githubRunId": "30671291320",
+        "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30671291320",
+        "trigger": "workflow_dispatch",
+        "notes": "GitHub+HN hard success; Reddit soft-fail credentials missing"
+      }
+    ]
+  },
+  "workflowEnhancementsThisCycle": [
+    "Receipt JSON written per run under /tmp/p4u-ingest/receipt.json",
+    "Artifact upload problems4us-11e-ingest-receipt (retention 30d)",
+    "GitHub ::error:: annotation on failure naming Passport Warning+ escalation"
+  ],
+  "blockers": [
+    "Needs 2 more consecutive calendar-day successes (scheduled cron 06:20 UTC)",
+    "Full three-source bar still gated by problems4us-11a Reddit OAuth secrets"
+  ],
+  "prod": {
+    "health": "healthy",
+    "database": "connected",
+    "aiProvider": "openai",
+    "version": "v2026.07.31-eb43d8e"
+  }
+}

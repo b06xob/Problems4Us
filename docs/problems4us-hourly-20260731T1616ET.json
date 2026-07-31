@@ -1,0 +1,52 @@
+{
+  "correlationId": "cos-verify-mustang-login-20260731",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "atUtc": "2026-07-31T22:58:00Z",
+  "cycle": "hourly-work-1616ET",
+  "prod": {
+    "health": "healthy",
+    "database": "connected",
+    "aiProvider": "openai",
+    "checkoutReady": false,
+    "version": "v2026.07.31-eb43d8e",
+    "healthCheckedAtUtc": "2026-07-31T22:55:04Z"
+  },
+  "workThisCycle": [
+    {
+      "artifact": "src/app/api/checkout/billing-forward/route.ts",
+      "advances": ["problems4us-09b", "problems4us-09d"],
+      "closesStep": false,
+      "why": "HOLD-safe company forward apply path; fail-closed without BREIVAX_BILLING_FORWARD_SECRET; no isolated Stripe webhook"
+    },
+    {
+      "artifact": ".github/workflows/scheduled-daily-ingest.yml",
+      "advances": ["problems4us-11e"],
+      "closesStep": false,
+      "why": "Receipt artifact + Passport ::error:: escalation on <60% failure"
+    },
+    {
+      "artifact": "docs/problems4us-11e-daily-ingest-ledger-20260731.json",
+      "advances": ["problems4us-11e"],
+      "closesStep": false,
+      "why": "Day-1 of 3 consecutive-day ledger from GH run 30671291320"
+    },
+    {
+      "artifact": "docs/problems4us-11d-source-tos-compliance-pack-20260731.md",
+      "advances": ["problems4us-11d"],
+      "closesStep": false,
+      "why": "Pack refreshed; formal close still waits on 11a Reddit smoke"
+    }
+  ],
+  "tests": {
+    "checkout-session": "22/22 pass including 4 billing-forward cases"
+  },
+  "openPlan": {
+    "blocked": ["problems4us-09", "problems4us-09b", "problems4us-11a"],
+    "inProgress": ["problems4us-11d", "problems4us-11e"],
+    "leafBlockers": {
+      "problems4us-09b": "Founder HOLD — no isolated Stripe webhook; shared billing.breivax.com not confirmed",
+      "problems4us-11a": "Xavier: set REDDIT_CLIENT_ID + REDDIT_CLIENT_SECRET on problems4us-linux"
+    }
+  }
+}

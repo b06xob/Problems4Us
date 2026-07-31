@@ -1,8 +1,9 @@
-# Scheduled daily ingest → score (problems4us-11e prep)
+# Scheduled daily ingest → score (problems4us-11e)
 
 # Live POST to GitHub Issues + Hacker News admin ingest (AI extract on write).
 # Reddit is attempted and counted; missing OAuth secrets fail soft so the job
 # can still succeed on the two live sources (>=60% of attempted sources).
+# Failure must escalate Warning+ to Passport (ops-runbook-admin-ingest.md).
 
 name: Scheduled daily ingest
 
@@ -17,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ingest watched sources (GitHub + HN + Reddit best-effort)
+        id: ingest
         env:
           ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
           GITHUB_INGEST_URL: https://problems4us.com/api/ingest/github
@@ -26,12 +28,15 @@ jobs:
           set -euo pipefail
           if [ -z "${ADMIN_API_KEY:-}" ]; then
             echo "ADMIN_API_KEY secret missing — cannot ingest unattended"
+            echo "::error::problems4us-11e: ADMIN_API_KEY missing — escalate Warning+ to Passport"
             exit 1
           fi
 
           ok=0
           attempted=0
           mkdir -p /tmp/p4u-ingest
+          RUN_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          DAY=$(date -u +%Y-%m-%d)
 
           attempt() {
             local name="$1"
@@ -52,16 +57,20 @@ jobs:
               # Treat credential-missing Reddit responses as soft failure even on 200
               if grep -qi "credentials missing\|REDDIT_CLIENT" "/tmp/p4u-ingest/${name}.json" 2>/dev/null; then
                 echo "${name}: soft-fail (credentials missing in body)"
+                echo "${name}=soft_credentials" >> /tmp/p4u-ingest/sources.env
                 return 0
               fi
               ok=$((ok + 1))
+              echo "${name}=ok" >> /tmp/p4u-ingest/sources.env
               return 0
             fi
             if [ "$soft" = "1" ]; then
               echo "${name}: soft-fail HTTP ${CODE}"
+              echo "${name}=soft_http_${CODE}" >> /tmp/p4u-ingest/sources.env
               return 0
             fi
             echo "${name}: hard-fail HTTP ${CODE}"
+            echo "${name}=hard_fail_${CODE}" >> /tmp/p4u-ingest/sources.env
             return 1
           }
 
@@ -70,12 +79,53 @@ jobs:
           # Soft: Reddit OAuth may be unset (problems4us-11a blocker)
           attempt reddit "$REDDIT_INGEST_URL" '{"mode":"fetch","subreddits":["sysadmin"],"postLimit":10,"dryRun":false}' 1 || true
 
-          echo "ok=${ok} attempted=${attempted}"
+          RATE_PCT=0
+          if [ "$attempted" -gt 0 ]; then
+            RATE_PCT=$(( ok * 100 / attempted ))
+          fi
+          if [ "$ok" -ge 2 ]; then PASSED=true; else PASSED=false; fi
+          export RUN_AT DAY RATE_PCT PASSED
+          export OK_COUNT="$ok" ATTEMPTED="$attempted"
+
+          python3 - <<'PY'
+          import json, os
+          receipt = {
+            "stepId": "problems4us-11e",
+            "runAtUtc": os.environ.get("RUN_AT", ""),
+            "calendarDayUtc": os.environ.get("DAY", ""),
+            "ok": int(os.environ.get("OK_COUNT", "0")),
+            "attempted": int(os.environ.get("ATTEMPTED", "0")),
+            "successRatePct": int(os.environ.get("RATE_PCT", "0")),
+            "thresholdPct": 60,
+            "passed": os.environ.get("PASSED", "false") == "true",
+            "githubRunId": os.environ.get("GITHUB_RUN_ID", ""),
+            "githubRunUrl": "https://github.com/%s/actions/runs/%s" % (
+              os.environ.get("GITHUB_REPOSITORY", "b06xob/Problems4Us"),
+              os.environ.get("GITHUB_RUN_ID", "0"),
+            ),
+            "note": "Reddit soft-fails while OAuth secrets missing; close needs 3 consecutive calendar days >=60%.",
+          }
+          open("/tmp/p4u-ingest/receipt.json", "w", encoding="utf-8").write(json.dumps(receipt, indent=2))
+          print(json.dumps(receipt, indent=2))
+          PY
+
+          echo "ok=${ok} attempted=${attempted} successRatePct=${RATE_PCT}"
+
           # Success when at least 2 of 3 sources fully succeeded (GitHub+HN),
           # which is >=60% of watched sources while Reddit remains blocked.
           if [ "$ok" -ge 2 ]; then
             echo "daily ingest success rate >=60% this run"
             exit 0
           fi
+          echo "::error::problems4us-11e FAILED — success below 60% (ok=${ok}/${attempted}). Escalate Warning+ to Passport per ops-runbook-admin-ingest.md."
           echo "daily ingest failed: insufficient source successes"
           exit 1
+
+      - name: Upload ingest receipt artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: problems4us-11e-ingest-receipt
+          path: /tmp/p4u-ingest/
+          if-no-files-found: warn
+          retention-days: 30

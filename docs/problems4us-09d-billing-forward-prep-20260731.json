@@ -1,0 +1,28 @@
+{
+  "stepId": "problems4us-09d",
+  "correlationId": "cos-verify-mustang-login-20260731",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "asOfUtc": "2026-07-31T22:58:00Z",
+  "status": "not_started",
+  "note": "Cannot close — depends on problems4us-09b (HOLD). Prep advanced under HOLD without wiring isolated Stripe webhook.",
+  "prepShipped": {
+    "route": "src/app/api/checkout/billing-forward/route.ts",
+    "helpers": [
+      "getBreivaxBillingForwardSecret",
+      "verifyBillingForwardSecret",
+      "extractPaidEarlyAccessFromForwardPayload",
+      "billingForwardNotConfiguredMessage"
+    ],
+    "unitTests": "tests/checkout-session.test.ts — 4 forward cases; suite 22/22 pass",
+    "contract": "docs/contracts/PROBLEMS4US_CENTRALIZED_STRIPE_WEBHOOK_CONSUMER.md",
+    "failClosed": "POST /api/checkout/billing-forward returns 503 until BREIVAX_BILLING_FORWARD_SECRET set",
+    "idempotencyPath": "stripeEventId -> insertPaidEarlyAccessEventDb + upsertPaidBuilderEntitlementDb"
+  },
+  "explicitNonGoals": [
+    "Did not set STRIPE_WEBHOOK_SECRET on problems4us-linux",
+    "Did not set BREIVAX_BILLING_FORWARD_SECRET (Founder/Passport)",
+    "Did not invent paid seats or MRR"
+  ],
+  "unblockNeeded": "Passport confirms billing.breivax.com forward delivery + company secret, OR Founder authorizes temporary standalone Stripe, OR invite-only closes Month-2 monetization"
+}

@@ -30,17 +30,20 @@ Central routing should key on `metadata.product == Problems4Us` (case-sensitive 
 | Paid extract | `extractPaidEarlyAccessFromEvent` (`checkout.session.completed`) |
 | Idempotency | `insertPaidEarlyAccessEventDb` keyed by `stripeEventId` |
 | Entitlement grant | `upsertPaidBuilderEntitlementDb` → `PlanEntitlements` |
-| HTTP entry | `POST /api/checkout/webhook` — **503** until secret present (correct under HOLD) |
+| HTTP entry (legacy Stripe) | `POST /api/checkout/webhook` — **503** until `STRIPE_WEBHOOK_SECRET` present (correct under HOLD) |
+| HTTP entry (company forward) | `POST /api/checkout/billing-forward` — **503** until `BREIVAX_BILLING_FORWARD_SECRET` present; auth via `x-breivax-billing-forward-secret` |
+| Forward payload parse | `extractPaidEarlyAccessFromForwardPayload` (requires `stripeEventId` + `sessionId`; product=`Problems4Us`) |
 
 Replay of the same `stripeEventId` must not double-grant (09d success criteria).
 
 ## Delivery options (Passport chooses one)
 
-1. **Forward** — central verifier POSTs the verified event (or a normalized paid payload) to Problems4Us `POST /api/checkout/webhook` **or** a new internal apply route that skips Stripe signature and trusts a company forward secret.
-2. **Shared company secret** — one Breivax webhook signing secret on `problems4us-linux` matching the central verifier (not a product-isolated invent).
+1. **Forward** — central verifier POSTs a normalized paid payload to Problems4Us `POST /api/checkout/billing-forward` with header `x-breivax-billing-forward-secret` matching App Service `BREIVAX_BILLING_FORWARD_SECRET`. **Implemented this cycle (HOLD-safe):** route fail-closed until company secret is set; does **not** require `STRIPE_WEBHOOK_SECRET`. Idempotent via `stripeEventId` → `insertPaidEarlyAccessEventDb` + Builder entitlement grant.
+2. **Shared company secret** — one Breivax webhook signing secret on `problems4us-linux` matching the central verifier (not a product-isolated invent) on legacy `POST /api/checkout/webhook`.
 3. **Pull** — central billing writes claim rows; Problems4Us admin/job applies Builder seats by email.
 
-Until Passport documents which option, keep `/api/checkout/webhook` fail-closed without secret.
+Until Passport documents which option and sets the matching secret, keep both routes fail-closed without secret.
+
 
 ## Near-term paid path (not blocked by this HOLD)
 
@@ -62,5 +65,7 @@ Any one of:
 
 ## Evidence this cycle
 
-- Prod health `checkoutReady=false`, `sessionConfigured=false`, `webhookConfigured=false` (2026-07-31T22:49:50Z)
-- `az webapp config appsettings list` for REDDIT/STRIPE keys on `problems4us-linux`: empty `[]` (confirmed this cycle)
+- Prod health `checkoutReady=false`, `sessionConfigured=false`, `webhookConfigured=false` (2026-07-31T22:55:04Z)
+- `az webapp config appsettings list` for REDDIT/STRIPE keys on `problems4us-linux`: empty (reconfirmed)
+- Unit tests: `tests/checkout-session.test.ts` — billing forward helpers (22/22 suite pass including 4 new forward cases)
+- Route shipped: `src/app/api/checkout/billing-forward/route.ts` (HOLD-safe; no isolated Stripe webhook secret)
