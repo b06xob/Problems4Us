@@ -1,0 +1,16 @@
+{
+  "stepId": "problems4us-17b",
+  "checkedAtUtc": "2026-07-31T18:01:30Z",
+  "correlationId": "cos-hourly-pulse-20260731T174502Z",
+  "verdict": "Critical API contract Jest suite covers admin fail-closed, auth session, checkoutReady booleans, ranking facet schema",
+  "testFile": "tests/critical-api-contracts.test.ts",
+  "testResult": "6/6 passed",
+  "covers": [
+    "admin fail-closed 503 when ADMIN_API_KEY unset",
+    "admin 401 wrong key",
+    "auth session cookie extract + unauthorized 401",
+    "checkoutReady false without Stripe secrets",
+    "XPS ranking contractVersion pin + facet keys 0..1"
+  ],
+  "smokePass": true
+}
