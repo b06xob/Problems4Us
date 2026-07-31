@@ -18,6 +18,11 @@ import {
   TARGET_GITHUB_REPOS,
   type GitHubIssue,
 } from './github-client';
+import {
+  searchHackerNews,
+  HN_DEFAULT_QUERIES,
+  type HnHit,
+} from './hackernews-client';
 import { getAIProvider } from './ai-service';
 import { calculateOpportunityScore } from './scoring';
 
@@ -509,6 +514,123 @@ export async function ingestGitHubRepo(
       commentsIn: 0,
       commentsOut: 0,
       droppedLowEngagement: 0,
+      droppedDenylist: 0,
+      droppedDedupe: dropped,
+    },
+  };
+}
+
+function hnHitsToRawPosts(hits: HnHit[], sourceId: string): RawPost[] {
+  return hits.map((hit) => {
+    const title = (hit.title || hit.story_title || "").trim();
+    const body = (hit.comment_text || hit.story_text || "").trim();
+    const created =
+      typeof hit.created_at_i === "number"
+        ? new Date(hit.created_at_i * 1000).toISOString()
+        : new Date().toISOString();
+    return {
+      RawPostId: generateId("hn"),
+      SourceId: sourceId,
+      ExternalId: `hn-${hit.objectID}`,
+      Title: title,
+      Body: body,
+      Author: hit.author || "unknown",
+      Url:
+        hit.url ||
+        `https://news.ycombinator.com/item?id=${hit.objectID}`,
+      PublishedAt: created,
+      CollectedAt: new Date().toISOString(),
+    };
+  });
+}
+
+export type HackerNewsIngestOptions = {
+  queries?: string[];
+  hitsPerPage?: number;
+  dryRun?: boolean;
+  sourceId?: string;
+};
+
+/**
+ * Ingest Hacker News stories/comments via Algolia search (problems4us-11c).
+ */
+export async function ingestHackerNews(
+  options: HackerNewsIngestOptions = {}
+): Promise<IngestionResult> {
+  const startTime = Date.now();
+  const errors: string[] = [];
+  const queries = options.queries?.length
+    ? options.queries.slice(0, 5)
+    : [...HN_DEFAULT_QUERIES];
+  const sourceId = options.sourceId ?? "src-forum-hackernews";
+  const allHits: HnHit[] = [];
+
+  for (const query of queries) {
+    try {
+      const result = await searchHackerNews(query, {
+        hitsPerPage: options.hitsPerPage ?? 15,
+      });
+      allHits.push(...result.hits);
+      await new Promise((r) => setTimeout(r, 600));
+    } catch (error) {
+      errors.push(
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
+
+  const rawPosts = hnHitsToRawPosts(allHits, sourceId);
+  const { unique, dropped } = dedupeByExternalId(rawPosts);
+  const dryRun = Boolean(options.dryRun);
+  let painPoints: PainPoint[] = [];
+  const painSignalPosts = filterForPainSignals(unique);
+
+  if (!dryRun && painSignalPosts.length > 0) {
+    try {
+      painPoints = await extractPainPointsFromPosts(
+        painSignalPosts.slice(0, 20)
+      );
+      for (const pp of painPoints) {
+        try {
+          await insertPainPoint(pp);
+        } catch {
+          // skip duplicates
+        }
+      }
+    } catch (error) {
+      errors.push(
+        `AI extraction failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  if (!dryRun) {
+    for (const post of unique) {
+      try {
+        await insertRawPost(post);
+      } catch {
+        // skip duplicates
+      }
+    }
+  }
+
+  collectedRawPosts.push(...unique);
+  extractedPainPoints.push(...painPoints);
+
+  return {
+    source: "hackernews",
+    postsCollected: unique.length,
+    commentsCollected: 0,
+    rawPostsCreated: dryRun ? 0 : unique.length,
+    painPointsExtracted: painPoints.length,
+    errors,
+    duration: Date.now() - startTime,
+    qualityFilter: {
+      postsIn: allHits.length,
+      postsOut: unique.length,
+      commentsIn: 0,
+      commentsOut: 0,
+      droppedLowEngagement: Math.max(0, allHits.length - unique.length - dropped),
       droppedDenylist: 0,
       droppedDedupe: dropped,
     },

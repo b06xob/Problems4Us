@@ -47,6 +47,23 @@ curl.exe -s -X POST https://problems4us.com/api/ingest/github `
   -d '{"repo":"Azure/azure-cli","perPage":10,"dryRun":true}'
 ```
 
+## Hacker News forums ingest (problems4us-11c)
+
+| Control | Implementation |
+|---------|----------------|
+| Auth | None (public Algolia HN API) |
+| User-Agent | `Problems4Us/1.0 (Data Collection Bot)` |
+| Quality | Min title/body length + points floor (`hackernews-client`) |
+| Caps | Max 5 queries; hitsPerPage ≤50; ~600ms between queries |
+| Admin path | `GET/POST /api/ingest/hackernews` (ADMIN_API_KEY) |
+
+```powershell
+curl.exe -s -X POST https://problems4us.com/api/ingest/hackernews `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
+  -d '{"hitsPerPage":10,"dryRun":true}'
+```
+
 Set the key once per shell session:
 
 ```powershell
