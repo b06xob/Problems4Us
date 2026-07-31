@@ -1,9 +1,10 @@
 {
   "stepId": "problems4us-11e",
-  "correlationId": "cos-verify-mustang-login-20260731",
+  "correlationId": "cos-hourly-pulse-20260731T204502Z",
+  "priorCorrelationId": "cos-verify-mustang-login-20260731",
   "host": "Audi",
   "agent": "Problems4Us Agent",
-  "asOfUtc": "2026-07-31T22:58:00Z",
+  "asOfUtc": "2026-07-31T23:05:00Z",
   "status": "in_progress",
   "successCriteria": "Scheduled daily job runs ingest->score for watched sources without human poke; success rate >=60% over 3 consecutive days; failure escalates Warning+ to Passport.",
   "ledger": {
@@ -16,27 +17,34 @@
         "ok": 2,
         "attempted": 3,
         "successRatePct": 66,
-        "githubRunId": "30671558172",
-        "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30671558172",
-        "priorSameDayRunId": "30671291320",
+        "githubRunId": "30671761815",
+        "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30671761815",
+        "sources": {
+          "github": "ok",
+          "hackernews": "ok",
+          "reddit": "soft_credentials"
+        },
+        "priorSameDayRunIds": ["30671558172", "30671291320"],
         "trigger": "workflow_dispatch",
-        "notes": "GitHub+HN hard success; Reddit soft-fail credentials missing; receipt artifact uploaded"
+        "notes": "Hourly pulse reconfirm: GitHub+HN hard success; Reddit soft-fail credentials missing; receipt artifact uploaded. Same calendar day — does not advance consecutive-day counter."
       }
     ]
   },
-  "workflowEnhancementsThisCycle": [
-    "Receipt JSON written per run under /tmp/p4u-ingest/receipt.json",
-    "Artifact upload problems4us-11e-ingest-receipt (retention 30d)",
-    "GitHub ::error:: annotation on failure naming Passport Warning+ escalation"
-  ],
+  "nextCalendarDayNeeded": "2026-08-01 (scheduled cron 06:20 UTC)",
   "blockers": [
-    "Needs 2 more consecutive calendar-day successes (scheduled cron 06:20 UTC)",
-    "Full three-source bar still gated by problems4us-11a Reddit OAuth secrets"
+    "Needs 2 more consecutive calendar-day successes after 2026-07-31",
+    "Full three-source bar still gated by problems4us-11a Reddit OAuth secrets on App Service"
   ],
+  "redditReconfirmThisCycle": {
+    "dryRunHttp": 200,
+    "error": "Reddit API credentials missing. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET.",
+    "azureAppSettings": "rg-problems4us / problems4us-linux — no REDDIT_* keys present"
+  },
   "prod": {
     "health": "healthy",
     "database": "connected",
     "aiProvider": "openai",
-    "version": "v2026.07.31-eb43d8e"
+    "version": "v2026.07.31-b190f88",
+    "checkoutReady": false
   }
 }

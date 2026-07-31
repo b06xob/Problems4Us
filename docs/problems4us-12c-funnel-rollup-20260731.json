@@ -1,0 +1,54 @@
+{
+  "stepId": "problems4us-12c",
+  "alsoAdvances": ["problems4us-12"],
+  "correlationId": "cos-hourly-pulse-20260731T204502Z",
+  "updatedAtUtc": "2026-07-31T23:05:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "replyTo": "Passport",
+  "status": "in_progress",
+  "successCriteria": "Paid seat counts join visits/activated into one Passport-readable dashboard or weekly Intercom artifact; path documented.",
+  "funnelKpis": {
+    "window": "last_168h_events_plus_live_counts",
+    "visits": {
+      "proxy": "instrumented page views via GET /api/events?summary=1&hours=168",
+      "pricing_view": 4,
+      "waitlist_view": 32,
+      "note": "Not raw CDN analytics — same proxy as problems4us-12a"
+    },
+    "waitlist": {
+      "totalRecords": 1,
+      "path": "GET /api/waitlist?countOnly=1"
+    },
+    "activated": {
+      "totalAccounts": 5,
+      "activatedAccounts": 1,
+      "rule": "saved_problems>=3 OR saved_ideas>=1",
+      "path": "GET /api/admin/activation"
+    },
+    "paidOrEntitledSeats": {
+      "activeBuilderSeats": 1,
+      "activePilotSeats": 1,
+      "stripePaidEarlyAccessEvents168h": 0,
+      "checkoutReady": false,
+      "definition": "Invite/pilot Builder seats (problems4us-09a) count as entitled/paid seats until centralized Stripe (09b) is live; Stripe paid_early_access remains 0.",
+      "path": "GET /api/checkout/entitlements?summary=1 (+ list=1 for seat detail)"
+    }
+  },
+  "passportReadablePath": "Problems4US/docs/problems4us-12c-funnel-rollup-20260731.json + Problems4US/docs/ops-runbook-funnel-kpi.md + Intercom DailyStatus",
+  "validationAtUtc": "2026-07-31T23:03:30Z",
+  "live": {
+    "health": "healthy",
+    "database": "connected",
+    "aiProvider": "openai",
+    "version": "v2026.07.31-b190f88",
+    "checkoutReady": false
+  },
+  "limitations": [
+    "Stripe checkoutReady=false — no card-paid seats yet (09b HOLD on isolated Stripe; centralized billing pending).",
+    "Visit counts are product instrumentation proxies, not CDN unique visitors.",
+    "Activation gate for Month-2 done-when still short (1 activated vs >=10 target) — see problems4us-14a."
+  ],
+  "successCriteriaMet": false,
+  "remainingToClose": "problems4us-09 rollup (Stripe live OR Founder confirms invite/pilot seats as production paid path for KPI). Artifact+ops path already Passport-readable."
+}

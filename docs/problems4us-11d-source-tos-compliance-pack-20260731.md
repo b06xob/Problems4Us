@@ -1,10 +1,10 @@
 # Source ToS + rate-limit compliance pack (problems4us-11d)
 
 **Status:** Draft filed — **not closed** until `problems4us-11a` live Reddit smoke completes.  
-**Correlation:** `cos-verify-mustang-login-20260731` (prior: `cos-verify-mustang-clean-retest-20260731`)  
+**Correlation:** `cos-hourly-pulse-20260731T204502Z` (prior: `cos-verify-mustang-login-20260731`)  
 **Owner:** Problems4Us Agent (Audi)  
 **Audience:** Passport / Xavier  
-**As of (UTC):** 2026-07-31T22:58Z
+**As of (UTC):** 2026-07-31T23:05Z
 
 ## Purpose
 
