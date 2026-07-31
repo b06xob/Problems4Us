@@ -102,20 +102,22 @@ function computeTrendDirection(
   snapshots: TrendSnapshot[]
 ): TrendDirection {
   if (snapshots.length >= 2) {
-    const sorted = [...snapshots].sort((a, b) =>
-      a.SnapshotDate.localeCompare(b.SnapshotDate)
-    );
+    const sorted = [...snapshots].sort((a, b) => {
+      const aDate = String(a.SnapshotDate ?? "");
+      const bDate = String(b.SnapshotDate ?? "");
+      return aDate.localeCompare(bDate);
+    });
     const first = sorted[0].OpportunityScore ?? 0;
     const last = sorted[sorted.length - 1].OpportunityScore ?? 0;
     const diff = last - first;
-    if (diff >= 5) return 'up';
-    if (diff <= -5) return 'down';
-    return 'stable';
+    if (diff >= 5) return "up";
+    if (diff <= -5) return "down";
+    return "stable";
   }
 
-  if (trendScore >= 65) return 'up';
-  if (trendScore <= 45) return 'down';
-  return 'stable';
+  if (trendScore >= 65) return "up";
+  if (trendScore <= 45) return "down";
+  return "stable";
 }
 
 async function getPrimarySourceTypes(): Promise<Map<string, SourceType>> {
@@ -433,14 +435,23 @@ ${painPoint.Summary}`;
         "Test pricing with early adopters from community forums",
       ];
 
-  const trendHistory = snapshots.map((s) => ({
-    month: new Date(s.SnapshotDate).toLocaleDateString("en-US", {
-      month: "short",
-      year: "numeric",
-    }),
-    mentions: s.MentionCount ?? 0,
-    severity: Math.round(s.AverageSeverity ?? 0),
-  }));
+  const trendHistory = snapshots.map((s) => {
+    const raw = s.SnapshotDate as unknown;
+    const asDate =
+      raw instanceof Date
+        ? raw
+        : new Date(typeof raw === "string" || typeof raw === "number" ? raw : NaN);
+    return {
+      month: Number.isFinite(asDate.getTime())
+        ? asDate.toLocaleDateString("en-US", {
+            month: "short",
+            year: "numeric",
+          })
+        : "",
+      mentions: s.MentionCount ?? 0,
+      severity: Math.round(s.AverageSeverity ?? 0),
+    };
+  });
 
   return {
     painPoint: painPointWithMeta,

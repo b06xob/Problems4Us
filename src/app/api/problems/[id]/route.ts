@@ -30,8 +30,10 @@ export async function GET(
     });
   } catch (error) {
     console.error("Failed to fetch pain point detail:", error);
+    const message =
+      error instanceof Error ? error.message.slice(0, 240) : "unknown";
     return NextResponse.json(
-      { error: "Failed to fetch pain point detail" },
+      { error: "Failed to fetch pain point detail", detail: message },
       { status: 500 }
     );
   }
