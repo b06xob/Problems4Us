@@ -1,0 +1,29 @@
+{
+  "stepId": "problems4us-32",
+  "correlationId": "cos-hourly-pulse-20260731T224503Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "asOfUtc": "2026-07-31T23:22:00Z",
+  "status": "in_progress",
+  "successCriteria": "Ingest path drops or quarantine clearly toxic/PII-heavy posts before public problem list; policy note filed; sample evidence.",
+  "implemented": {
+    "module": "src/lib/ingest-moderation.ts",
+    "wiredIn": "src/lib/data-ingestion.ts (reddit, github, hackernews)",
+    "policyNote": "docs/problems4us-32-content-moderation-20260731.md",
+    "unitTests": "tests/ingest-moderation.test.ts"
+  },
+  "validation": {
+    "localUnitTests": {
+      "command": "npm test -- --testPathPattern=ingest-moderation",
+      "passed": 4,
+      "failed": 0,
+      "atUtc": "2026-07-31T23:20:00Z"
+    },
+    "prodLive": false,
+    "prodVersionAtCheck": "v2026.07.31-e562671",
+    "note": "Moderation not yet on production until this commit deploys."
+  },
+  "dependsOnNote": "Plan lists depends_on problems4us-11a; GitHub/HN paths advanced without Reddit secrets. Reddit live path still blocked on 11a OAuth.",
+  "successCriteriaMet": false,
+  "remainingToClose": "Deploy to problems4us-linux + optional live ingest moderation field smoke"
+}

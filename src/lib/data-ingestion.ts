@@ -13,6 +13,10 @@ import {
   type QualityFilterStats,
 } from './reddit-quality-filters';
 import {
+  moderateRawPosts,
+  type ModerationStats,
+} from './ingest-moderation';
+import {
   fetchRepoIssues,
   parseRepoTarget,
   TARGET_GITHUB_REPOS,
@@ -35,6 +39,7 @@ export interface IngestionResult {
   errors: string[];
   duration: number;
   qualityFilter?: QualityFilterStats;
+  moderation?: ModerationStats;
 }
 
 export interface IngestionOptions {
@@ -213,7 +218,10 @@ export async function ingestSubreddit(
   const { unique: dedupedRaw, dropped: rawDedupeDropped } =
     dedupeByExternalId(rawPosts);
   filtered.stats.droppedDedupe += rawDedupeDropped;
-  const painSignalPosts = filterForPainSignals(dedupedRaw);
+  const moderated = moderateRawPosts(dedupedRaw);
+  filtered.stats.droppedDenylist +=
+    moderated.stats.droppedToxic + moderated.stats.droppedPii;
+  const painSignalPosts = filterForPainSignals(moderated.kept);
 
   const dryRun = Boolean(options.dryRun);
   let painPoints: PainPoint[] = [];
@@ -233,7 +241,7 @@ export async function ingestSubreddit(
   }
 
   if (!dryRun) {
-    for (const post of dedupedRaw) {
+    for (const post of moderated.kept) {
       try {
         await insertRawPost(post);
       } catch {
@@ -242,18 +250,19 @@ export async function ingestSubreddit(
     }
   }
 
-  collectedRawPosts.push(...dedupedRaw);
+  collectedRawPosts.push(...moderated.kept);
   extractedPainPoints.push(...painPoints);
 
   return {
     source: subredditName,
     postsCollected: filtered.stats.postsOut,
     commentsCollected: filtered.stats.commentsOut,
-    rawPostsCreated: dryRun ? 0 : dedupedRaw.length,
+    rawPostsCreated: dryRun ? 0 : moderated.kept.length,
     painPointsExtracted: painPoints.length,
     errors,
     duration: Date.now() - startTime,
     qualityFilter: filtered.stats,
+    moderation: moderated.stats,
   };
 }
 
@@ -318,9 +327,10 @@ export async function searchAndIngest(
     }
 
     const { unique, dropped } = dedupeByExternalId(allPosts);
+    const moderated = moderateRawPosts(unique);
 
     let painPoints: PainPoint[] = [];
-    const painSignalPosts = filterForPainSignals(unique);
+    const painSignalPosts = filterForPainSignals(moderated.kept);
     // Honor dryRun: collect/search only — no AI extraction or DB pain-point writes.
     if (!dryRun && painSignalPosts.length > 0) {
       try {
@@ -338,7 +348,7 @@ export async function searchAndIngest(
     }
 
     if (!dryRun) {
-      for (const post of unique) {
+      for (const post of moderated.kept) {
         try {
           await insertRawPost(post);
         } catch {
@@ -347,26 +357,28 @@ export async function searchAndIngest(
       }
     }
 
-    collectedRawPosts.push(...unique);
+    collectedRawPosts.push(...moderated.kept);
     extractedPainPoints.push(...painPoints);
 
     results.push({
       source: subreddit,
-      postsCollected: unique.length,
+      postsCollected: moderated.kept.length,
       commentsCollected: 0,
-      rawPostsCreated: dryRun ? 0 : unique.length,
+      rawPostsCreated: dryRun ? 0 : moderated.kept.length,
       painPointsExtracted: painPoints.length,
       errors,
       duration: Date.now() - startTime,
       qualityFilter: {
         postsIn: allPosts.length,
-        postsOut: unique.length,
+        postsOut: moderated.kept.length,
         commentsIn: 0,
         commentsOut: 0,
         droppedLowEngagement: 0,
-        droppedDenylist: 0,
+        droppedDenylist:
+          moderated.stats.droppedToxic + moderated.stats.droppedPii,
         droppedDedupe: dropped,
       },
+      moderation: moderated.stats,
     });
   }
 
@@ -466,9 +478,10 @@ export async function ingestGitHubRepo(
 
   const rawPosts = githubIssuesToRawPosts(issues, sourceId);
   const { unique, dropped } = dedupeByExternalId(rawPosts);
+  const moderated = moderateRawPosts(unique);
   const dryRun = Boolean(options.dryRun);
   let painPoints: PainPoint[] = [];
-  const painSignalPosts = filterForPainSignals(unique);
+  const painSignalPosts = filterForPainSignals(moderated.kept);
 
   if (!dryRun && painSignalPosts.length > 0) {
     try {
@@ -488,7 +501,7 @@ export async function ingestGitHubRepo(
   }
 
   if (!dryRun) {
-    for (const post of unique) {
+    for (const post of moderated.kept) {
       try {
         await insertRawPost(post);
       } catch {
@@ -497,26 +510,28 @@ export async function ingestGitHubRepo(
     }
   }
 
-  collectedRawPosts.push(...unique);
+  collectedRawPosts.push(...moderated.kept);
   extractedPainPoints.push(...painPoints);
 
   return {
     source: `${parsed.owner}/${parsed.repo}`,
-    postsCollected: unique.length,
+    postsCollected: moderated.kept.length,
     commentsCollected: 0,
-    rawPostsCreated: dryRun ? 0 : unique.length,
+    rawPostsCreated: dryRun ? 0 : moderated.kept.length,
     painPointsExtracted: painPoints.length,
     errors,
     duration: Date.now() - startTime,
     qualityFilter: {
       postsIn: issues.length,
-      postsOut: unique.length,
+      postsOut: moderated.kept.length,
       commentsIn: 0,
       commentsOut: 0,
       droppedLowEngagement: 0,
-      droppedDenylist: 0,
+      droppedDenylist:
+        moderated.stats.droppedToxic + moderated.stats.droppedPii,
       droppedDedupe: dropped,
     },
+    moderation: moderated.stats,
   };
 }
 
@@ -581,9 +596,10 @@ export async function ingestHackerNews(
 
   const rawPosts = hnHitsToRawPosts(allHits, sourceId);
   const { unique, dropped } = dedupeByExternalId(rawPosts);
+  const moderated = moderateRawPosts(unique);
   const dryRun = Boolean(options.dryRun);
   let painPoints: PainPoint[] = [];
-  const painSignalPosts = filterForPainSignals(unique);
+  const painSignalPosts = filterForPainSignals(moderated.kept);
 
   if (!dryRun && painSignalPosts.length > 0) {
     try {
@@ -605,7 +621,7 @@ export async function ingestHackerNews(
   }
 
   if (!dryRun) {
-    for (const post of unique) {
+    for (const post of moderated.kept) {
       try {
         await insertRawPost(post);
       } catch {
@@ -614,25 +630,30 @@ export async function ingestHackerNews(
     }
   }
 
-  collectedRawPosts.push(...unique);
+  collectedRawPosts.push(...moderated.kept);
   extractedPainPoints.push(...painPoints);
 
   return {
     source: "hackernews",
-    postsCollected: unique.length,
+    postsCollected: moderated.kept.length,
     commentsCollected: 0,
-    rawPostsCreated: dryRun ? 0 : unique.length,
+    rawPostsCreated: dryRun ? 0 : moderated.kept.length,
     painPointsExtracted: painPoints.length,
     errors,
     duration: Date.now() - startTime,
     qualityFilter: {
       postsIn: allHits.length,
-      postsOut: unique.length,
+      postsOut: moderated.kept.length,
       commentsIn: 0,
       commentsOut: 0,
-      droppedLowEngagement: Math.max(0, allHits.length - unique.length - dropped),
-      droppedDenylist: 0,
+      droppedLowEngagement: Math.max(
+        0,
+        allHits.length - unique.length - dropped
+      ),
+      droppedDenylist:
+        moderated.stats.droppedToxic + moderated.stats.droppedPii,
       droppedDedupe: dropped,
     },
+    moderation: moderated.stats,
   };
 }

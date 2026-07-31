@@ -1,10 +1,10 @@
 {
   "stepId": "problems4us-11e",
-  "correlationId": "cos-hourly-pulse-20260731T204502Z",
-  "priorCorrelationId": "cos-verify-mustang-login-20260731",
+  "correlationId": "cos-hourly-pulse-20260731T224503Z",
+  "priorCorrelationId": "cos-hourly-pulse-20260731T194503Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
-  "asOfUtc": "2026-07-31T23:05:00Z",
+  "asOfUtc": "2026-07-31T23:22:30Z",
   "status": "in_progress",
   "successCriteria": "Scheduled daily job runs ingest->score for watched sources without human poke; success rate >=60% over 3 consecutive days; failure escalates Warning+ to Passport.",
   "ledger": {
@@ -26,25 +26,43 @@
         },
         "priorSameDayRunIds": ["30671558172", "30671291320"],
         "trigger": "workflow_dispatch",
-        "notes": "Hourly pulse reconfirm: GitHub+HN hard success; Reddit soft-fail credentials missing; receipt artifact uploaded. Same calendar day — does not advance consecutive-day counter."
+        "notes": "Day-1 locked from prior pulse. Same calendar day — consecutive-day counter does not advance on reconfirm."
       }
     ]
+  },
+  "sameDayDryRunThisCycle": {
+    "atUtc": "2026-07-31T23:21:40Z",
+    "hackernews": {
+      "dryRun": true,
+      "success": true,
+      "postsCollected": 16,
+      "painPointsExtracted": 0
+    },
+    "github": {
+      "dryRun": true,
+      "success": true,
+      "repo": "Azure/azure-cli",
+      "postsCollected": 1,
+      "painPointsExtracted": 0
+    },
+    "reddit": {
+      "dryRun": true,
+      "success": false,
+      "error": "Reddit API credentials missing. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET."
+    },
+    "note": "Dry-runs keep pipeline warm; do not replace scheduled consecutive-day ledger."
   },
   "nextCalendarDayNeeded": "2026-08-01 (scheduled cron 06:20 UTC)",
   "blockers": [
     "Needs 2 more consecutive calendar-day successes after 2026-07-31",
     "Full three-source bar still gated by problems4us-11a Reddit OAuth secrets on App Service"
   ],
-  "redditReconfirmThisCycle": {
-    "dryRunHttp": 200,
-    "error": "Reddit API credentials missing. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET.",
-    "azureAppSettings": "rg-problems4us / problems4us-linux — no REDDIT_* keys present"
-  },
   "prod": {
     "health": "healthy",
     "database": "connected",
     "aiProvider": "openai",
-    "version": "v2026.07.31-b190f88",
-    "checkoutReady": false
+    "version": "v2026.07.31-e562671",
+    "checkoutReady": false,
+    "checkedAtUtc": "2026-07-31T23:21:20Z"
   }
 }

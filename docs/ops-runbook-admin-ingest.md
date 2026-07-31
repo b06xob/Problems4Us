@@ -22,6 +22,7 @@ Auth: `ADMIN_API_KEY` via header `x-admin-api-key` (or `Authorization: Bearer <k
 | Inter-request pacing | ~1200ms between comment-thread fetches; ~2000ms between subreddits in `ingestAllSubreddits`. |
 | Request caps | API clamps `postLimit` ≤100, ≤20 subs, ≤10 search keywords (`ingest-guards`). |
 | Quality filters | Min post score/comments, keyword denylist, ExternalId dedupe (`src/lib/reddit-quality-filters.ts`) before DB/AI writes. |
+| Content moderation (problems4us-32) | After quality/dedupe, drop toxic phrases + PII-heavy posts (`src/lib/ingest-moderation.ts`) before DB/AI. Applies to Reddit, GitHub, and HN. |
 | Ops preference | Always dry-run first; avoid tight loops of live ingest against production. |
 
 **Compliance posture:** Public subreddit content only via official Reddit API. Do not increase concurrency without Passport review. Escalate Warning to Passport if repeated 429s or auth failures persist >1 hour.

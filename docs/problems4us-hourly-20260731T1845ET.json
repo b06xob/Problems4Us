@@ -1,0 +1,61 @@
+{
+  "correlationId": "cos-hourly-pulse-20260731T224503Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "atUtc": "2026-07-31T23:23:00Z",
+  "cycle": "hourly-work-1845ET",
+  "prod": {
+    "health": "healthy",
+    "database": "connected",
+    "aiProvider": "openai",
+    "checkoutReady": false,
+    "version": "v2026.07.31-e562671",
+    "healthCheckedAtUtc": "2026-07-31T23:21:20Z"
+  },
+  "azureAppSettings": {
+    "redditKeysPresent": false,
+    "stripeKeysPresent": false,
+    "note": "az webapp config appsettings list filtered to REDDIT_* / STRIPE_* returned empty"
+  },
+  "workThisCycle": [
+    {
+      "what": "Closed source ToS/rate-limit compliance pack (docs success criteria)",
+      "advances": ["problems4us-11d"],
+      "closesStep": true,
+      "evidence": "docs/problems4us-11d-source-tos-compliance-pack-20260731.md; Intercom/Docs/project-plans/problems4us-plan.json"
+    },
+    {
+      "what": "Built toxic/PII ingest filter before score publish (unit-tested)",
+      "advances": ["problems4us-32"],
+      "closesStep": false,
+      "evidence": "docs/problems4us-32-content-moderation-20260731.json; src/lib/ingest-moderation.ts; tests/ingest-moderation.test.ts"
+    },
+    {
+      "what": "Reconfirmed Reddit OAuth still missing; dry-run fails credentials",
+      "advances": ["problems4us-11a"],
+      "closesStep": false,
+      "evidence": "docs/problems4us-11a-blocked-reddit-secrets-20260731.json"
+    },
+    {
+      "what": "Refreshed visits→activated→invite-seat funnel KPI rollup",
+      "advances": ["problems4us-12c", "problems4us-12"],
+      "closesStep": false,
+      "evidence": "docs/problems4us-12c-funnel-rollup-20260731.json"
+    },
+    {
+      "what": "11e day-1 ledger still 1/3 consecutive days — next calendar day 2026-08-01 cron",
+      "advances": ["problems4us-11e"],
+      "closesStep": false,
+      "evidence": "docs/problems4us-11e-daily-ingest-ledger-20260731.json"
+    }
+  ],
+  "openPlan": {
+    "blocked": ["problems4us-09", "problems4us-09b", "problems4us-11a"],
+    "inProgress": ["problems4us-11e", "problems4us-12c", "problems4us-32"],
+    "leafBlockers": {
+      "problems4us-09b": "Founder HOLD — no isolated Stripe; centralized billing.breivax.com not confirmed; OR approve invite cohort as production paid path",
+      "problems4us-11a": "Xavier: set REDDIT_CLIENT_ID + REDDIT_CLIENT_SECRET on problems4us-linux",
+      "problems4us-11e": "Calendar wait — need 2026-08-01 and 2026-08-02 scheduled successes"
+    }
+  }
+}

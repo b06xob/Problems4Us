@@ -1,10 +1,10 @@
 # Source ToS + rate-limit compliance pack (problems4us-11d)
 
-**Status:** Draft filed — **not closed** until `problems4us-11a` live Reddit smoke completes.  
-**Correlation:** `cos-hourly-pulse-20260731T204502Z` (prior: `cos-verify-mustang-login-20260731`)  
+**Status:** **CLOSED** for docs success criteria (Passport-readable pack). Reddit *live* smoke stays under `problems4us-11a`.  
+**Correlation:** `cos-hourly-pulse-20260731T224503Z` (prior: `cos-hourly-pulse-20260731T194503Z`)  
 **Owner:** Problems4Us Agent (Audi)  
 **Audience:** Passport / Xavier  
-**As of (UTC):** 2026-07-31T23:05Z
+**As of (UTC):** 2026-07-31T23:22Z
 
 ## Purpose
 
@@ -16,9 +16,9 @@ Canonical ops detail remains in `ops-runbook-admin-ingest.md`. This pack is the 
 
 | Source | Auth | ToS / robots posture | Rate-limit controls | Live status |
 |---|---|---|---|---|
-| Reddit | OAuth `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` (optional user/pass) | Public subreddit content via official API only; User-Agent `Problems4Us/1.0 (Data Collection Bot)`; no HTML scrape | 429 + `Retry-After` once; ~1200ms between comment threads; ~2000ms between subs; API caps `postLimit`≤100, ≤20 subs | **Blocked** — App Service secrets unset (`az` returned no REDDIT_* keys this cycle). Quality filters deployed. |
-| GitHub Issues | Optional `GITHUB_TOKEN`; unauthenticated allowed at lower quota | Official Issues API; drops PRs; User-Agent as above | 429/403 honor `Retry-After`; max 10 repos/request; `perPage`≤100; `maxPages`≤5 | **Live** — prod smoke filed in `problems4us-11b-github-ingest-20260731.json` |
-| Hacker News | None (public Algolia HN Search API) | Public forum search; respect provider ToS; no scrape of news.ycombinator.com HTML | ~600ms between queries; max 5 queries; hitsPerPage≤50 | **Live** — prod smoke filed in `problems4us-11c-hackernews-ingest-20260731.json` |
+| Reddit | OAuth `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` (optional user/pass) | Public subreddit content via official API only; User-Agent `Problems4Us/1.0 (Data Collection Bot)`; no HTML scrape | 429 + `Retry-After` once; ~1200ms between comment threads; ~2000ms between subs; API caps `postLimit`≤100, ≤20 subs | **Blocked** — App Service secrets unset (`az` returned no REDDIT_* keys this cycle). Quality filters deployed. Dry-run reconfirmed credentials missing. |
+| GitHub Issues | Optional `GITHUB_TOKEN`; unauthenticated allowed at lower quota | Official Issues API; drops PRs; User-Agent as above | 429/403 honor `Retry-After`; max 10 repos/request; `perPage`≤100; `maxPages`≤5 | **Live** — this cycle: Azure/azure-cli posts=7 painPoints=5 stored. Prior smoke in `problems4us-11b-github-ingest-20260731.json` |
+| Hacker News | None (public Algolia HN Search API) | Public forum search; respect provider ToS; no scrape of news.ycombinator.com HTML | ~600ms between queries; max 5 queries; hitsPerPage≤50 | **Live** — this cycle: posts=30 painPoints extracted=15 stored=22. Prior smoke in `problems4us-11c-hackernews-ingest-20260731.json` |
 
 ## Quality / safety before score publish
 
@@ -46,14 +46,15 @@ GitHub + HN hard-required; Reddit soft-fails while OAuth secrets missing.
 
 ## Close criteria for 11d
 
-- This pack accepted as complete **and**
-- `problems4us-11a` dry-run + live smoke after Reddit secrets restore
+- [x] Single Passport-readable artifact covers robots/ToS, auth, rate limits, escalation for Reddit + GitHub + HN
+- Reddit dry-run + live smoke after secrets restore remains **`problems4us-11a`** (not a second gate on this pack)
 
 ## Evidence pointers
 
 - `ops-runbook-admin-ingest.md` (Reddit / GitHub / HN sections)
-- `problems4us-11a-blocked-reddit-secrets-20260731.json`
+- `problems4us-11a-blocked-reddit-secrets-20260731.json` (reconfirmed 2026-07-31T23:20Z — credentials missing; az REDDIT_* empty)
 - `problems4us-11b-github-ingest-20260731.json`
 - `problems4us-11c-hackernews-ingest-20260731.json`
 - `problems4us-11e-daily-ingest-ledger-20260731.json` (day-1 unattended GitHub+HN; Reddit soft-fail)
+- `problems4us-32-content-moderation-20260731.md` (downstream toxic/PII filter)
 - `docs/contracts/PROBLEMS4US_CENTRALIZED_STRIPE_WEBHOOK_CONSUMER.md` (billing hold — separate workstream)
