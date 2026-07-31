@@ -16,10 +16,11 @@
         "ok": 2,
         "attempted": 3,
         "successRatePct": 66,
-        "githubRunId": "30671291320",
-        "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30671291320",
+        "githubRunId": "30671558172",
+        "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30671558172",
+        "priorSameDayRunId": "30671291320",
         "trigger": "workflow_dispatch",
-        "notes": "GitHub+HN hard success; Reddit soft-fail credentials missing"
+        "notes": "GitHub+HN hard success; Reddit soft-fail credentials missing; receipt artifact uploaded"
       }
     ]
   },
