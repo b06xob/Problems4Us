@@ -130,6 +130,48 @@ jobs:
           echo "daily ingest failed: insufficient source successes"
           exit 1
 
+      - name: Post Passport-readable ledger receipt
+        if: always()
+        env:
+          ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ADMIN_API_KEY:-}" ]; then
+            echo "::warning::ADMIN_API_KEY missing — cannot POST ledger receipt"
+            exit 0
+          fi
+          if [ ! -f /tmp/p4u-ingest/receipt.json ]; then
+            echo "No receipt.json — skip ledger POST"
+            exit 0
+          fi
+          # Enrich with GITHUB_RUN_* then POST to prod admin ledger (problems4us-11e).
+          python3 - <<'PY'
+          import json, os, urllib.request
+          receipt = json.load(open("/tmp/p4u-ingest/receipt.json", encoding="utf-8"))
+          receipt["githubRunId"] = os.environ.get("GITHUB_RUN_ID", receipt.get("githubRunId", ""))
+          receipt["githubRunUrl"] = "https://github.com/%s/actions/runs/%s" % (
+              os.environ.get("GITHUB_REPOSITORY", "b06xob/Problems4Us"),
+              os.environ.get("GITHUB_RUN_ID", "0"),
+          )
+          body = json.dumps(receipt).encode("utf-8")
+          req = urllib.request.Request(
+              "https://problems4us.com/api/admin/ingest-daily",
+              data=body,
+              method="POST",
+              headers={
+                  "content-type": "application/json",
+                  "x-admin-api-key": os.environ["ADMIN_API_KEY"],
+              },
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=60) as resp:
+                  print(resp.status, resp.read().decode("utf-8", errors="replace")[:2000])
+          except Exception as exc:
+              # Ledger post must not hide ingest outcome; warn loudly for Audi/Passport.
+              print("::warning::problems4us-11e ledger POST failed:", exc)
+              raise SystemExit(0)
+          PY
+
       - name: Upload ingest receipt artifact
         if: always()
         uses: actions/upload-artifact@v4

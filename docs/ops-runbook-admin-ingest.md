@@ -135,7 +135,7 @@ After a successful dry-run or live ingest, note in DailyStatus / Progress:
 - `summary.dryRun` and `summary.errorCount`
 - Correlation id of the directing CoS task
 
-## Unattended daily ingest (problems4us-11e prep)
+## Unattended daily ingest (problems4us-11e)
 
 | Item | Value |
 |------|--------|
@@ -143,8 +143,15 @@ After a successful dry-run or live ingest, note in DailyStatus / Progress:
 | Cadence | `cron: 20 6 * * *` (daily 06:20 UTC) + `workflow_dispatch` |
 | Sources | GitHub Issues + Hacker News hard-required; Reddit soft-fails while OAuth secrets missing |
 | Secret | Repo secret `ADMIN_API_KEY` (same as alerts evaluate) |
+| Passport ledger | `GET /api/admin/ingest-daily` (ADMIN_API_KEY) — consecutive-day streak without chasing Audi |
+| Receipt write | Scheduled job `POST /api/admin/ingest-daily` after each run (upsert per UTC calendar day) |
 
-Escalate Warning to Passport if the scheduled job fails twice in a row, or success rate stays below 60% for 2 consecutive days after Reddit secrets are restored.
+```powershell
+curl.exe -s "https://problems4us.com/api/admin/ingest-daily?limit=14" `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY"
+```
+
+Escalate Warning to Passport if the scheduled job fails twice in a row, or success rate stays below 60% for 2 consecutive days after Reddit secrets are restored. Failed receipts set `escalateWarning` on POST and leave `passed=false` on the ledger for the next agent wake.
 
 ## Builder entitlement pilot (G7 bypass)
 
