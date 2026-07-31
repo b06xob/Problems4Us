@@ -90,3 +90,45 @@ jobs:
             --restart true \
             --timeout 900
 
+      # problems4us-17c: post-deploy smoke — health + public + admin fail-closed
+      - name: Post-deploy smoke (health + public + admin-fail)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          SMOKE_BASE: https://problems4us.com
+        run: |
+          set -euo pipefail
+          echo "Waiting for App Service warmup..."
+          sleep 45
+
+          fail=0
+          check() {
+            local name="$1" url="$2" expect="$3"
+            code=$(curl -sS -o /tmp/smoke-body.json -w "%{http_code}" "$url" || echo "000")
+            echo "${name}: HTTP ${code} (expect ${expect})"
+            head -c 400 /tmp/smoke-body.json || true
+            echo
+            if [ "$code" != "$expect" ]; then
+              echo "SMOKE FAIL: ${name}"
+              fail=1
+            fi
+          }
+
+          check "health" "${SMOKE_BASE}/api/health" "200"
+          check "public-pricing" "${SMOKE_BASE}/pricing" "200"
+          # Admin without key must fail closed (401 or 503) — never 200
+          admin_code=$(curl -sS -o /tmp/smoke-admin.json -w "%{http_code}" \
+            "${SMOKE_BASE}/api/sources" || echo "000")
+          echo "admin-fail: HTTP ${admin_code} (expect 401 or 503)"
+          head -c 400 /tmp/smoke-admin.json || true
+          echo
+          if [ "$admin_code" != "401" ] && [ "$admin_code" != "503" ]; then
+            echo "SMOKE FAIL: admin-fail expected 401/503"
+            fail=1
+          fi
+
+          if [ "$fail" -ne 0 ]; then
+            echo "Post-deploy smoke FAILED — do not treat this ship as green"
+            exit 1
+          fi
+          echo "Post-deploy smoke PASSED"
+

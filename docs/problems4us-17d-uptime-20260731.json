@@ -1,0 +1,16 @@
+{
+  "stepId": "problems4us-17d",
+  "checkedAtUtc": "2026-07-31T18:55:00Z",
+  "correlationId": "cos-hourly-pulse-20260731T184503Z",
+  "verdict": "Hourly GitHub Actions health probe + monthly uptime compute method documented for 99% target",
+  "workflow": ".github/workflows/health-uptime-probe.yml",
+  "runbook": "docs/ops-runbook-uptime-health.md",
+  "schedule": "cron 5 * * * * UTC",
+  "escalation": ">=2 consecutive hour failures -> Warning+ to Passport",
+  "liveProbe": {
+    "url": "https://problems4us.com/api/health",
+    "status": "healthy",
+    "database": "connected"
+  },
+  "smokePass": true
+}

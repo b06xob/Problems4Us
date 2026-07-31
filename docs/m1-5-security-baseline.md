@@ -12,8 +12,21 @@ Last updated: 2026-07-31 (Audi / Problems4Us Agent)
 | Conversion POST strips PII keys | `/api/events` drops `email|password|token|secret|key` props |
 | Submissions hide emails from public | `toPublicSubmission` strips `SubmitterEmail` unless admin |
 | Shared brief PII strip + revoke | `/share/briefs` redacts emails/secret-like props; admin `POST /api/admin/share/revoke` denylists token hash (`src/lib/brief-share-revoke.ts`) |
+| Public POST rate limits | Waitlist / auth register+login / checkout session return **429** when per-IP window exceeded (`src/lib/public-rate-limit.ts`, `tests/public-rate-limit.test.ts`) |
+| AI analyze cost caps | Per-request char + daily token budget; **429** fail-soft (`src/lib/ai-budget.ts`, `docs/ops-runbook-ai-budget.md`) |
 
-## Funnel ops (M1.4 read path)
+## Public rate limits (problems4us-23)
+
+| Route | Default | Window |
+| --- | --- | --- |
+| `POST /api/waitlist` | 20 / IP | 60s |
+| `POST /api/auth/register` | 10 / IP | 60s |
+| `POST /api/auth/login` | 30 / IP | 60s |
+| `POST /api/checkout/session` | 15 / IP | 60s |
+
+In-memory per App Service instance. Prefer Azure Front Door / WAF for edge abuse; these guards stop naive spray without breaking legitimate smoke.
+
+## Still human-gated
 
 ```powershell
 # Use curl.exe on Windows PowerShell (bare curl aliases to Invoke-WebRequest)

@@ -1,0 +1,14 @@
+{
+  "stepId": "problems4us-17c",
+  "checkedAtUtc": "2026-07-31T18:55:00Z",
+  "correlationId": "cos-hourly-pulse-20260731T184503Z",
+  "verdict": "Deploy workflow gains post-deploy smoke gate: health 200, public pricing 200, admin without key 401/503",
+  "workflow": ".github/workflows/deploy.yml",
+  "checks": [
+    "GET /api/health expect 200",
+    "GET /pricing expect 200",
+    "GET /api/sources without key expect 401 or 503"
+  ],
+  "behavior": "Red smoke fails the deploy job so silent green ship narrative is blocked",
+  "smokePass": true
+}

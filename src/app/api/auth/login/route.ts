@@ -5,9 +5,28 @@ import {
 } from "@/lib/user-auth";
 import { getActivationForUserDb, loginUserDb } from "@/lib/user-db";
 import { isValidEmail, normalizeEmail } from "@/lib/waitlist";
+import {
+  decideRateLimit,
+  extractClientIp,
+  PUBLIC_RATE_LIMITS,
+} from "@/lib/public-rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = decideRateLimit(
+      PUBLIC_RATE_LIMITS["auth-login"],
+      extractClientIp(request.headers)
+    );
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: limited.error },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limited.retryAfterSec) },
+        }
+      );
+    }
+
     const body = (await request.json()) as {
       email?: string;
       password?: string;

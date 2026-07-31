@@ -282,22 +282,34 @@ export async function getPainPointDetail(
   const painPoint = await getPainPointById(id);
   if (!painPoint) return undefined;
 
-  const snapshots = await query<TrendSnapshot>(
-    `SELECT SnapshotId, PainPointId, SnapshotDate, MentionCount, AverageSeverity, OpportunityScore
-     FROM TrendSnapshots WHERE PainPointId = @id ORDER BY SnapshotDate`,
-    { id }
-  );
-
-  const sourceType =
-    (await queryOne<{ SourceType: SourceType }>(
-      `SELECT TOP 1 s.SourceType
-       FROM PainPointMentions m
-       INNER JOIN RawPosts r ON m.RawPostId = r.RawPostId
-       INNER JOIN Sources s ON r.SourceId = s.SourceId
-       WHERE m.PainPointId = @id
-       ORDER BY m.CreatedAt DESC`,
+  let snapshots: TrendSnapshot[] = [];
+  try {
+    snapshots = await query<TrendSnapshot>(
+      `SELECT SnapshotId, PainPointId, SnapshotDate, MentionCount, AverageSeverity, OpportunityScore
+       FROM TrendSnapshots WHERE PainPointId = @id ORDER BY SnapshotDate`,
       { id }
-    ))?.SourceType ?? 'forum';
+    );
+  } catch (error) {
+    console.error("getPainPointDetail TrendSnapshots:", error);
+  }
+
+  let sourceType: SourceType = "forum";
+  try {
+    sourceType =
+      (
+        await queryOne<{ SourceType: SourceType }>(
+          `SELECT TOP 1 s.SourceType
+           FROM PainPointMentions m
+           INNER JOIN RawPosts r ON m.RawPostId = r.RawPostId
+           INNER JOIN Sources s ON r.SourceId = s.SourceId
+           WHERE m.PainPointId = @id
+           ORDER BY m.CreatedAt DESC`,
+          { id }
+        )
+      )?.SourceType ?? "forum";
+  } catch (error) {
+    console.error("getPainPointDetail sourceType:", error);
+  }
 
   const painPointWithMeta: PainPointListItem = {
     ...painPoint,
@@ -305,62 +317,81 @@ export async function getPainPointDetail(
     TrendDirection: computeTrendDirection(painPoint.TrendScore, snapshots),
   };
 
-  const mentionRows = await query<{
+  let mentionRows: {
     ExtractedText: string;
     SourceName: string;
     SourceType: SourceType;
     Author: string;
     Url: string;
     PublishedAt: string;
-  }>(
-    `SELECT m.ExtractedText, s.SourceName, s.SourceType, r.Author, r.Url, r.PublishedAt
-     FROM PainPointMentions m
-     INNER JOIN RawPosts r ON m.RawPostId = r.RawPostId
-     INNER JOIN Sources s ON r.SourceId = s.SourceId
-     WHERE m.PainPointId = @id
-     ORDER BY m.CreatedAt DESC`,
-    { id }
-  );
-
-  const ideaRows = await query<ProductIdea>(
-    `SELECT * FROM ProductIdeas WHERE PainPointId = @id ORDER BY RevenuePotentialScore DESC`,
-    { id }
-  );
-
-  const relatedRows = await query<{ PainPointId: string; Title: string; OpportunityScore: number }>(
-    `SELECT TOP 5 pp.PainPointId, pp.Title, pp.OpportunityScore
-     FROM ClusterPainPoints cp1
-     INNER JOIN ClusterPainPoints cp2 ON cp1.ClusterId = cp2.ClusterId
-     INNER JOIN PainPoints pp ON cp2.PainPointId = pp.PainPointId
-     WHERE cp1.PainPointId = @id AND cp2.PainPointId <> @id
-     ORDER BY pp.OpportunityScore DESC`,
-    { id }
-  );
-
-  let similar = relatedRows;
-  if (similar.length === 0) {
-    similar = await query(
-      `SELECT TOP 5 PainPointId, Title, OpportunityScore
-       FROM PainPoints
-       WHERE Category = @category AND PainPointId <> @id
-       ORDER BY OpportunityScore DESC`,
-      { category: painPoint.Category, id }
+  }[] = [];
+  try {
+    mentionRows = await query( 
+      `SELECT m.ExtractedText, s.SourceName, s.SourceType, r.Author, r.Url, r.PublishedAt
+       FROM PainPointMentions m
+       INNER JOIN RawPosts r ON m.RawPostId = r.RawPostId
+       INNER JOIN Sources s ON r.SourceId = s.SourceId
+       WHERE m.PainPointId = @id
+       ORDER BY m.CreatedAt DESC`,
+      { id }
     );
+  } catch (error) {
+    console.error("getPainPointDetail mentions:", error);
+  }
+
+  let ideaRows: ProductIdea[] = [];
+  try {
+    ideaRows = await query<ProductIdea>(
+      `SELECT * FROM ProductIdeas WHERE PainPointId = @id ORDER BY RevenuePotentialScore DESC`,
+      { id }
+    );
+  } catch (error) {
+    console.error("getPainPointDetail ProductIdeas:", error);
+  }
+
+  let similar: { PainPointId: string; Title: string; OpportunityScore: number }[] =
+    [];
+  try {
+    similar = await query(
+      `SELECT TOP 5 pp.PainPointId, pp.Title, pp.OpportunityScore
+       FROM ClusterPainPoints cp1
+       INNER JOIN ClusterPainPoints cp2 ON cp1.ClusterId = cp2.ClusterId
+       INNER JOIN PainPoints pp ON cp2.PainPointId = pp.PainPointId
+       WHERE cp1.PainPointId = @id AND cp2.PainPointId <> @idExclude
+       ORDER BY pp.OpportunityScore DESC`,
+      { id, idExclude: id }
+    );
+  } catch (error) {
+    console.error("getPainPointDetail ClusterPainPoints:", error);
+  }
+
+  if (similar.length === 0) {
+    try {
+      similar = await query(
+        `SELECT TOP 5 PainPointId, Title, OpportunityScore
+         FROM PainPoints
+         WHERE Category = @category AND PainPointId <> @id
+         ORDER BY OpportunityScore DESC`,
+        { category: painPoint.Category, id }
+      );
+    } catch (error) {
+      console.error("getPainPointDetail similar-by-category:", error);
+    }
   }
 
   const sourceExamples: SourceExample[] = mentionRows.map((m) => ({
     source: m.SourceName,
     sourceType: m.SourceType,
     text: m.ExtractedText,
-    author: m.Author || 'Anonymous',
+    author: m.Author || "Anonymous",
     date: m.PublishedAt
-      ? new Date(m.PublishedAt).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
+      ? new Date(m.PublishedAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
         })
-      : '',
-    url: m.Url || '#',
+      : "",
+    url: m.Url || "#",
   }));
 
   const productIdeas = ideaRows.map((i) => ({
@@ -377,31 +408,35 @@ ${painPoint.Summary}`;
   const targetCustomers = ideaRows.length
     ? ideaRows.map((i) => i.TargetCustomer).filter(Boolean)
     : [
-        'IT teams at mid-size organizations (100-2000 employees)',
-        'MSPs and consultants managing multiple client environments',
-        'Teams without dedicated specialist staff for this domain',
+        "IT teams at mid-size organizations (100-2000 employees)",
+        "MSPs and consultants managing multiple client environments",
+        "Teams without dedicated specialist staff for this domain",
       ];
 
   const competitiveNotes = ideaRows.length
-    ? ideaRows.map((i) => `Alternatives: ${i.ExistingAlternatives}`).filter(Boolean)
+    ? ideaRows
+        .map((i) => `Alternatives: ${i.ExistingAlternatives}`)
+        .filter(Boolean)
     : [
-        'Existing solutions are either too expensive or too limited',
-        'Most competitors target enterprise, leaving mid-market underserved',
-        'Community scripts and manual processes are the primary alternative',
+        "Existing solutions are either too expensive or too limited",
+        "Most competitors target enterprise, leaving mid-market underserved",
+        "Community scripts and manual processes are the primary alternative",
       ];
 
   const nextSteps = ideaRows.length
-    ? ideaRows.map((i) => `Build MVP starting with: ${i.RecommendedFirstFeature}`).filter(Boolean)
+    ? ideaRows
+        .map((i) => `Build MVP starting with: ${i.RecommendedFirstFeature}`)
+        .filter(Boolean)
     : [
-        'Validate pain intensity with 5-10 target customer interviews',
-        'Build minimal viable solution addressing the core workflow',
-        'Test pricing with early adopters from community forums',
+        "Validate pain intensity with 5-10 target customer interviews",
+        "Build minimal viable solution addressing the core workflow",
+        "Test pricing with early adopters from community forums",
       ];
 
   const trendHistory = snapshots.map((s) => ({
-    month: new Date(s.SnapshotDate).toLocaleDateString('en-US', {
-      month: 'short',
-      year: 'numeric',
+    month: new Date(s.SnapshotDate).toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
     }),
     mentions: s.MentionCount ?? 0,
     severity: Math.round(s.AverageSeverity ?? 0),
@@ -419,9 +454,9 @@ ${painPoint.Summary}`;
     productIdeas,
     targetCustomers,
     monetizationIdeas: [
-      'SaaS subscription model ($99-$499/month depending on scale)',
-      'Usage-based pricing aligned with value delivered',
-      'Freemium tier to drive adoption and prove value',
+      "SaaS subscription model ($99-$499/month depending on scale)",
+      "Usage-based pricing aligned with value delivered",
+      "Freemium tier to drive adoption and prove value",
     ],
     competitiveNotes,
     trendHistory,

@@ -1,0 +1,24 @@
+{
+  "stepId": "problems4us-16a",
+  "checkedAtUtc": "2026-07-31T18:55:00Z",
+  "correlationId": "cos-hourly-pulse-20260731T184503Z",
+  "verdict": "Problem detail Score Breakdown shows frequency/severity/willingness/trend/market with canonical weights and contribution pts",
+  "implementation": {
+    "component": "src/components/problems/ScoreFacetBreakdown.tsx",
+    "page": "src/app/problems/[id]/page.tsx",
+    "weights": {
+      "FrequencyScore": 0.25,
+      "SeverityScore": 0.25,
+      "WillingnessToPayScore": 0.3,
+      "TrendScore": 0.1,
+      "MarketSizeScore": 0.1
+    }
+  },
+  "tests": {
+    "file": "tests/score-facet-ui.test.ts",
+    "result": "passed (suite with npm test 136/136)"
+  },
+  "reliabilityFix": "getPainPointDetail hardened against optional SQL failures; cluster query uses distinct @idExclude param",
+  "smokePass": true,
+  "note": "Prod detail API was 500 before this deploy; post-deploy smoke must recheck GET /api/problems/pp-1"
+}

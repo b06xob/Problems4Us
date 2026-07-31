@@ -1,0 +1,16 @@
+{
+  "stepId": "problems4us-16b",
+  "checkedAtUtc": "2026-07-31T18:56:30Z",
+  "correlationId": "cos-hourly-pulse-20260731T184503Z",
+  "verdict": "Facet tooltips match XPS contract names (relevance/quality/novelty); no orphan P4U labels",
+  "component": "src/components/problems/ScoreFacetBreakdown.tsx",
+  "mapping": {
+    "FrequencyScore": "relevance",
+    "SeverityScore": "quality",
+    "WillingnessToPayScore": "quality",
+    "TrendScore": "novelty",
+    "MarketSizeScore": "relevance"
+  },
+  "tests": "tests/score-facet-ui.test.ts XPS mapping assertion",
+  "smokePass": true
+}

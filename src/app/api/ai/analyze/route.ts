@@ -5,6 +5,10 @@ import {
   mapExtractedPainPoints,
   resolveAiProviderName,
 } from "@/lib/ai-analyze";
+import {
+  decideAiAnalyzeBudget,
+  recordAiBudgetUsage,
+} from "@/lib/ai-budget";
 
 export async function POST(request: NextRequest) {
   const authError = requireAdminAuth(request);
@@ -21,10 +25,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const trimmed = text.trim();
+    const budget = decideAiAnalyzeBudget(trimmed);
+    if (!budget.ok) {
+      return NextResponse.json(
+        {
+          error: budget.error,
+          reason: budget.reason,
+          estimatedTokens: budget.estimatedTokens,
+          dailyUsed: budget.dailyUsed,
+          dailyCap: budget.dailyCap,
+        },
+        {
+          status: budget.status,
+          headers: { "Retry-After": "3600" },
+        }
+      );
+    }
+
     const providerName = resolveAiProviderName();
     const provider = getAIProvider();
-    const extracted = await provider.extractPainPoints(text.trim());
-    const painPoints = mapExtractedPainPoints(extracted, text);
+    const extracted = await provider.extractPainPoints(trimmed);
+    recordAiBudgetUsage(budget.estimatedTokens);
+    const painPoints = mapExtractedPainPoints(extracted, trimmed);
     const summary =
       painPoints.length === 1
         ? `Identified 1 pain point from the provided text, categorized under "${painPoints[0].category}" (provider=${providerName}).`
@@ -36,6 +59,10 @@ export async function POST(request: NextRequest) {
       painPoints,
       summary,
       provider: providerName,
+      budget: {
+        estimatedTokens: budget.estimatedTokens,
+        remainingToday: budget.remainingToday,
+      },
     });
   } catch {
     return NextResponse.json(

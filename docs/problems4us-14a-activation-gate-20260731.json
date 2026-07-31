@@ -1,0 +1,20 @@
+{
+  "stepId": "problems4us-14a",
+  "checkedAtUtc": "2026-07-31T18:53:30Z",
+  "correlationId": "cos-hourly-pulse-20260731T184503Z",
+  "verdict": "Activation gate measured short of Month-2 bar; Founder outreach required rather than inventing seats",
+  "activation": {
+    "totalAccounts": 5,
+    "activatedAccounts": 1,
+    "activationRule": "saved_problems>=3 OR saved_ideas>=1",
+    "gate": ">=10 activated OR >=3 paying/invite seats",
+    "gateMet": false
+  },
+  "paidSeats": {
+    "checkoutReady": false,
+    "note": "Stripe held on shared billing; invite cohort exists but not counted as >=3 paying without Founder fallback approval"
+  },
+  "founderOutreachRequired": true,
+  "smokePass": true,
+  "evidencePath": "GET /api/admin/activation"
+}

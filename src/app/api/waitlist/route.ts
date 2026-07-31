@@ -11,6 +11,11 @@ import {
   normalizeEmail,
   parseWaitlistSource,
 } from "@/lib/waitlist";
+import {
+  decideRateLimit,
+  extractClientIp,
+  PUBLIC_RATE_LIMITS,
+} from "@/lib/public-rate-limit";
 
 export async function GET(request: NextRequest) {
   const unauthorized = requireAdminAuth(request);
@@ -36,6 +41,20 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = decideRateLimit(
+      PUBLIC_RATE_LIMITS.waitlist,
+      extractClientIp(request.headers)
+    );
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: limited.error },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limited.retryAfterSec) },
+        }
+      );
+    }
+
     const body = (await request.json()) as {
       email?: string;
       source?: string;

@@ -1,0 +1,16 @@
+{
+  "stepId": "problems4us-23",
+  "checkedAtUtc": "2026-07-31T18:55:00Z",
+  "correlationId": "cos-hourly-pulse-20260731T184503Z",
+  "verdict": "Public waitlist/auth/checkout POSTs rate-limited per IP; 429 without breaking legitimate single smoke",
+  "lib": "src/lib/public-rate-limit.ts",
+  "routes": [
+    "POST /api/waitlist",
+    "POST /api/auth/register",
+    "POST /api/auth/login",
+    "POST /api/checkout/session"
+  ],
+  "tests": "tests/public-rate-limit.test.ts passed",
+  "securityBaseline": "docs/m1-5-security-baseline.md updated",
+  "smokePass": true
+}

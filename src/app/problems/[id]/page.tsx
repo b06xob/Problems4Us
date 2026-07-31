@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { ScoreBar } from "@/components/ui/ScoreBar";
+import { ScoreFacetBreakdown } from "@/components/problems/ScoreFacetBreakdown";
 import { TrendIndicator } from "@/components/ui/TrendIndicator";
 import { SourceIcon } from "@/components/ui/SourceIcon";
 import {
@@ -180,14 +181,18 @@ export default function ProblemDetailPage() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-8">
           <section className="card">
-            <h2 className="text-lg font-semibold text-text-primary mb-4">Score Breakdown</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <ScoreBar score={painPoint.FrequencyScore} label="Frequency Score" />
-              <ScoreBar score={painPoint.SeverityScore} label="Severity Score" />
-              <ScoreBar score={painPoint.WillingnessToPayScore} label="Willingness to Pay" />
-              <ScoreBar score={painPoint.MarketSizeScore} label="Market Size" />
-              <ScoreBar score={painPoint.TrendScore} label="Trend Score" />
-            </div>
+            <h2 className="text-lg font-semibold text-text-primary mb-4">
+              Score Breakdown
+            </h2>
+            <ScoreFacetBreakdown
+              scores={{
+                FrequencyScore: painPoint.FrequencyScore,
+                SeverityScore: painPoint.SeverityScore,
+                WillingnessToPayScore: painPoint.WillingnessToPayScore,
+                TrendScore: painPoint.TrendScore,
+                MarketSizeScore: painPoint.MarketSizeScore,
+              }}
+            />
           </section>
 
           <section className="card">

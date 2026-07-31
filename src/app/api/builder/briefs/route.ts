@@ -19,10 +19,11 @@ import {
   verifyBriefShareToken,
 } from "@/lib/brief-share";
 import { formatOpportunityBriefMarkdown } from "@/lib/opportunity-brief";
+import { formatOpportunityBriefPdf } from "@/lib/opportunity-brief-pdf";
 
 /**
- * GET /api/builder/briefs?email=&problemId=
- * Builder-gated opportunity brief export (M2.2 gate + M3.1 share links).
+ * GET /api/builder/briefs?email=&problemId=&format=markdown|pdf
+ * Builder-gated opportunity brief export (M2.2 gate + M3.1 share links + M3.1b PDF).
  * Header x-builder-email is accepted as an email alternate.
  * Successful exports record builder_brief_export funnel events (seat → usage)
  * and mint a signed shareUrl (builder_brief_share) when a share secret is set.
@@ -33,6 +34,17 @@ export async function GET(request: NextRequest) {
     request.headers.get("x-builder-email")?.trim() ||
     "";
   const problemId = request.nextUrl.searchParams.get("problemId")?.trim() || "";
+  const formatRaw =
+    request.nextUrl.searchParams.get("format")?.trim().toLowerCase() ||
+    "markdown";
+  const format = formatRaw === "pdf" ? "pdf" : "markdown";
+
+  if (formatRaw && formatRaw !== "markdown" && formatRaw !== "pdf") {
+    return NextResponse.json(
+      { error: "format must be markdown or pdf", gate: "M2.2" },
+      { status: 400 }
+    );
+  }
 
   if (!problemId) {
     return NextResponse.json(
@@ -129,6 +141,22 @@ export async function GET(request: NextRequest) {
           }
         }
       }
+    }
+
+    if (format === "pdf") {
+      const pdf = formatOpportunityBriefPdf(painPoint, ideas);
+      const safeName = painPoint.PainPointId.replace(/[^a-zA-Z0-9_-]/g, "_");
+      return new NextResponse(Buffer.from(pdf), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="opportunity-brief-${safeName}.pdf"`,
+          "X-Problems4Us-Format": "pdf",
+          "X-Problems4Us-ProblemId": painPoint.PainPointId,
+          "X-Problems4Us-IdeaCount": String(ideas.length),
+          ...(shareUrl ? { "X-Problems4Us-ShareUrl": shareUrl } : {}),
+        },
+      });
     }
 
     return NextResponse.json({

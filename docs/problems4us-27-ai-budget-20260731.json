@@ -1,0 +1,15 @@
+{
+  "stepId": "problems4us-27",
+  "checkedAtUtc": "2026-07-31T18:55:00Z",
+  "correlationId": "cos-hourly-pulse-20260731T184503Z",
+  "verdict": "AI analyze path enforces per-request char + daily token budget; overage returns 429 fail-soft",
+  "lib": "src/lib/ai-budget.ts",
+  "route": "src/app/api/ai/analyze/route.ts",
+  "defaults": {
+    "AI_ANALYZE_MAX_CHARS": 24000,
+    "AI_DAILY_TOKEN_BUDGET": 250000
+  },
+  "runbook": "docs/ops-runbook-ai-budget.md",
+  "tests": "tests/ai-budget.test.ts passed",
+  "smokePass": true
+}

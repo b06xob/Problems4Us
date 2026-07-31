@@ -1,0 +1,38 @@
+# Unattended health / uptime probe (problems4us-17d)
+# Logs availability for monthly 99% target; fails Warning-style on multi-hour downtime.
+
+name: Health uptime probe
+
+on:
+  schedule:
+    # Every hour UTC
+    - cron: "5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  probe-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe /api/health
+        env:
+          HEALTH_URL: https://problems4us.com/api/health
+        run: |
+          set -euo pipefail
+          START=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          CODE=$(curl -sS -o /tmp/health.json -w "%{http_code}" --max-time 30 "$HEALTH_URL" || echo "000")
+          echo "probedAtUtc=${START}"
+          echo "http=${CODE}"
+          cat /tmp/health.json || true
+          echo
+          if [ "$CODE" != "200" ]; then
+            echo "::error::Health probe failed HTTP ${CODE} — escalate if consecutive hours fail"
+            exit 1
+          fi
+          # Require healthy JSON when present
+          if grep -q '"status"' /tmp/health.json; then
+            grep -q '"healthy"' /tmp/health.json || {
+              echo "::error::Health status not healthy"
+              exit 1
+            }
+          fi
+          echo "Health probe OK"

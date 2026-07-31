@@ -6,6 +6,11 @@ import {
   getStripeCheckoutPublicStatus,
   stripeCheckoutNotReadyMessage,
 } from "@/lib/stripe-checkout";
+import {
+  decideRateLimit,
+  extractClientIp,
+  PUBLIC_RATE_LIMITS,
+} from "@/lib/public-rate-limit";
 
 /**
  * POST /api/checkout/session
@@ -13,6 +18,20 @@ import {
  * When ready: create Stripe Checkout Session for Builder tier and record funnel event.
  */
 export async function POST(request: NextRequest) {
+  const limited = decideRateLimit(
+    PUBLIC_RATE_LIMITS["checkout-session"],
+    extractClientIp(request.headers)
+  );
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: limited.error },
+      {
+        status: 429,
+        headers: { "Retry-After": String(limited.retryAfterSec) },
+      }
+    );
+  }
+
   const publicStatus = getStripeCheckoutPublicStatus();
   const config = getStripeCheckoutConfig();
   if (!publicStatus.checkoutReady || !config) {
