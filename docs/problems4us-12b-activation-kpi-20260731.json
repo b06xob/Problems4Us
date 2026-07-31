@@ -1,0 +1,23 @@
+{
+  "stepId": "problems4us-12b",
+  "correlationId": "cos-manual-work-wake-20260731-1725Z",
+  "completedAtUtc": "2026-07-31T17:36:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "status": "done",
+  "delivered": {
+    "endpoint": "GET /api/admin/activation (ADMIN_API_KEY)",
+    "activationRule": "saved_problems>=3 OR saved_ideas>=1"
+  },
+  "validation": {
+    "prod": {
+      "http": 200,
+      "totalAccounts": 4,
+      "activatedAccounts": 1,
+      "activationRule": "saved_problems>=3 OR saved_ideas>=1",
+      "atUtc": "2026-07-31T17:35:50Z"
+    }
+  },
+  "passportReadablePath": "Problems4US/docs/problems4us-12b-activation-kpi-20260731.json",
+  "successCriteriaMet": true
+}
