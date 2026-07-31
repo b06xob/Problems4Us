@@ -1,19 +1,22 @@
 {
   "stepId": "problems4us-15c",
-  "checkedAtUtc": "2026-07-31T17:54:00Z",
+  "checkedAtUtc": "2026-07-31T17:59:40Z",
   "correlationId": "cos-hourly-pulse-20260731T174502Z",
-  "verdict": "Share-link revoke denylist + PII strip shipped; awaiting post-deploy prod revoke smoke",
-  "statusAtWrite": "in_progress_pending_deploy",
-  "changes": [
-    "src/lib/brief-share-revoke.ts — token-hash denylist + stripShareBriefPii",
-    "src/app/api/admin/share/revoke/route.ts — admin revoke endpoint",
-    "src/lib/load-shared-brief.ts — revoke check + PII strip before share view",
-    "docs/m1-5-security-baseline.md — revoke + PII controls"
-  ],
-  "unitTests": "tests/alerts.test.ts brief share revoke helpers PASS",
-  "preDeployShare": {
-    "expiryPresent": true,
+  "verdict": "Share-link expiry + admin revoke + PII strip live in prod",
+  "deploy": {
+    "version": "v2026.07.31-4675d04",
+    "commit": "4675d04044158db09949c58d7e02370ed36c7ef6",
+    "ghRun": 30653122560
+  },
+  "smoke": {
+    "shareBeforeRevokeHttp": 200,
+    "revokeHttp": 200,
+    "revokeGate": "M3.1c",
+    "shareAfterRevokeHttp": 403,
+    "shareAfterError": "share link revoked",
     "emailInBriefMarkdown": false,
-    "consultantPageWithoutToken": "HTTP page renders missing-token message without login"
-  }
+    "consultantNoLogin": true
+  },
+  "securityNote": "docs/m1-5-security-baseline.md",
+  "smokePass": true
 }

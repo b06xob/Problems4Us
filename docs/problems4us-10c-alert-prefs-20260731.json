@@ -1,14 +1,21 @@
 {
   "stepId": "problems4us-10c",
-  "checkedAtUtc": "2026-07-31T17:54:00Z",
+  "checkedAtUtc": "2026-07-31T17:59:46Z",
   "correlationId": "cos-hourly-pulse-20260731T174502Z",
-  "verdict": "Watch mute/frequency preferences API + evaluate skip shipped; awaiting post-deploy auth smoke",
-  "statusAtWrite": "in_progress_pending_deploy",
-  "changes": [
-    "src/lib/alerts-db.ts — Muted/AlertFrequency/MutedUntil columns + updateWatchPreferencesDb + isWatchMuted",
-    "src/app/api/me/watches/route.ts — PATCH preferences; DELETE unwatch retained",
-    "src/app/api/admin/alerts/evaluate/route.ts — skippedMuted",
-    "docs/ops-runbook-alerts-evaluate.md — preference ops"
-  ],
-  "unitTests": "normalizeAlertFrequency + isWatchMuted PASS in tests/alerts.test.ts"
+  "verdict": "Users can list watches, mute/set frequency, and remove watches; evaluate skips muted",
+  "deploy": {
+    "version": "v2026.07.31-4675d04",
+    "commit": "4675d04044158db09949c58d7e02370ed36c7ef6"
+  },
+  "smoke": {
+    "registerHttp": 201,
+    "watchHttp": 201,
+    "mutePatchHttp": 200,
+    "muted": true,
+    "alertFrequency": "muted",
+    "unwatchHttp": 200,
+    "removed": true
+  },
+  "runbook": "docs/ops-runbook-alerts-evaluate.md",
+  "smokePass": true
 }
