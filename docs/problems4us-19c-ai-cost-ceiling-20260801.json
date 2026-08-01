@@ -1,16 +1,34 @@
 {
   "stepId": "problems4us-19c",
   "correlationId": "cos-hourly-pulse-20260801T084502Z",
-  "updatedAtUtc": "2026-08-01T08:50:00Z",
+  "updatedAtUtc": "2026-08-01T08:56:14Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "status": "done",
-  "verdict": "Monthly Passport-readable AI cost ceiling monitor shipped; invoice pending (no invented spend); analyze caps (27) remain enforced; Warning+ path on first real invoice breach",
+  "verdict": "Monthly Passport-readable AI cost ceiling monitor live on prod; invoice pending (no invented spend); analyze caps (27) remain enforced; Warning+ path on first real invoice breach",
   "successCriteria": {
     "passportReadableMonthlyCheck": true,
     "breachEscalatesWarning": true,
     "analyzeBudgetControlsRemain": true,
     "noInventedInvoice": true
+  },
+  "deploy": {
+    "commit": "4054e1e",
+    "version": "v2026.08.01-4054e1e",
+    "githubRun": "https://github.com/b06xob/Problems4Us/actions/runs/30692599040"
+  },
+  "live": {
+    "http": 200,
+    "unauthHttp": 401,
+    "url": "https://problems4us.com/api/admin/ai-cost-ceiling",
+    "status": "invoice_pending",
+    "monthUtc": "2026-08",
+    "activatedAccounts": 1,
+    "totalAccounts": 6,
+    "mrrUsd": 0,
+    "checkoutReady": false,
+    "escalateWarningToPassport": false,
+    "dailyTokenBudget": 250000
   },
   "code": [
     "Problems4US/src/lib/ai-cost-ceiling.ts",
@@ -18,20 +36,11 @@
     "Problems4US/tests/ai-cost-ceiling.test.ts",
     "Problems4US/docs/ops-runbook-ai-budget.md"
   ],
-  "unitTests": "ai-cost-ceiling + ai-budget: 10/10 passed locally",
+  "unitTests": "ai-cost-ceiling 6/6; CI deploy tests green",
   "ceilings": {
     "maxPctOfMrr": 0.35,
     "maxUsdPerActivatedWhileLowMrr": 15,
     "lowMrrUsdThreshold": 500
-  },
-  "liveBaseline": {
-    "monthUtc": "2026-08",
-    "activatedAccounts": 1,
-    "totalAccounts": 6,
-    "mrrUsd": 0,
-    "checkoutReady": false,
-    "aiSpendUsd": null,
-    "expectedStatusBeforeDeploy": "invoice_pending"
   },
   "docs": [
     "Problems4US/docs/ops-runbook-ai-budget.md",
