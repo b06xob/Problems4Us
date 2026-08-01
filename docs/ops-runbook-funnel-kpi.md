@@ -6,7 +6,13 @@
 
 ## One-command Passport read path
 
-With `ADMIN_API_KEY` set:
+Preferred (single call — problems4us-12c):
+
+```powershell
+curl.exe -s "https://problems4us.com/api/admin/funnel?hours=168" -H "x-admin-api-key: $env:ADMIN_API_KEY"
+```
+
+Slice APIs (same data, if debugging a stage):
 
 ```powershell
 curl.exe -s "https://problems4us.com/api/events?summary=1&hours=168" -H "x-admin-api-key: $env:ADMIN_API_KEY"
@@ -19,6 +25,7 @@ curl.exe -s "https://problems4us.com/api/checkout/entitlements?summary=1" -H "x-
 
 | Funnel stage | Source | Fields |
 |---|---|---|
+| Full rollup | `/api/admin/funnel?hours=168` | `visits`, `waitlist`, `activated`, `paidOrEntitledSeats`, `checkout` |
 | Visits (proxy) | `/api/events?summary=1&hours=168` | `pricing_view`, `waitlist_view` |
 | Waitlist | `/api/waitlist?countOnly=1` | `total` |
 | Activated | `/api/admin/activation` | `totalAccounts`, `activatedAccounts` (rule: saved≥3 problems OR ≥1 idea) |
@@ -35,4 +42,4 @@ When 09b unblocks, re-read entitlements + `paid_early_access` events; do not inv
 
 ## Snapshot evidence
 
-`Problems4US/docs/problems4us-12c-funnel-rollup-20260731.json`
+`Problems4US/docs/problems4us-12c-funnel-rollup-20260801.json`
