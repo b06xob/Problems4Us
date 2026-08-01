@@ -24,6 +24,29 @@ az webapp config appsettings set -n problems4us-linux -g rg-problems4us --settin
 
 Runaway ingest that fans out analyze calls will hit 429 once the daily budget is consumed for that instance.
 
+## Monthly AI cost ceiling (problems4us-19c)
+
+Passport-readable check (no invented invoices):
+
+```powershell
+curl.exe -s "https://problems4us.com/api/admin/ai-cost-ceiling" `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY"
+
+# After OpenAI invoice is known:
+curl.exe -s "https://problems4us.com/api/admin/ai-cost-ceiling?aiSpendUsd=12.50&mrrUsd=0" `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY"
+```
+
+| Ceiling | Rule |
+| --- | --- |
+| % of MRR | AI spend ≤ 35% of MRR (when MRR > 0) |
+| Low-MRR per activated | While MRR < $500: AI spend ≤ $15 / activated account / month |
+
+- Missing spend → `status=invoice_pending` (not a breach). Set `AI_MONTHLY_SPEND_USD` on App Service or pass `?aiSpendUsd=`.
+- First real invoice breach → `escalateWarningToPassport=true` — publish Intercom Warning+ to Passport/Xavier.
+- Analyze path caps (above) stay enforced regardless of monthly invoice state.
+
 ## Tests
 
-`tests/ai-budget.test.ts`
+`tests/ai-budget.test.ts`  
+`tests/ai-cost-ceiling.test.ts`

@@ -1,11 +1,11 @@
 {
   "stepId": "problems4us-11e",
-  "correlationId": "cos-hourly-pulse-20260801T074504Z",
-  "updatedAtUtc": "2026-08-01T07:55:00Z",
+  "correlationId": "cos-hourly-pulse-20260801T084502Z",
+  "updatedAtUtc": "2026-08-01T08:47:54Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "status": "in_progress",
-  "verdict": "Day-2 ledger still 2/3 consecutive calendar days >=60%; Reddit soft_credentials founderAction now exposed on ingest-daily; next day 2026-08-02 cron",
+  "verdict": "Day-2 revalidated live: still 2/3 consecutive calendar days >=60%; Reddit soft_credentials founderActionRequired=true; Day-3 waits 2026-08-02 scheduled cron (cannot invent a future day)",
   "live": {
     "http": 200,
     "url": "https://problems4us.com/api/admin/ingest-daily",
@@ -36,12 +36,8 @@
       }
     ]
   },
-  "codeThisCycle": [
-    "Problems4US/src/lib/ingest-daily-receipt.ts (founderActionRequiredReddit)",
-    "Problems4US/src/app/api/admin/ingest-daily/route.ts",
-    "Problems4US/tests/ingest-daily-receipt.test.ts"
-  ],
   "docs": [
     "Problems4US/docs/problems4us-11e-daily-ingest-ledger-20260801.json"
-  ]
+  ],
+  "blocker": "Calendar: need 2026-08-02 unattended cron receipt for 3rd consecutive day. Parallel: Xavier restore REDDIT_* or accept GitHub+HN-only (11f)."
 }

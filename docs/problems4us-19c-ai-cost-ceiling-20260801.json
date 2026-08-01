@@ -1,0 +1,41 @@
+{
+  "stepId": "problems4us-19c",
+  "correlationId": "cos-hourly-pulse-20260801T084502Z",
+  "updatedAtUtc": "2026-08-01T08:50:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "status": "done",
+  "verdict": "Monthly Passport-readable AI cost ceiling monitor shipped; invoice pending (no invented spend); analyze caps (27) remain enforced; Warning+ path on first real invoice breach",
+  "successCriteria": {
+    "passportReadableMonthlyCheck": true,
+    "breachEscalatesWarning": true,
+    "analyzeBudgetControlsRemain": true,
+    "noInventedInvoice": true
+  },
+  "code": [
+    "Problems4US/src/lib/ai-cost-ceiling.ts",
+    "Problems4US/src/app/api/admin/ai-cost-ceiling/route.ts",
+    "Problems4US/tests/ai-cost-ceiling.test.ts",
+    "Problems4US/docs/ops-runbook-ai-budget.md"
+  ],
+  "unitTests": "ai-cost-ceiling + ai-budget: 10/10 passed locally",
+  "ceilings": {
+    "maxPctOfMrr": 0.35,
+    "maxUsdPerActivatedWhileLowMrr": 15,
+    "lowMrrUsdThreshold": 500
+  },
+  "liveBaseline": {
+    "monthUtc": "2026-08",
+    "activatedAccounts": 1,
+    "totalAccounts": 6,
+    "mrrUsd": 0,
+    "checkoutReady": false,
+    "aiSpendUsd": null,
+    "expectedStatusBeforeDeploy": "invoice_pending"
+  },
+  "docs": [
+    "Problems4US/docs/ops-runbook-ai-budget.md",
+    "Problems4US/docs/problems4us-19a-unit-economics-20260731.md"
+  ],
+  "founderNote": "Paste OpenAI monthly invoice into AI_MONTHLY_SPEND_USD (or ?aiSpendUsd=) — first breach of either Q4 ceiling publishes Warning+ to Passport."
+}

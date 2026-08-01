@@ -1,14 +1,13 @@
 {
   "stepId": "problems4us-12c",
-  "correlationId": "cos-hourly-pulse-20260801T074504Z",
-  "updatedAtUtc": "2026-08-01T07:50:08Z",
+  "correlationId": "cos-hourly-pulse-20260801T084502Z",
+  "updatedAtUtc": "2026-08-01T08:47:54Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "status": "in_progress",
-  "verdict": "Funnel rollup API live and Passport-readable; formal close still waits on problems4us-09 monetization path",
+  "verdict": "Funnel rollup revalidated live; Passport-readable; formal close still waits on problems4us-09 monetization path",
   "live": {
     "http": 200,
-    "unauthHttp": 401,
     "url": "https://problems4us.com/api/admin/funnel?hours=168",
     "pricing_view": 5,
     "waitlist_view": 39,
