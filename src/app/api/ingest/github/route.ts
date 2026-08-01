@@ -6,10 +6,15 @@ import {
   getExtractedPainPoints,
 } from "@/lib/data-ingestion";
 import { TARGET_GITHUB_REPOS } from "@/lib/github-client";
+import {
+  resolveGitHubRepoTargets,
+  resolveIngestDryRun,
+} from "@/lib/ingest-guards";
 
 /**
  * Admin GitHub Issues ingest (problems4us-11b).
  * POST body: { repo: "owner/repo", dryRun?: boolean, perPage?: number, state?: "open"|"closed"|"all" }
+ * Also accepts ?dryRun=1|true query and owner+repo / repos[] / targets[] shapes.
  */
 export async function POST(request: NextRequest) {
   const authError = requireAdminAuth(request);
@@ -19,6 +24,8 @@ export async function POST(request: NextRequest) {
     const body = (await request.json().catch(() => ({}))) as {
       repo?: string;
       repos?: string[];
+      owner?: string;
+      targets?: Array<{ owner?: string; repo?: string }>;
       dryRun?: boolean;
       perPage?: number;
       maxPages?: number;
@@ -26,12 +33,11 @@ export async function POST(request: NextRequest) {
       sourceId?: string;
     };
 
+    const resolved = resolveGitHubRepoTargets(body);
     const targets =
-      Array.isArray(body.repos) && body.repos.length > 0
-        ? body.repos
-        : body.repo
-          ? [body.repo]
-          : TARGET_GITHUB_REPOS.map((r) => `${r.owner}/${r.repo}`);
+      resolved.length > 0
+        ? resolved
+        : TARGET_GITHUB_REPOS.map((r) => `${r.owner}/${r.repo}`);
 
     if (targets.length > 10) {
       return NextResponse.json(
@@ -40,12 +46,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const dryRun = resolveIngestDryRun(body.dryRun, request.nextUrl.searchParams);
+
     const results = [];
     for (const repo of targets) {
       results.push(
         await ingestGitHubRepo({
           repo,
-          dryRun: Boolean(body.dryRun),
+          dryRun,
           perPage: body.perPage,
           maxPages: body.maxPages,
           state: body.state,
@@ -67,7 +75,7 @@ export async function POST(request: NextRequest) {
       ok: errorCount === 0,
       posts: totalPosts,
       painPoints: totalPainPoints,
-      dryRun: Boolean(body.dryRun),
+      dryRun,
     });
 
     return NextResponse.json({
@@ -78,7 +86,7 @@ export async function POST(request: NextRequest) {
         totalPostsCollected: totalPosts,
         totalPainPoints,
         errorCount,
-        dryRun: Boolean(body.dryRun),
+        dryRun,
         totalRawPostsStored: getCollectedRawPosts().length,
         totalPainPointsStored: getExtractedPainPoints().length,
       },
@@ -99,27 +107,27 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     status: "ready",
+    sourceType: "github",
     defaultRepos: TARGET_GITHUB_REPOS.map((r) => ({
       owner: r.owner,
       repo: r.repo,
-      sourceId: r.sourceId,
       url: `https://github.com/${r.owner}/${r.repo}/issues`,
     })),
-    auth: "Optional GITHUB_TOKEN on App Service for higher rate limits; unauthenticated still works with lower quota.",
+    auth: "Optional GITHUB_TOKEN on App Service",
     usage: {
       POST: {
-        description: "Trigger GitHub Issues ingestion (ADMIN_API_KEY required)",
         body: {
           repo: '"owner/repo" or github.com URL (optional if repos[] or defaults)',
-          repos: 'string[] max 10',
-          dryRun: "boolean — fetch only, no DB/AI writes (default false)",
-          perPage: "1-100 (default 30)",
-          maxPages: "1-5 (default 1)",
-          state: '"open" | "closed" | "all" (default open)',
+          repos: 'string[] of "owner/repo"',
+          owner: "string — with bare repo name forms owner/repo",
+          targets: '[{ owner, repo }] — ops probe shape',
+          dryRun:
+            "boolean — fetch only, no DB/AI writes (default false); also ?dryRun=1",
+          perPage: "1-100",
+          maxPages: "1-5",
+          state: '"open"|"closed"|"all"',
         },
       },
     },
-    tosNotes:
-      "GitHub REST API Terms apply. Prefer GITHUB_TOKEN. Honor rate-limit headers; do not scrape HTML.",
   });
 }

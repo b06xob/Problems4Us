@@ -12,6 +12,7 @@ import { TARGET_SUBREDDITS } from "@/lib/reddit-client";
 import {
   INGEST_LIMITS,
   normalizeIngestRequest,
+  resolveIngestDryRun,
   summarizeIngestResults,
 } from "@/lib/ingest-guards";
 
@@ -34,8 +35,11 @@ export async function POST(request: NextRequest) {
       postLimit,
       includeComments,
       searchKeywords,
-      dryRun,
     } = parsed.value;
+    const dryRun = resolveIngestDryRun(
+      parsed.value.dryRun,
+      request.nextUrl.searchParams
+    );
 
     const options: IngestionOptions = {
       sort,
@@ -136,7 +140,7 @@ export async function GET(request: NextRequest) {
           includeComments: "boolean (default: true)",
           searchKeywords: "string[] (for mode \"search\"; max 10)",
           dryRun:
-            "boolean - collect posts without AI extraction / pain-point writes (default: false)",
+            "boolean - collect posts without AI extraction / pain-point writes (default: false); also ?dryRun=1",
         },
       },
     },

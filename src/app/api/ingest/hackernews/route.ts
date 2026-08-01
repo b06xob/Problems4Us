@@ -6,10 +6,12 @@ import {
   getExtractedPainPoints,
 } from "@/lib/data-ingestion";
 import { HN_DEFAULT_QUERIES } from "@/lib/hackernews-client";
+import { resolveIngestDryRun } from "@/lib/ingest-guards";
 
 /**
  * Admin Hacker News (forums) ingest — problems4us-11c.
  * POST { queries?: string[], hitsPerPage?: number, dryRun?: boolean }
+ * Also accepts ?dryRun=1|true so ops probes cannot accidentally write live.
  */
 export async function POST(request: NextRequest) {
   const authError = requireAdminAuth(request);
@@ -22,10 +24,12 @@ export async function POST(request: NextRequest) {
       dryRun?: boolean;
     };
 
+    const dryRun = resolveIngestDryRun(body.dryRun, request.nextUrl.searchParams);
+
     const result = await ingestHackerNews({
       queries: body.queries,
       hitsPerPage: body.hitsPerPage,
-      dryRun: Boolean(body.dryRun),
+      dryRun,
     });
 
     const { TELEMETRY_EVENTS, trackAppEventFireAndForget } = await import(
@@ -36,7 +40,7 @@ export async function POST(request: NextRequest) {
       ok: result.errors.length === 0,
       posts: result.postsCollected,
       painPoints: result.painPointsExtracted,
-      dryRun: Boolean(body.dryRun),
+      dryRun,
     });
 
     return NextResponse.json({
@@ -46,7 +50,7 @@ export async function POST(request: NextRequest) {
         totalPostsCollected: result.postsCollected,
         totalPainPoints: result.painPointsExtracted,
         errorCount: result.errors.length,
-        dryRun: Boolean(body.dryRun),
+        dryRun,
         totalRawPostsStored: getCollectedRawPosts().length,
         totalPainPointsStored: getExtractedPainPoints().length,
       },
@@ -78,7 +82,7 @@ export async function GET(request: NextRequest) {
         body: {
           queries: "string[] max 5 (optional)",
           hitsPerPage: "1-50 (default 15)",
-          dryRun: "boolean — fetch only (default false)",
+          dryRun: "boolean — fetch only (default false); also ?dryRun=1",
         },
       },
     },

@@ -41,11 +41,14 @@ Defaults (code): `minPostScore=2`, `minPostComments=1`, `minCommentScore=1`, den
 | Admin path | `GET/POST /api/ingest/github` (ADMIN_API_KEY) |
 
 ```powershell
-# Dry-run default Azure/azure-cli issues
-curl.exe -s -X POST https://problems4us.com/api/ingest/github `
+# Dry-run default Azure/azure-cli issues (body dryRun OR ?dryRun=1)
+curl.exe -s -X POST "https://problems4us.com/api/ingest/github?dryRun=1" `
   -H "x-admin-api-key: $env:ADMIN_API_KEY" `
   -H "content-type: application/json" `
-  -d '{"repo":"Azure/azure-cli","perPage":10,"dryRun":true}'
+  -d '{"repo":"Azure/azure-cli","perPage":10}'
+# Equivalent body form:
+# -d '{"repo":"Azure/azure-cli","perPage":10,"dryRun":true}'
+# Also accepted: {"owner":"Azure","repo":"azure-cli"} or {"repos":["Azure/azure-cli"]}
 ```
 
 ## Hacker News forums ingest (problems4us-11c)
@@ -59,10 +62,10 @@ curl.exe -s -X POST https://problems4us.com/api/ingest/github `
 | Admin path | `GET/POST /api/ingest/hackernews` (ADMIN_API_KEY) |
 
 ```powershell
-curl.exe -s -X POST https://problems4us.com/api/ingest/hackernews `
+curl.exe -s -X POST "https://problems4us.com/api/ingest/hackernews?dryRun=1" `
   -H "x-admin-api-key: $env:ADMIN_API_KEY" `
   -H "content-type: application/json" `
-  -d '{"hitsPerPage":10,"dryRun":true}'
+  -d '{"hitsPerPage":10}'
 ```
 
 Set the key once per shell session:

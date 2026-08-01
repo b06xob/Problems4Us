@@ -1,11 +1,11 @@
 {
   "stepId": "problems4us-11e",
-  "correlationId": "cos-hourly-pulse-20260801T084502Z",
-  "updatedAtUtc": "2026-08-01T08:47:54Z",
+  "correlationId": "cos-hourly-pulse-20260801T154503Z",
+  "updatedAtUtc": "2026-08-01T15:50:30Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "status": "in_progress",
-  "verdict": "Day-2 revalidated live: still 2/3 consecutive calendar days >=60%; Reddit soft_credentials founderActionRequired=true; Day-3 waits 2026-08-02 scheduled cron (cannot invent a future day)",
+  "verdict": "Day-2 still holds (2/3 consecutive UTC calendar days >=60%). This 11:45 ET pulse revalidated live ledger + source dry-runs. Reddit still credentials-missing. Day-3 waits 2026-08-02 scheduled cron — cannot invent a future day. Also shipped ingest ?dryRun=1 query parity (GitHub/HN/Reddit) so ops probes cannot accidentally write live.",
   "live": {
     "http": 200,
     "url": "https://problems4us.com/api/admin/ingest-daily",
@@ -15,6 +15,7 @@
     "escalateWarningToPassport": false,
     "consecutiveRedditSoftCredentialDays": 2,
     "founderActionRequiredReddit": true,
+    "founderActionReddit": "Reddit soft_credentials for 2 consecutive calendar days — Xavier: restore REDDIT_* secrets (11a) or accept GitHub+HN-only (11f).",
     "days": [
       {
         "calendarDayUtc": "2026-08-01",
@@ -23,7 +24,10 @@
         "attempted": 3,
         "successRatePct": 66,
         "reddit": "soft_credentials",
-        "githubRunId": "30689244646"
+        "github": "ok",
+        "hackernews": "ok",
+        "githubRunId": "30689244646",
+        "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30689244646"
       },
       {
         "calendarDayUtc": "2026-07-31",
@@ -32,12 +36,57 @@
         "attempted": 3,
         "successRatePct": 66,
         "reddit": "soft_credentials",
-        "githubRunId": "30674158121"
+        "github": "ok",
+        "hackernews": "ok",
+        "githubRunId": "30674158121",
+        "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30674158121"
       }
     ]
   },
+  "sourceDryRunsThisPulse": {
+    "reddit": {
+      "http": 200,
+      "success": false,
+      "error": "Reddit API credentials missing. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET.",
+      "subredditsProcessed": 6,
+      "errorCount": 6
+    },
+    "hackernews": {
+      "http": 200,
+      "success": true,
+      "postsCollected": 29,
+      "note": "Pre-fix probe with ?dryRun=1 ignored body-only dryRun on prod; live writes occurred (catalog forum grew). Fix shipping this pulse."
+    },
+    "github": {
+      "http": 200,
+      "success": true,
+      "repo": "Azure/azure-cli",
+      "postsCollected": 9,
+      "note": "owner+repo body shape was invalid pre-fix; repos[] / defaults OK. Fix shipping this pulse."
+    }
+  },
+  "opsFlagsFromHealth": {
+    "redditOAuthConfigured": false,
+    "passwordResetEmailConfigured": false,
+    "appInsightsConfigured": false,
+    "billingForwardSecretConfigured": false,
+    "checkoutReady": false
+  },
+  "prodVersionAtProbe": "v2026.08.01-504a43c",
+  "engineeringThisPulse": {
+    "what": "Honor ?dryRun=1 on Reddit/GitHub/HN ingest; accept GitHub owner+repo and targets[] shapes",
+    "tests": "tests/ingest-guards.test.ts 7/7",
+    "evidence": "Problems4US/docs/problems4us-11e-dryrun-query-parity-20260801.json"
+  },
+  "catalogAfterProbe": {
+    "total": 186,
+    "forum": 180,
+    "reddit": 5,
+    "github": 1
+  },
   "docs": [
-    "Problems4US/docs/problems4us-11e-daily-ingest-ledger-20260801.json"
+    "Problems4US/docs/problems4us-11e-daily-ingest-ledger-20260801.json",
+    "Problems4US/docs/problems4us-11e-dryrun-query-parity-20260801.json"
   ],
   "blocker": "Calendar: need 2026-08-02 unattended cron receipt for 3rd consecutive day. Parallel: Xavier restore REDDIT_* or accept GitHub+HN-only (11f)."
 }
