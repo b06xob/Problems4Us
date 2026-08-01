@@ -1,0 +1,34 @@
+{
+  "stepId": "problems4us-31a",
+  "correlationId": "cos-hourly-pulse-20260801T054503Z",
+  "closedAtUtc": "2026-08-01T05:56:32Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "status": "done",
+  "verdict": "Public login/register/alerts pages live; navbar shows session; problem detail save+watch controls work without curl",
+  "deploy": {
+    "commit": "848a93d",
+    "version": "v2026.08.01-848a93d",
+    "githubRun": "https://github.com/b06xob/Problems4Us/actions/runs/30686606749",
+    "deployedAt": "2026-08-01T05:51:21Z"
+  },
+  "prodSmoke": {
+    "pagesHttp200": ["/login", "/register", "/alerts", "/forgot-password", "/reset-password", "/problems/pp-1"],
+    "register": 201,
+    "me": 200,
+    "saveProblem": 201,
+    "watchProblem": 201,
+    "alertsInbox": 200
+  },
+  "code": [
+    "Problems4US/src/app/login/page.tsx",
+    "Problems4US/src/app/register/page.tsx",
+    "Problems4US/src/app/alerts/page.tsx",
+    "Problems4US/src/components/layout/Navbar.tsx",
+    "Problems4US/src/components/problems/ProblemEngagementControls.tsx",
+    "Problems4US/src/lib/use-session.ts",
+    "Problems4US/tests/account-ui.test.ts"
+  ],
+  "unitTests": "account-ui + user-auth suites green locally",
+  "evidenceFile": "Problems4US/docs/problems4us-31a-22a-smoke-20260801.json"
+}

@@ -1,72 +1,26 @@
 {
   "stepId": "problems4us-12c",
-  "alsoAdvances": ["problems4us-12"],
-  "correlationId": "cos-hourly-pulse-20260801T034504Z",
-  "priorCorrelationId": "cos-hourly-pulse-20260801T024502Z",
-  "updatedAtUtc": "2026-08-01T03:52:00Z",
+  "correlationId": "cos-hourly-pulse-20260801T054503Z",
+  "updatedAtUtc": "2026-08-01T05:51:03Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
-  "replyTo": "Passport",
   "status": "in_progress",
-  "successCriteria": "Paid seat counts join visits/activated into one Passport-readable dashboard or weekly Intercom artifact; path documented.",
-  "advancedThisCycle": [
-    "Re-validated live GET /api/admin/funnel?hours=168 — HTTP 200 ok=true; unauthenticated HTTP 401 fail-closed.",
-    "KPIs unchanged vs prior cycle: pricing_view=4, waitlist_view=33, activated=1/5, invite Builder seats=1, Stripe paid=0, checkoutReady=false.",
-    "Formal close still waits on problems4us-09 (Xavier Stripe/centralized billing OR Founder confirm invite cohort as production paid path)."
-  ],
-  "funnelKpis": {
-    "window": "last_168h_events_plus_live_counts",
-    "passportReadablePath": "GET https://problems4us.com/api/admin/funnel?hours=168",
-    "asOfUtc": "2026-08-01T03:49:59.903Z",
-    "visits": {
-      "proxy": "instrumented page views via conversion events",
-      "pricing_view": 4,
-      "waitlist_view": 33
-    },
-    "waitlist": {
-      "totalRecords": 1
-    },
-    "activated": {
-      "totalAccounts": 5,
-      "activatedAccounts": 1,
-      "rule": "saved_problems>=3 OR saved_ideas>=1"
-    },
-    "paidOrEntitledSeats": {
-      "activeBuilderSeats": 1,
-      "activePilotSeats": 1,
-      "stripePaidEarlyAccessEvents": 0,
-      "checkoutReady": false,
-      "definition": "Invite/pilot Builder seats (problems4us-09a) count as entitled/paid seats until centralized Stripe (09b) is live; Stripe paid_early_access remains 0 while checkoutReady=false."
-    },
-    "otherEvents": {
-      "builder_brief_export": 5,
-      "builder_brief_share": 5,
-      "builder_brief_share_view": 1,
-      "admin_pilot_grant": 5,
-      "admin_pilot_revoke": 4,
-      "total": 57
-    }
-  },
-  "deploy": {
-    "commit": "b90c28f",
-    "version": "v2026.08.01-b90c28f",
-    "note": "Funnel API shipped earlier in 0e5086c; this cycle is live revalidation only."
-  },
-  "validationAtUtc": "2026-08-01T03:49:59Z",
+  "verdict": "Funnel rollup API live and Passport-readable; formal close still waits on problems4us-09 monetization path",
   "live": {
-    "health": "healthy",
-    "database": "connected",
-    "aiProvider": "openai",
-    "version": "v2026.08.01-b90c28f",
-    "checkoutReady": false,
-    "funnelHttp": 200,
-    "funnelUnauthHttp": 401
+    "http": 200,
+    "unauthHttp": 401,
+    "url": "https://problems4us.com/api/admin/funnel?hours=168",
+    "pricing_view": 5,
+    "waitlist_view": 40,
+    "waitlistTotal": 1,
+    "activatedAccounts": 1,
+    "totalAccounts": 5,
+    "activePilotSeats": 1,
+    "stripePaid": 0,
+    "checkoutReady": false
   },
-  "limitations": [
-    "Stripe checkoutReady=false — no card-paid seats yet (09b HOLD on isolated Stripe; centralized billing pending).",
-    "Visit counts are product instrumentation proxies, not CDN unique visitors.",
-    "Activation gate for Month-2 done-when still short (1 activated vs >=10 target) — see problems4us-14a."
+  "docs": [
+    "Problems4US/docs/ops-runbook-funnel-kpi.md"
   ],
-  "successCriteriaMet": false,
-  "remainingToClose": "problems4us-09 rollup (Stripe live OR Founder confirms invite/pilot seats as production paid path for KPI). Live one-call Passport path already shipped."
+  "blocker": "problems4us-09 (Stripe centralized hold / invite-only Founder decision via 09f)"
 }
