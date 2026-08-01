@@ -1,46 +1,46 @@
-# Problems4Us — Case-style problem→idea narratives (PREP for problems4us-18c)
+﻿# Problems4Us â€” Case-style problemâ†’idea narratives (PREP for problems4us-18c)
 
-**Status:** Prep only — `problems4us-18c` remains `not_started` until `problems4us-11` rollup closes.  
-**Correlation:** cos-hourly-pulse-20260801T154503Z (refreshed)  
+**Status:** Prep only â€” `problems4us-18c` remains `not_started` until `problems4us-11` rollup closes.  
+**Correlation:** cos-hourly-pulse-20260801T234502Z (refreshed)  
 **Host / agent:** Audi / Problems4Us Agent  
-**As of:** 2026-08-01T15:50:30Z  
-**Source:** Live production `GET /api/problems` + `GET /api/ideas` (186 scored problems; 12 product ideas). Full-catalog source mix this pulse: forum=180, reddit=5, github=1. Narrative set below uses the five idea-linked classics until 11 closes.
+**As of:** 2026-08-01T23:50:00Z  
+**Source:** Live production `GET /api/problems` + `GET /api/ideas` (186 scored problems; 12 product ideas). Full-catalog source mix this pulse: forum=180, reddit=5, github=1. Prod `v2026.08.01-5b63497`. Narrative set below uses the five idea-linked classics until 11 closes.
 
 These five narratives cite real pain-point and idea IDs for the partner offer pack. Formal close of 18c waits on source-expansion rollup (11).
 
 ---
 
-## 1. Azure Reserved Instance cost surprises → CloudCost Guardian
+## 1. Azure Reserved Instance cost surprises â†’ CloudCost Guardian
 
 - **Problem ID:** pp-1  
 - **Source type (live):** reddit  
-- **Opportunity score:** 84 (severity 85 · frequency 78 · willingness 92 · market 80 · trend 82)  
-- **Customer pain:** Mid-market teams buy Azure Reserved Instances, then get surprised by charges when workloads shift or instances are misconfigured — commonly 20–40% of cloud budget wasted.  
+- **Opportunity score:** 84 (severity 85 Â· frequency 78 Â· willingness 92 Â· market 80 Â· trend 82)  
+- **Customer pain:** Mid-market teams buy Azure Reserved Instances, then get surprised by charges when workloads shift or instances are misconfigured â€” commonly 20â€“40% of cloud budget wasted.  
 - **Idea ID / name:** idea-1 / CloudCost Guardian  
 - **Product angle:** Real-time Azure cost anomaly detection with smart alerting (learns spend patterns; alerts on genuine anomalies). First feature: daily cost anomaly digest with one-click investigation.  
-- **Why it matters for pilots:** Highest willingness-to-pay facet in the top set; maps cleanly to a 10-minute demo (score facets → Builder brief).
+- **Why it matters for pilots:** Highest willingness-to-pay facet in the top set; maps cleanly to a 10-minute demo (score facets â†’ Builder brief).
 
-## 2. Microsoft 365 license waste → M365 License Optimizer
+## 2. Microsoft 365 license waste â†’ M365 License Optimizer
 
 - **Problem ID:** pp-7  
 - **Source type (live):** forum  
 - **Opportunity score:** 82  
-- **Customer pain:** Companies pay for unused M365 seats with no easy reclaim path (~$15–25 per unused seat / month).  
+- **Customer pain:** Companies pay for unused M365 seats with no easy reclaim path (~$15â€“25 per unused seat / month).  
 - **Idea ID / name:** idea-4 / M365 License Optimizer  
 - **Product angle:** Usage analysis, waste ID, downgrade recommendations, automated reclamation, savings reporting. First feature: license waste scanner with monthly savings estimate.  
 - **Why it matters for pilots:** Clear ROI story for IT/procurement; strong for MSPs managing multiple tenants.
 
-## 3. Support ticket routing inefficiency → TicketFlow AI
+## 3. Support ticket routing inefficiency â†’ TicketFlow AI
 
 - **Problem ID:** pp-19  
 - **Source type (live):** forum  
 - **Opportunity score:** 78  
-- **Customer pain:** Tickets misrouted to wrong teams add 24–48 hours of delay and frustrate agents and customers.  
+- **Customer pain:** Tickets misrouted to wrong teams add 24â€“48 hours of delay and frustrate agents and customers.  
 - **Idea ID / name:** idea-8 / TicketFlow AI  
 - **Product angle:** AI classification + smart routing from historical patterns; SLA tracker and escalation automation. First feature: classifier trained on historical routing data.  
 - **Why it matters for pilots:** Support ops buyers understand the pain immediately; idea already has a named MVP feature set.
 
-## 4. SQL Server query performance degradation → SQLPulse
+## 4. SQL Server query performance degradation â†’ SQLPulse
 
 - **Problem ID:** pp-4  
 - **Source type (live):** forum  
@@ -50,7 +50,7 @@ These five narratives cite real pain-point and idea IDs for the partner offer pa
 - **Product angle:** Automatic regression detection, index advisor, wait-stats analysis, capacity forecasting. First feature: automatic query regression detection with root-cause analysis.  
 - **Why it matters for pilots:** High-severity technical buyer path (DBA/DevOps) distinct from cloud-cost and M365 stories.
 
-## 5. QuickBooks integration breaking changes → QuickSync Bridge
+## 5. QuickBooks integration breaking changes â†’ QuickSync Bridge
 
 - **Problem ID:** pp-17  
 - **Source type (live):** reddit  
@@ -68,11 +68,11 @@ These five narratives cite real pain-point and idea IDs for the partner offer pa
 - Live ideas catalog: `https://problems4us.com/api/ideas` (total=12)  
 - Offer pack companion: `Problems4US/docs/problems4us-18a-partner-pilot-offer-20260731.md`  
 - Demo script companion: `Problems4US/docs/problems4us-18b-demo-script-20260731.md`  
-- Prod version at probe: `v2026.08.01-504a43c`  
-- Dry-runs this pulse: HN postsCollected=29; GitHub postsCollected=9 (Azure/azure-cli); Reddit credentials-missing
+- Prod version at probe: `v2026.08.01-5b63497`  
+- Dry-runs this pulse (18:45 ET): HN postsCollected=29 (`dryRun=true`); GitHub postsCollected=9 Azure/azure-cli (`dryRun=true`); Reddit credentials-missing 6/6
 
 ## Remaining to mark 18c done
 
-1. Close `problems4us-11` (requires Reddit secrets for 11a **or** Founder accept GitHub+HN via 11f, plus Day-3 of 11e on 2026-08-02).  
+1. Close `problems4us-11` (requires Reddit secrets for 11a **or** Founder accept GitHub+HN via 11f, plus Day-3 of 11e on 2026-08-02 cron ~06:20 UTC).  
 2. Optionally refresh narratives with newly ingested GitHub/HN (and Reddit) IDs after 11e Day-3.  
 3. File final pack under offer docs and set plan status `done`.

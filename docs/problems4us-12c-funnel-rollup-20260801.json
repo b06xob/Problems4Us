@@ -1,16 +1,16 @@
-{
+﻿{
   "stepId": "problems4us-12c",
-  "correlationId": "cos-hourly-pulse-20260801T154503Z",
-  "updatedAtUtc": "2026-08-01T15:50:30Z",
+  "correlationId": "cos-hourly-pulse-20260801T234502Z",
+  "updatedAtUtc": "2026-08-01T23:50:00Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "status": "in_progress",
-  "verdict": "Funnel rollup revalidated live this 11:45 ET pulse; Passport-readable via GET /api/admin/funnel. Formal close still waits on problems4us-09 monetization path (invite-only Founder approval via 09f OR centralized Stripe).",
+  "verdict": "Funnel rollup revalidated live this 19:45 ET pulse; Passport-readable via GET /api/admin/funnel. Counts unchanged vs prior pulse (pricing_view=5, waitlist_view=41, activated=1/6, invite seats=1). Formal close still waits on problems4us-09 monetization path (invite-only Founder approval via 09f OR centralized Stripe).",
   "live": {
     "http": 200,
     "url": "https://problems4us.com/api/admin/funnel?hours=168",
     "pricing_view": 5,
-    "waitlist_view": 38,
+    "waitlist_view": 41,
     "waitlistTotal": 1,
     "activatedAccounts": 1,
     "totalAccounts": 6,
@@ -19,7 +19,7 @@
     "stripePaid": 0,
     "builder_brief_export": 5,
     "checkoutReady": false,
-    "asOfUtc": "2026-08-01T15:46:19.574Z"
+    "asOfUtc": "2026-08-01T23:46:38.779Z"
   },
   "activation": {
     "http": 200,

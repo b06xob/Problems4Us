@@ -1,11 +1,11 @@
-{
+﻿{
   "stepId": "problems4us-11e",
-  "correlationId": "cos-hourly-pulse-20260801T154503Z",
-  "updatedAtUtc": "2026-08-01T15:50:30Z",
+  "correlationId": "cos-hourly-pulse-20260801T234502Z",
+  "updatedAtUtc": "2026-08-01T23:50:00Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "status": "in_progress",
-  "verdict": "Day-2 still holds (2/3 consecutive UTC calendar days >=60%). This 11:45 ET pulse revalidated live ledger + source dry-runs. Reddit still credentials-missing. Day-3 waits 2026-08-02 scheduled cron — cannot invent a future day. Also shipped ingest ?dryRun=1 query parity (GitHub/HN/Reddit) so ops probes cannot accidentally write live.",
+  "verdict": "Day-2 still holds (2/3 consecutive UTC calendar days >=60%). This 19:45 ET pulse revalidated live ledger + source dry-runs on prod v2026.08.01-5b63497, then shipped Reddit ?mode= query parity (unit 8/8) for deploy. Reddit still credentials-missing (6/6). Day-3 waits 2026-08-02 scheduled cron (~06:20 UTC) — cannot invent a future day.",
   "live": {
     "http": 200,
     "url": "https://problems4us.com/api/admin/ingest-daily",
@@ -47,22 +47,31 @@
     "reddit": {
       "http": 200,
       "success": false,
+      "dryRun": true,
+      "mode": "all",
       "error": "Reddit API credentials missing. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET.",
       "subredditsProcessed": 6,
-      "errorCount": 6
+      "errorCount": 6,
+      "note": "Body form {mode:all,dryRun:true}. Query form ?mode=all&dryRun=1 was 400 pre-fix; fix shipping this pulse."
     },
     "hackernews": {
       "http": 200,
       "success": true,
+      "dryRun": true,
       "postsCollected": 29,
-      "note": "Pre-fix probe with ?dryRun=1 ignored body-only dryRun on prod; live writes occurred (catalog forum grew). Fix shipping this pulse."
+      "painPointsStored": 0,
+      "moderationDroppedPii": 1,
+      "note": "Query ?dryRun=1 honored on prod; no live writes."
     },
     "github": {
       "http": 200,
       "success": true,
+      "dryRun": true,
       "repo": "Azure/azure-cli",
       "postsCollected": 9,
-      "note": "owner+repo body shape was invalid pre-fix; repos[] / defaults OK. Fix shipping this pulse."
+      "painPointsStored": 0,
+      "moderationDroppedPii": 2,
+      "note": "owner+repo + ?dryRun=1 honored on prod."
     }
   },
   "opsFlagsFromHealth": {
@@ -70,23 +79,15 @@
     "passwordResetEmailConfigured": false,
     "appInsightsConfigured": false,
     "billingForwardSecretConfigured": false,
-    "checkoutReady": false
+    "checkoutReady": false,
+    "database": "connected",
+    "aiProvider": "openai",
+    "version": "v2026.08.01-5b63497"
   },
-  "prodVersionAtProbe": "v2026.08.01-504a43c",
   "engineeringThisPulse": {
-    "what": "Honor ?dryRun=1 on Reddit/GitHub/HN ingest; accept GitHub owner+repo and targets[] shapes",
-    "tests": "tests/ingest-guards.test.ts 7/7",
-    "evidence": "Problems4US/docs/problems4us-11e-dryrun-query-parity-20260801.json"
+    "fix": "applyIngestQueryOverrides so Reddit honors ?mode=all with empty body",
+    "unitTests": "8/8 ingest-guards",
+    "evidence": "Problems4US/docs/problems4us-11e-reddit-mode-query-parity-20260801.json"
   },
-  "catalogAfterProbe": {
-    "total": 186,
-    "forum": 180,
-    "reddit": 5,
-    "github": 1
-  },
-  "docs": [
-    "Problems4US/docs/problems4us-11e-daily-ingest-ledger-20260801.json",
-    "Problems4US/docs/problems4us-11e-dryrun-query-parity-20260801.json"
-  ],
-  "blocker": "Calendar: need 2026-08-02 unattended cron receipt for 3rd consecutive day. Parallel: Xavier restore REDDIT_* or accept GitHub+HN-only (11f)."
+  "nextAction": "Deploy mode-query fix; wait for 2026-08-02 unattended cron (~06:20 UTC) for Day-3 receipt; keep Founder Decision A (11f) open — do not invent Reddit success."
 }

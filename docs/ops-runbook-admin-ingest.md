@@ -89,11 +89,22 @@ curl.exe -s https://problems4us.com/api/ingest/reddit -H "x-admin-api-key: $env:
 
 ## Dry-run ingest (collect only, no AI / pain-point writes)
 
+Body form:
+
 ```powershell
 curl.exe -s -X POST https://problems4us.com/api/ingest/reddit `
   -H "x-admin-api-key: $env:ADMIN_API_KEY" `
   -H "content-type: application/json" `
   -d '{"mode":"fetch","subreddits":["sysadmin"],"postLimit":10,"dryRun":true}'
+```
+
+Query form (parity with GitHub/HN ops probes — `?mode=` and `?dryRun=1` honored; empty body OK):
+
+```powershell
+curl.exe -s -X POST "https://problems4us.com/api/ingest/reddit?dryRun=1&mode=all" `
+  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
+  -H "content-type: application/json" `
+  -d "{}"
 ```
 
 ## Live ingest (writes raw posts + AI extraction when provider configured)

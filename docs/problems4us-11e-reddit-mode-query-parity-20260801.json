@@ -1,0 +1,27 @@
+{
+  "stepId": "problems4us-11e-ops-safety",
+  "title": "Reddit ingest honors ?mode=all query (empty-body ops curl parity)",
+  "correlationId": "cos-hourly-pulse-20260801T234502Z",
+  "updatedAtUtc": "2026-08-01T23:50:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "problem": "POST /api/ingest/reddit?dryRun=1&mode=all with empty body returned HTTP 400 Provide subreddits array or use mode all — query mode was ignored so normalize defaulted to fetch.",
+  "fix": {
+    "applyIngestQueryOverrides": "query mode/sort/timeframe/postLimit/includeComments merge into body before normalize; query wins when present",
+    "routes": ["src/app/api/ingest/reddit/route.ts"],
+    "lib": "src/lib/ingest-guards.ts",
+    "runbook": "docs/ops-runbook-admin-ingest.md"
+  },
+  "validation": {
+    "unitTests": "tests/ingest-guards.test.ts — 8 passed",
+    "localCommand": "npm test -- --testPathPattern=ingest-guards --no-coverage",
+    "preDeployProbe": {
+      "queryFormHttp": 400,
+      "bodyFormHttp": 200,
+      "bodyFormNote": "POST body {dryRun:true,mode:all} still credentials-missing 6/6 (expected until REDDIT_* set)"
+    }
+  },
+  "maturity": "Tested",
+  "live": "Partial",
+  "whyItMatters": "Reliability — hourly/ops probes using the same query style as GitHub/HN must not 400 or silently default to fetch."
+}

@@ -11,6 +11,7 @@ import {
 import { TARGET_SUBREDDITS } from "@/lib/reddit-client";
 import {
   INGEST_LIMITS,
+  applyIngestQueryOverrides,
   normalizeIngestRequest,
   resolveIngestDryRun,
   summarizeIngestResults,
@@ -22,7 +23,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const parsed = normalizeIngestRequest(body);
+    const merged = applyIngestQueryOverrides(
+      body,
+      request.nextUrl.searchParams
+    );
+    const parsed = normalizeIngestRequest(merged);
     if (!parsed.ok) {
       return NextResponse.json({ error: parsed.error }, { status: parsed.status });
     }

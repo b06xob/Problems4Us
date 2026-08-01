@@ -183,6 +183,47 @@ export function summarizeIngestResults(
 }
 
 /**
+ * Merge Reddit ingest query params into the JSON body before normalize.
+ * Query wins when present so ops curls like
+ * `POST /api/ingest/reddit?dryRun=1&mode=all` do not 400 on empty body
+ * (mode would otherwise default to "fetch" and require subreddits).
+ */
+export function applyIngestQueryOverrides(
+  body: unknown,
+  searchParams?: URLSearchParams | null
+): Record<string, unknown> {
+  const raw =
+    body && typeof body === "object"
+      ? { ...(body as Record<string, unknown>) }
+      : {};
+  if (!searchParams) return raw;
+
+  const mode = searchParams.get("mode");
+  if (mode !== null && mode.trim() !== "") {
+    raw.mode = mode.trim();
+  }
+  const sort = searchParams.get("sort");
+  if (sort !== null && sort.trim() !== "") {
+    raw.sort = sort.trim();
+  }
+  const timeframe = searchParams.get("timeframe");
+  if (timeframe !== null && timeframe.trim() !== "") {
+    raw.timeframe = timeframe.trim();
+  }
+  const postLimit = searchParams.get("postLimit");
+  if (postLimit !== null && postLimit.trim() !== "") {
+    raw.postLimit = Number(postLimit);
+  }
+  const includeComments = searchParams.get("includeComments");
+  if (includeComments !== null && includeComments.trim() !== "") {
+    const n = includeComments.trim().toLowerCase();
+    if (n === "0" || n === "false" || n === "no") raw.includeComments = false;
+    if (n === "1" || n === "true" || n === "yes") raw.includeComments = true;
+  }
+  return raw;
+}
+
+/**
  * Resolve dry-run from JSON body and/or ?dryRun=1|true query.
  * Query wins when present so ops curl patterns cannot accidentally write live.
  */

@@ -3,6 +3,7 @@
  */
 import {
   INGEST_LIMITS,
+  applyIngestQueryOverrides,
   normalizeIngestRequest,
   resolveGitHubRepoTargets,
   resolveIngestDryRun,
@@ -83,6 +84,25 @@ describe("ingest-guards", () => {
     expect(resolveIngestDryRun(false, new URLSearchParams("dryRun=true"))).toBe(
       true
     );
+  });
+
+  it("applies ?mode=all from query so empty-body ops curls do not 400", () => {
+    const merged = applyIngestQueryOverrides(
+      {},
+      new URLSearchParams("dryRun=1&mode=all")
+    );
+    expect(merged.mode).toBe("all");
+    const parsed = normalizeIngestRequest(merged);
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.value.mode).toBe("all");
+    }
+    // Query mode overrides body mode when present
+    const overridden = applyIngestQueryOverrides(
+      { mode: "fetch", subreddits: ["azure"] },
+      new URLSearchParams("mode=all")
+    );
+    expect(overridden.mode).toBe("all");
   });
 
   it("resolves GitHub owner+repo / repos / targets shapes", () => {
