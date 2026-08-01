@@ -1,0 +1,65 @@
+Health: Minor Issue
+
+=== COMPLETED ===
+- What: Ops dry-run probes for Reddit ingest now accept the same query style as GitHub and Hacker News (no more false 400 on empty body).
+- Capability: Admin can call POST /api/ingest/reddit?dryRun=1&mode=all safely; dry-run does not write scored problems.
+- Maturity: Verified
+- Live: Yes
+- Why it matters: Reliability — hourly checks can probe Reddit without accidental live writes or broken probe curls.
+- Evidence: Problems4US/docs/problems4us-11e-reddit-mode-query-parity-20260801.json; prod v2026.08.01-2e9922e; GH Actions https://github.com/b06xob/Problems4Us/actions/runs/30724064863; live query dry-run HTTP 200 mode=all dryRun=true 6/6 credentials-missing catalog=186
+
+- What: Daily unattended ingest streak revalidated — still Day 2 of 3 at 66% (GitHub + Hacker News OK; Reddit soft-failing on missing OAuth).
+- Capability: Passport-readable ledger at GET /api/admin/ingest-daily remains current.
+- Maturity: Tested
+- Live: Partial
+- Why it matters: Reliability — unattended source pipeline is running; Reddit remains the only soft failure.
+- Evidence: Problems4US/docs/problems4us-11e-daily-ingest-ledger-20260801.json; consecutiveCalendarDaysPassed=2; escalateWarningToPassport=false
+
+- What: Funnel KPI rollup revalidated for Passport (visits → waitlist → activated → invite seats).
+- Capability: GET /api/admin/funnel still readable without chasing Audi.
+- Maturity: Tested
+- Live: Partial
+- Why it matters: Revenue — paid-seat formal close still waits Founder monetization path decision.
+- Evidence: Problems4US/docs/problems4us-12c-funnel-rollup-20260801.json; pricing_view=5 waitlist_view=41 activated=1/6 invite seats=1 checkoutReady=false
+
+=== PLANNED ===
+- What next: problems4us-11e — capture Day-3 unattended ingest receipt after 2026-08-02 cron (~06:20 UTC); keep Founder Decision A (11f GitHub+HN bar) and Decision B (09f invite paid path) open
+- Due: ASAP — continuing immediately, not waiting for a scheduled cycle or the step's target_date
+- Success: consecutiveCalendarDaysPassed=3 with successCriteriaMet=true OR Founder accepts GitHub+HN-only and plan criteria amended
+
+=== BLOCKERS ===
+- Blocker: Reddit OAuth secrets missing on App Service (REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET)
+- Owner: Xavier
+- CEO needed: Yes
+- Impact: Blocks 11a live smoke and delays Month-2 three-source rollup (11/11f); daily ledger stays at 2/3 soft-fail
+
+- Blocker: Month-2 paid path — centralized Stripe HOLD or Founder approve invite-only as production paid path (09f)
+- Owner: Xavier / Passport
+- CEO needed: Yes
+- Impact: Blocks 09/09b/09d/12c formal close; checkoutReady remains false
+
+- Blocker: External pilot outreach not run (14b)
+- Owner: Xavier
+- CEO needed: Yes
+- Impact: Activation stuck at 1/6; blocks 14c/14d/16d usefulness batch
+
+=== DECISIONS NEEDED ===
+Decision: Accept GitHub Issues + Hacker News as the Month-2 source bar now (defer Reddit), or restore Reddit OAuth secrets today?
+Recommendation: Accept GitHub+HN now; restore Reddit later as growth add-on.
+Reason: Two consecutive UTC days already succeed at 66% with GitHub+HN; Reddit soft-fails only on missing secrets; catalog already 186 (forum=180, reddit=5, github=1).
+Impact if approved: Agent applies 11f amendment and can close 11e after Day-3 without inventing Reddit traffic.
+Impact if declined: Xavier sets REDDIT_* on problems4us-linux; agent clears 11a same day.
+Deadline: 2026-08-02
+Default if no response: Keep GitHub+HN running; leave 11a/11f blocked; do not invent Reddit success.
+
+Decision: Approve invite-only Builder cohort + manual invoicing as Month-2 production paid path, or wait for centralized billing.breivax.com Stripe webhook?
+Recommendation: Approve invite-only now; centralized Stripe as Month-3 hardening.
+Reason: Isolated Stripe is on Founder HOLD; invite grant/revoke + entitlements already live; 1 pilot seat active.
+Impact if approved: 09f/09 and 12c can close on invite seats; outreach can grant seats without Stripe secrets.
+Impact if declined: 09/12 stay open until BREIVAX_BILLING_FORWARD_SECRET + centralized webhook live.
+Deadline: 2026-08-05
+Default if no response: Invite cohort remains only live paid path; plan steps stay blocked.
+
+=== RISKS ===
+Medium: Activation and paid seats remain smoke-level (1 activated / 1 invite seat) until Founder outreach — delays Month-2 done-when and revenue proof.
+Low: Day-3 ingest cron is the next calendar gate; if it fails, 11e streak resets.

@@ -1,11 +1,11 @@
 ﻿{
   "stepId": "problems4us-11e",
   "correlationId": "cos-hourly-pulse-20260801T234502Z",
-  "updatedAtUtc": "2026-08-01T23:50:00Z",
+  "updatedAtUtc": "2026-08-01T23:55:00Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "status": "in_progress",
-  "verdict": "Day-2 still holds (2/3 consecutive UTC calendar days >=60%). This 19:45 ET pulse revalidated live ledger + source dry-runs on prod v2026.08.01-5b63497, then shipped Reddit ?mode= query parity (unit 8/8) for deploy. Reddit still credentials-missing (6/6). Day-3 waits 2026-08-02 scheduled cron (~06:20 UTC) — cannot invent a future day.",
+  "verdict": "Day-2 still holds (2/3 consecutive UTC calendar days >=60%). This 19:45 ET pulse revalidated live ledger + source dry-runs, then shipped and verified Reddit ?mode= query parity on prod v2026.08.01-2e9922e (query dry-run HTTP 200, dryRun=true, mode=all, 6/6 credentials-missing, catalog unchanged 186). Day-3 waits 2026-08-02 scheduled cron (~06:20 UTC) — cannot invent a future day.",
   "live": {
     "http": 200,
     "url": "https://problems4us.com/api/admin/ingest-daily",
@@ -52,7 +52,7 @@
       "error": "Reddit API credentials missing. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET.",
       "subredditsProcessed": 6,
       "errorCount": 6,
-      "note": "Body form {mode:all,dryRun:true}. Query form ?mode=all&dryRun=1 was 400 pre-fix; fix shipping this pulse."
+      "note": "Post-deploy query form ?mode=all&dryRun=1 HTTP 200 on v2026.08.01-2e9922e (was 400 pre-fix)."
     },
     "hackernews": {
       "http": 200,
@@ -82,12 +82,14 @@
     "checkoutReady": false,
     "database": "connected",
     "aiProvider": "openai",
-    "version": "v2026.08.01-5b63497"
+    "version": "v2026.08.01-2e9922e"
   },
   "engineeringThisPulse": {
     "fix": "applyIngestQueryOverrides so Reddit honors ?mode=all with empty body",
     "unitTests": "8/8 ingest-guards",
+    "deployRun": "https://github.com/b06xob/Problems4Us/actions/runs/30724064863",
+    "prodVersion": "v2026.08.01-2e9922e",
     "evidence": "Problems4US/docs/problems4us-11e-reddit-mode-query-parity-20260801.json"
   },
-  "nextAction": "Deploy mode-query fix; wait for 2026-08-02 unattended cron (~06:20 UTC) for Day-3 receipt; keep Founder Decision A (11f) open — do not invent Reddit success."
+  "nextAction": "Wait for 2026-08-02 unattended cron (~06:20 UTC) for Day-3 receipt; keep Founder Decision A (11f) open — do not invent Reddit success."
 }

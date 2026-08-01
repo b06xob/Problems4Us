@@ -2,7 +2,7 @@
   "stepId": "problems4us-11e-ops-safety",
   "title": "Reddit ingest honors ?mode=all query (empty-body ops curl parity)",
   "correlationId": "cos-hourly-pulse-20260801T234502Z",
-  "updatedAtUtc": "2026-08-01T23:50:00Z",
+  "updatedAtUtc": "2026-08-01T23:55:00Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "problem": "POST /api/ingest/reddit?dryRun=1&mode=all with empty body returned HTTP 400 Provide subreddits array or use mode all — query mode was ignored so normalize defaulted to fetch.",
@@ -10,18 +10,32 @@
     "applyIngestQueryOverrides": "query mode/sort/timeframe/postLimit/includeComments merge into body before normalize; query wins when present",
     "routes": ["src/app/api/ingest/reddit/route.ts"],
     "lib": "src/lib/ingest-guards.ts",
-    "runbook": "docs/ops-runbook-admin-ingest.md"
+    "runbook": "docs/ops-runbook-admin-ingest.md",
+    "commit": "2e9922e"
   },
   "validation": {
     "unitTests": "tests/ingest-guards.test.ts — 8 passed",
     "localCommand": "npm test -- --testPathPattern=ingest-guards --no-coverage",
-    "preDeployProbe": {
-      "queryFormHttp": 400,
-      "bodyFormHttp": 200,
-      "bodyFormNote": "POST body {dryRun:true,mode:all} still credentials-missing 6/6 (expected until REDDIT_* set)"
+    "deploy": {
+      "commit": "2e9922e",
+      "version": "v2026.08.01-2e9922e",
+      "githubRun": "https://github.com/b06xob/Problems4Us/actions/runs/30724064863",
+      "conclusion": "success"
+    },
+    "prodSmoke": {
+      "queryFormHttp": 200,
+      "success": false,
+      "dryRun": true,
+      "mode": "all",
+      "subredditsProcessed": 6,
+      "errorCount": 6,
+      "painPointsStored": 0,
+      "error": "Reddit API credentials missing. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET.",
+      "catalogTotal": 186,
+      "note": "Pre-fix query form was HTTP 400; post-deploy query form reaches credential soft-fail without writing pain points."
     }
   },
-  "maturity": "Tested",
-  "live": "Partial",
+  "maturity": "Verified",
+  "live": "Yes",
   "whyItMatters": "Reliability — hourly/ops probes using the same query style as GitHub/HN must not 400 or silently default to fetch."
 }
