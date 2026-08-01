@@ -1,0 +1,37 @@
+{
+  "stepId": "ops-readiness",
+  "correlationId": "cos-hourly-pulse-20260801T074504Z",
+  "updatedAtUtc": "2026-08-01T07:56:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "status": "shipped_code",
+  "verdict": "Passport-readable ops flags on public health + admin checklist; unit tests green; awaiting deploy for live smoke",
+  "code": [
+    "Problems4US/src/lib/ops-readiness.ts",
+    "Problems4US/src/app/api/health/route.ts",
+    "Problems4US/src/app/api/admin/ops-readiness/route.ts",
+    "Problems4US/tests/ops-readiness.test.ts"
+  ],
+  "unitTests": "ops-readiness + ingest-daily-receipt + app-insights: 12/12 passed",
+  "expectedLive": {
+    "healthOpsKeys": [
+      "redditOAuthConfigured",
+      "passwordResetEmailConfigured",
+      "appInsightsConfigured",
+      "billingForwardSecretConfigured"
+    ],
+    "adminPath": "GET /api/admin/ops-readiness"
+  },
+  "azureSettingNamesPresent": [
+    "ADMIN_API_KEY",
+    "OPENAI_API_KEY",
+    "AZURE_SQL_CONNECTION_STRING"
+  ],
+  "azureSettingNamesAbsent": [
+    "REDDIT_CLIENT_ID",
+    "SENDGRID_API_KEY",
+    "APPLICATIONINSIGHTS_CONNECTION_STRING",
+    "STRIPE_SECRET_KEY",
+    "BREIVAX_BILLING_FORWARD_SECRET"
+  ]
+}

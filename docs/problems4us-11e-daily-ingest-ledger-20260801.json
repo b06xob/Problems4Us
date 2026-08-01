@@ -1,11 +1,11 @@
 {
   "stepId": "problems4us-11e",
-  "correlationId": "cos-hourly-pulse-20260801T054503Z",
-  "updatedAtUtc": "2026-08-01T05:51:10Z",
+  "correlationId": "cos-hourly-pulse-20260801T074504Z",
+  "updatedAtUtc": "2026-08-01T07:55:00Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "status": "in_progress",
-  "verdict": "Day-2 ledger still 2/3 consecutive calendar days >=60%; Reddit soft-fails on missing OAuth; next day 2026-08-02 cron",
+  "verdict": "Day-2 ledger still 2/3 consecutive calendar days >=60%; Reddit soft_credentials founderAction now exposed on ingest-daily; next day 2026-08-02 cron",
   "live": {
     "http": 200,
     "url": "https://problems4us.com/api/admin/ingest-daily",
@@ -13,6 +13,8 @@
     "consecutiveCalendarDaysNeeded": 3,
     "successCriteriaMet": false,
     "escalateWarningToPassport": false,
+    "consecutiveRedditSoftCredentialDays": 2,
+    "founderActionRequiredReddit": true,
     "days": [
       {
         "calendarDayUtc": "2026-08-01",
@@ -20,7 +22,8 @@
         "ok": 2,
         "attempted": 3,
         "successRatePct": 66,
-        "reddit": "soft_credentials"
+        "reddit": "soft_credentials",
+        "githubRunId": "30689244646"
       },
       {
         "calendarDayUtc": "2026-07-31",
@@ -28,10 +31,16 @@
         "ok": 2,
         "attempted": 3,
         "successRatePct": 66,
-        "reddit": "soft_credentials"
+        "reddit": "soft_credentials",
+        "githubRunId": "30674158121"
       }
     ]
   },
+  "codeThisCycle": [
+    "Problems4US/src/lib/ingest-daily-receipt.ts (founderActionRequiredReddit)",
+    "Problems4US/src/app/api/admin/ingest-daily/route.ts",
+    "Problems4US/tests/ingest-daily-receipt.test.ts"
+  ],
   "docs": [
     "Problems4US/docs/problems4us-11e-daily-ingest-ledger-20260801.json"
   ]

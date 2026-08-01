@@ -125,6 +125,45 @@ describe("ingest-daily-receipt (problems4us-11e)", () => {
     expect(okSummary.escalateWarning).toBeNull();
   });
 
+  it("flags founder Reddit action after 2 soft_credentials days", () => {
+    const soft: IngestDailyReceiptRecord[] = [
+      {
+        ReceiptId: "a",
+        CalendarDayUtc: "2026-08-01",
+        RunAtUtc: "2026-08-01T06:20:00Z",
+        OkCount: 2,
+        Attempted: 3,
+        SuccessRatePct: 66,
+        Passed: true,
+        SourcesJson:
+          '{"github":"ok","hackernews":"ok","reddit":"soft_credentials"}',
+        GithubRunId: null,
+        GithubRunUrl: null,
+        Note: null,
+        CreatedAt: "2026-08-01T06:20:00Z",
+      },
+      {
+        ReceiptId: "b",
+        CalendarDayUtc: "2026-07-31",
+        RunAtUtc: "2026-07-31T06:20:00Z",
+        OkCount: 2,
+        Attempted: 3,
+        SuccessRatePct: 66,
+        Passed: true,
+        SourcesJson:
+          '{"github":"ok","hackernews":"ok","reddit":"soft_credentials"}',
+        GithubRunId: null,
+        GithubRunUrl: null,
+        Note: null,
+        CreatedAt: "2026-07-31T06:20:00Z",
+      },
+    ];
+    const summary = buildLedgerSummary(soft, 3);
+    expect(summary.consecutiveRedditSoftCredentialDays).toBe(2);
+    expect(summary.founderActionRequiredReddit).toBe(true);
+    expect(summary.founderActionReddit).toMatch(/11f/);
+  });
+
   it("normalizeReceiptInput computes rate and passed", () => {
     const bad = normalizeReceiptInput({ calendarDayUtc: "bad" });
     expect(bad.ok).toBe(false);

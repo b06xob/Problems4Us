@@ -1,7 +1,7 @@
 {
   "stepId": "problems4us-12c",
-  "correlationId": "cos-hourly-pulse-20260801T054503Z",
-  "updatedAtUtc": "2026-08-01T05:51:03Z",
+  "correlationId": "cos-hourly-pulse-20260801T074504Z",
+  "updatedAtUtc": "2026-08-01T07:50:08Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "status": "in_progress",
@@ -11,10 +11,10 @@
     "unauthHttp": 401,
     "url": "https://problems4us.com/api/admin/funnel?hours=168",
     "pricing_view": 5,
-    "waitlist_view": 40,
+    "waitlist_view": 39,
     "waitlistTotal": 1,
     "activatedAccounts": 1,
-    "totalAccounts": 5,
+    "totalAccounts": 6,
     "activePilotSeats": 1,
     "stripePaid": 0,
     "checkoutReady": false

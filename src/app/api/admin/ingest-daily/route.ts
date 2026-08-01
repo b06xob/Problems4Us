@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
       records,
       // Passport/agent wake: publish Warning+ when escalateWarningToPassport is true
       escalateWarning: ledger.escalateWarning,
+      founderActionRequired: ledger.founderActionRequiredReddit,
+      founderAction: ledger.founderActionReddit,
     });
   } catch (error) {
     console.error("ingest-daily GET failed:", error);
@@ -69,6 +71,8 @@ export async function POST(request: NextRequest) {
         (!normalized.value.passed
           ? "Scheduled daily ingest below 60% this day — escalate Warning+ to Passport if consecutive failures persist."
           : null),
+      founderActionRequired: ledger.founderActionRequiredReddit,
+      founderAction: ledger.founderActionReddit,
     });
   } catch (error) {
     console.error("ingest-daily POST failed:", error);

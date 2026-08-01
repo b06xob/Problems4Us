@@ -1,0 +1,27 @@
+{
+  "stepId": "problems4us-14b",
+  "correlationId": "cos-hourly-pulse-20260801T074504Z",
+  "updatedAtUtc": "2026-08-01T07:55:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "status": "blocked",
+  "verdict": "Outreach pack bundled for Xavier; agent cannot invent external activated pilots",
+  "handoff": "Problems4US/docs/problems4us-14b-outreach-handoff-20260801.md",
+  "pack": [
+    "Problems4US/docs/problems4us-18a-partner-pilot-offer-20260731.md",
+    "Problems4US/docs/problems4us-18b-demo-script-20260731.md",
+    "Problems4US/docs/problems4us-18c-case-narratives-prep-20260801.md",
+    "Problems4US/docs/ops-runbook-invite-cohort.md"
+  ],
+  "liveBaseline": {
+    "activatedAccounts": 1,
+    "totalAccounts": 6,
+    "activePilotSeats": 1,
+    "stripePaid": 0
+  },
+  "blocker": {
+    "owner": "Xavier Boyd",
+    "ceoNeeded": true,
+    "action": "Run pilot outreach using offer + demo script; name 1-3 external contacts for Builder seats."
+  }
+}
