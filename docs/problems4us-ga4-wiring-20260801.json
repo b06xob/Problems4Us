@@ -1,0 +1,26 @@
+{
+  "correlationId": "cos-directive-20260801-ga4-problems4us",
+  "task": "Wire Google Analytics 4 on problems4us.com",
+  "measurementId": "G-2KR0ZZPNBC",
+  "gaAccount": "Breivax Technologies (62547512)",
+  "sisterSiteIdsNotUsed": {
+    "breivax.com": "G-BKTG3CBWEB",
+    "xpsview.org": "G-Q7K2Y740Y4"
+  },
+  "implementation": {
+    "file": "src/app/layout.tsx",
+    "placement": "root layout <head> via next/script strategy=beforeInteractive",
+    "scope": "all pages rendered through App Router root layout"
+  },
+  "cspCheck": {
+    "inRepo": "none found (next.config.ts has no headers; no middleware; no CSP strings)",
+    "azureAppSettings": "no CSP/HEADER/SECURITY content-security settings on problems4us-linux",
+    "livePreDeployHeaders": "no Content-Security-Policy on https://problems4us.com or https://www.problems4us.com (2026-08-01T04:08Z)",
+    "actionRequired": "none — no CSP to amend"
+  },
+  "verificationPending": [
+    "live HTML contains G-2KR0ZZPNBC / googletagmanager.com/gtag/js",
+    "post-deploy response headers still lack CSP (or allow GTM if CSP added later)",
+    "GitHub Actions deploy receipt on main"
+  ]
+}
