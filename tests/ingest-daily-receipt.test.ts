@@ -2,10 +2,13 @@
  * @jest-environment node
  */
 import {
+  buildLedgerSummary,
+  countConsecutiveFailedDays,
   countConsecutivePassedDays,
   isCalendarDayUtc,
   normalizeReceiptInput,
   previousUtcDay,
+  type IngestDailyReceiptRecord,
 } from "@/lib/ingest-daily-receipt";
 
 describe("ingest-daily-receipt (problems4us-11e)", () => {
@@ -49,6 +52,77 @@ describe("ingest-daily-receipt (problems4us-11e)", () => {
         { calendarDayUtc: "2026-07-29", passed: true },
       ])
     ).toBe(1);
+  });
+
+  it("counts consecutive failed days and escalates after 2", () => {
+    expect(
+      countConsecutiveFailedDays([
+        { calendarDayUtc: "2026-08-01", passed: false },
+        { calendarDayUtc: "2026-07-31", passed: false },
+      ])
+    ).toBe(2);
+
+    expect(
+      countConsecutiveFailedDays([
+        { calendarDayUtc: "2026-08-01", passed: false },
+        { calendarDayUtc: "2026-07-31", passed: true },
+      ])
+    ).toBe(1);
+
+    const failRecords: IngestDailyReceiptRecord[] = [
+      {
+        ReceiptId: "a",
+        CalendarDayUtc: "2026-08-01",
+        RunAtUtc: "2026-08-01T06:20:00Z",
+        OkCount: 0,
+        Attempted: 3,
+        SuccessRatePct: 0,
+        Passed: false,
+        SourcesJson: "{}",
+        GithubRunId: null,
+        GithubRunUrl: null,
+        Note: null,
+        CreatedAt: "2026-08-01T06:20:00Z",
+      },
+      {
+        ReceiptId: "b",
+        CalendarDayUtc: "2026-07-31",
+        RunAtUtc: "2026-07-31T06:20:00Z",
+        OkCount: 1,
+        Attempted: 3,
+        SuccessRatePct: 33,
+        Passed: false,
+        SourcesJson: "{}",
+        GithubRunId: null,
+        GithubRunUrl: null,
+        Note: null,
+        CreatedAt: "2026-07-31T06:20:00Z",
+      },
+    ];
+    const summary = buildLedgerSummary(failRecords, 3);
+    expect(summary.escalateWarningToPassport).toBe(true);
+    expect(summary.consecutiveFailedCalendarDays).toBe(2);
+    expect(summary.escalateWarning).toMatch(/Warning\+/);
+
+    const okSummary = buildLedgerSummary(
+      [
+        {
+          ...failRecords[0],
+          Passed: true,
+          OkCount: 2,
+          SuccessRatePct: 66,
+        },
+        {
+          ...failRecords[1],
+          Passed: true,
+          OkCount: 2,
+          SuccessRatePct: 66,
+        },
+      ],
+      3
+    );
+    expect(okSummary.escalateWarningToPassport).toBe(false);
+    expect(okSummary.escalateWarning).toBeNull();
   });
 
   it("normalizeReceiptInput computes rate and passed", () => {

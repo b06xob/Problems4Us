@@ -151,7 +151,7 @@ curl.exe -s "https://problems4us.com/api/admin/ingest-daily?limit=14" `
   -H "x-admin-api-key: $env:ADMIN_API_KEY"
 ```
 
-Escalate Warning to Passport if the scheduled job fails twice in a row, or success rate stays below 60% for 2 consecutive days after Reddit secrets are restored. Failed receipts set `escalateWarning` on POST and leave `passed=false` on the ledger for the next agent wake.
+Escalate Warning to Passport if the scheduled job fails twice in a row, or success rate stays below 60% for 2 consecutive days after Reddit secrets are restored. `GET /api/admin/ingest-daily` exposes `ledger.escalateWarningToPassport` and `escalateWarning` for agent wakes — publish Intercom Warning+ when true. Failed receipts also set `escalateWarning` on POST and leave `passed=false` on the ledger.
 
 ## Builder entitlement pilot (G7 bypass)
 

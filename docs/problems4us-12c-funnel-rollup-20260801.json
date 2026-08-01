@@ -1,22 +1,23 @@
 {
   "stepId": "problems4us-12c",
   "alsoAdvances": ["problems4us-12"],
-  "correlationId": "cos-hourly-pulse-20260801T024502Z",
-  "priorCorrelationId": "cos-hourly-pulse-20260801T014503Z",
-  "updatedAtUtc": "2026-08-01T02:53:51Z",
+  "correlationId": "cos-hourly-pulse-20260801T034504Z",
+  "priorCorrelationId": "cos-hourly-pulse-20260801T024502Z",
+  "updatedAtUtc": "2026-08-01T03:52:00Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "replyTo": "Passport",
   "status": "in_progress",
   "successCriteria": "Paid seat counts join visits/activated into one Passport-readable dashboard or weekly Intercom artifact; path documented.",
   "advancedThisCycle": [
-    "Shipped GET /api/admin/funnel?hours=168 — one-call Passport rollup of visits + waitlist + activated + paid/entitled seats + checkout flags.",
-    "Unit tests tests/funnel-kpi.test.ts 3/3; deploy GH run 30680753945 success; prod version v2026.08.01-0e5086c.",
-    "Live smoke: funnel HTTP 200 ok=true; unauthenticated call HTTP 401 fail-closed; ops-runbook-funnel-kpi.md updated to prefer single call."
+    "Re-validated live GET /api/admin/funnel?hours=168 — HTTP 200 ok=true; unauthenticated HTTP 401 fail-closed.",
+    "KPIs unchanged vs prior cycle: pricing_view=4, waitlist_view=33, activated=1/5, invite Builder seats=1, Stripe paid=0, checkoutReady=false.",
+    "Formal close still waits on problems4us-09 (Xavier Stripe/centralized billing OR Founder confirm invite cohort as production paid path)."
   ],
   "funnelKpis": {
     "window": "last_168h_events_plus_live_counts",
     "passportReadablePath": "GET https://problems4us.com/api/admin/funnel?hours=168",
+    "asOfUtc": "2026-08-01T03:49:59.903Z",
     "visits": {
       "proxy": "instrumented page views via conversion events",
       "pricing_view": 4,
@@ -47,17 +48,16 @@
     }
   },
   "deploy": {
-    "commit": "0e5086c",
-    "version": "v2026.08.01-0e5086c",
-    "githubRunId": "30680753945",
-    "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30680753945"
+    "commit": "b90c28f",
+    "version": "v2026.08.01-b90c28f",
+    "note": "Funnel API shipped earlier in 0e5086c; this cycle is live revalidation only."
   },
-  "validationAtUtc": "2026-08-01T02:53:51Z",
+  "validationAtUtc": "2026-08-01T03:49:59Z",
   "live": {
     "health": "healthy",
     "database": "connected",
     "aiProvider": "openai",
-    "version": "v2026.08.01-0e5086c",
+    "version": "v2026.08.01-b90c28f",
     "checkoutReady": false,
     "funnelHttp": 200,
     "funnelUnauthHttp": 401

@@ -73,18 +73,24 @@ export function isCalendarDayUtc(value: unknown): value is string {
  * Count trailing consecutive calendar days (from the newest day backward)
  * that passed the >=60% bar. Gaps or failed days break the streak.
  */
-export function countConsecutivePassedDays(
-  days: Array<{ calendarDayUtc: string; passed: boolean }>,
-  needed = 3
-): number {
-  if (!days.length) return 0;
-  const sorted = [...days].sort((a, b) =>
+function sortDaysNewestFirst(
+  days: Array<{ calendarDayUtc: string; passed: boolean }>
+): Array<{ calendarDayUtc: string; passed: boolean }> {
+  return [...days].sort((a, b) =>
     a.calendarDayUtc < b.calendarDayUtc
       ? 1
       : a.calendarDayUtc > b.calendarDayUtc
         ? -1
         : 0
   );
+}
+
+export function countConsecutivePassedDays(
+  days: Array<{ calendarDayUtc: string; passed: boolean }>,
+  needed = 3
+): number {
+  if (!days.length) return 0;
+  const sorted = sortDaysNewestFirst(days);
 
   let streak = 0;
   let expectDay: string | null = null;
@@ -104,6 +110,39 @@ export function countConsecutivePassedDays(
 
   return streak;
 }
+
+/**
+ * Trailing consecutive failed calendar days (newest first).
+ * Used to decide Warning+ escalation to Passport (ops-runbook: 2 consecutive).
+ */
+export function countConsecutiveFailedDays(
+  days: Array<{ calendarDayUtc: string; passed: boolean }>,
+  needed = 2
+): number {
+  if (!days.length) return 0;
+  const sorted = sortDaysNewestFirst(days);
+
+  let streak = 0;
+  let expectDay: string | null = null;
+
+  for (const day of sorted) {
+    if (day.passed) break;
+    if (expectDay === null) {
+      streak = 1;
+      expectDay = previousUtcDay(day.calendarDayUtc);
+      continue;
+    }
+    if (day.calendarDayUtc !== expectDay) break;
+    streak += 1;
+    expectDay = previousUtcDay(day.calendarDayUtc);
+    if (streak >= needed) break;
+  }
+
+  return streak;
+}
+
+/** Ops threshold: escalate Warning+ after this many consecutive failed days. */
+export const INGEST_DAILY_ESCALATE_AFTER_FAILED_DAYS = 2;
 
 export function previousUtcDay(day: string): string {
   const [y, m, d] = day.split("-").map(Number);
@@ -318,10 +357,22 @@ export function buildLedgerSummary(records: IngestDailyReceiptRecord[], needed =
     sources: safeParseSources(r.SourcesJson),
   }));
   const consecutive = countConsecutivePassedDays(days, needed);
+  const consecutiveFailed = countConsecutiveFailedDays(
+    days,
+    INGEST_DAILY_ESCALATE_AFTER_FAILED_DAYS
+  );
+  const escalateWarningToPassport =
+    consecutiveFailed >= INGEST_DAILY_ESCALATE_AFTER_FAILED_DAYS;
   return {
     consecutiveCalendarDaysNeeded: needed,
     consecutiveCalendarDaysPassed: consecutive,
     successCriteriaMet: consecutive >= needed,
+    consecutiveFailedCalendarDays: consecutiveFailed,
+    escalateAfterFailedDays: INGEST_DAILY_ESCALATE_AFTER_FAILED_DAYS,
+    escalateWarningToPassport,
+    escalateWarning: escalateWarningToPassport
+      ? `Scheduled daily ingest failed ${consecutiveFailed} consecutive calendar days — escalate Warning+ to Passport (ops-runbook-admin-ingest.md).`
+      : null,
     days,
   };
 }

@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
       stepId: "problems4us-11e",
       ledger,
       records,
+      // Passport/agent wake: publish Warning+ when escalateWarningToPassport is true
+      escalateWarning: ledger.escalateWarning,
     });
   } catch (error) {
     console.error("ingest-daily GET failed:", error);
@@ -63,9 +65,10 @@ export async function POST(request: NextRequest) {
       record,
       ledger,
       escalateWarning:
-        !normalized.value.passed
-          ? "Scheduled daily ingest below 60% — escalate Warning+ to Passport if consecutive failures."
-          : null,
+        ledger.escalateWarning ??
+        (!normalized.value.passed
+          ? "Scheduled daily ingest below 60% this day — escalate Warning+ to Passport if consecutive failures persist."
+          : null),
     });
   } catch (error) {
     console.error("ingest-daily POST failed:", error);

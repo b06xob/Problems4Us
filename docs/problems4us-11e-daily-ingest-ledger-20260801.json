@@ -1,24 +1,26 @@
 {
   "stepId": "problems4us-11e",
-  "correlationId": "cos-hourly-pulse-20260801T024502Z",
-  "priorCorrelationId": "cos-hourly-pulse-20260801T014503Z",
+  "correlationId": "cos-hourly-pulse-20260801T034504Z",
+  "priorCorrelationId": "cos-hourly-pulse-20260801T024502Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
-  "asOfUtc": "2026-08-01T02:53:51Z",
+  "asOfUtc": "2026-08-01T03:52:00Z",
   "status": "in_progress",
   "successCriteria": "Scheduled daily job runs ingest->score for watched sources without human poke; success rate >=60% over 3 consecutive days; failure escalates Warning+ to Passport.",
   "advancedThisCycle": [
-    "Re-validated Passport ledger GET /api/admin/ingest-daily — consecutiveCalendarDaysPassed=2/3 unchanged.",
-    "Confirmed Day-2 (2026-08-01) and Day-1 (2026-07-31) both passed at 66% (GitHub+HN ok; Reddit soft_credentials).",
-    "Confirmed latest scheduled-daily-ingest workflow runs success (30676424173, 30674158121).",
+    "Shipped Passport-readable consecutive-failure escalation on GET/POST /api/admin/ingest-daily (ledger.escalateWarningToPassport after 2 failed calendar days).",
+    "Unit tests tests/ingest-daily-receipt.test.ts 5/5 including escalate-after-2.",
+    "Ops runbook updated: agent wakes publish Intercom Warning+ when escalateWarningToPassport is true.",
+    "Re-validated live ledger: consecutiveCalendarDaysPassed=2/3 unchanged (Day-1 2026-07-31 + Day-2 2026-08-01 both 66%).",
     "Cannot lock Day-3 until UTC calendar day 2026-08-02 (cron 06:20 UTC).",
-    "Reconfirmed App Service has no REDDIT_* / STRIPE_* settings (only ADMIN_API_KEY + OPENAI_API_KEY among those patterns); Reddit dry-run still credentials missing."
+    "Reddit dry-run still credentials missing; App Service has no REDDIT_* or STRIPE_* settings (only ADMIN_API_KEY + OPENAI_API_KEY)."
   ],
   "ledger": {
     "consecutiveCalendarDaysNeeded": 3,
     "consecutiveCalendarDaysPassed": 2,
     "successCriteriaMet": false,
     "passportReadablePath": "GET https://problems4us.com/api/admin/ingest-daily?limit=14",
+    "escalationPath": "ledger.escalateWarningToPassport + escalateWarning on GET/POST",
     "days": [
       {
         "calendarDayUtc": "2026-08-01",
@@ -63,8 +65,8 @@
     "health": "healthy",
     "database": "connected",
     "aiProvider": "openai",
-    "version": "v2026.08.01-0e5086c",
+    "versionAtCheck": "v2026.08.01-b90c28f",
     "checkoutReady": false,
-    "checkedAtUtc": "2026-08-01T02:53:51Z"
+    "checkedAtUtc": "2026-08-01T03:49:38Z"
   }
 }
