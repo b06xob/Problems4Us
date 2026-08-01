@@ -61,12 +61,20 @@
     "Needs 1 more consecutive calendar-day success (2026-08-02) before close.",
     "Full three-source bar still gated by problems4us-11a Reddit OAuth secrets on App Service (soft-fail continues)."
   ],
+  "deploy": {
+    "commit": "1e8b6c6",
+    "version": "v2026.08.01-1e8b6c6",
+    "githubRunId": "30682854392",
+    "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30682854392"
+  },
   "prod": {
     "health": "healthy",
     "database": "connected",
     "aiProvider": "openai",
-    "versionAtCheck": "v2026.08.01-b90c28f",
+    "version": "v2026.08.01-1e8b6c6",
     "checkoutReady": false,
-    "checkedAtUtc": "2026-08-01T03:49:38Z"
+    "ledgerEscalateWarningToPassport": false,
+    "consecutiveCalendarDaysPassed": 2,
+    "checkedAtUtc": "2026-08-01T03:58:00Z"
   }
 }
