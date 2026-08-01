@@ -72,16 +72,10 @@ export function evaluateAiCostCeiling(
   input: AiCostCeilingInput
 ): AiCostCeilingCheck {
   const asOfUtc = input.asOfUtc ?? new Date().toISOString();
-  const cfg = getAiBudgetConfig({
-    AI_DAILY_TOKEN_BUDGET:
-      input.dailyTokenBudget != null
-        ? String(input.dailyTokenBudget)
-        : undefined,
-    AI_ANALYZE_MAX_CHARS:
-      input.perRequestMaxChars != null
-        ? String(input.perRequestMaxChars)
-        : undefined,
-  } as NodeJS.ProcessEnv);
+  const defaults = getAiBudgetConfig();
+  const dailyTokenBudget = input.dailyTokenBudget ?? defaults.dailyTokenBudget;
+  const perRequestMaxChars =
+    input.perRequestMaxChars ?? defaults.perRequestMaxChars;
 
   const mrrUsd = finiteNonNeg(input.mrrUsd) ?? 0;
   const activated = Math.max(
@@ -173,8 +167,8 @@ export function evaluateAiCostCeiling(
       any: anyBreach,
     },
     analyzeBudgetControls: {
-      dailyTokenBudget: cfg.dailyTokenBudget,
-      perRequestMaxChars: cfg.perRequestMaxChars,
+      dailyTokenBudget,
+      perRequestMaxChars,
       note: "problems4us-27 per-request + daily token caps remain enforced on POST /api/ai/analyze",
     },
     status,
