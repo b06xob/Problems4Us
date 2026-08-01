@@ -1,0 +1,72 @@
+{
+  "stepId": "problems4us-12c",
+  "alsoAdvances": ["problems4us-12"],
+  "correlationId": "cos-hourly-pulse-20260801T024502Z",
+  "priorCorrelationId": "cos-hourly-pulse-20260801T014503Z",
+  "updatedAtUtc": "2026-08-01T02:53:51Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "replyTo": "Passport",
+  "status": "in_progress",
+  "successCriteria": "Paid seat counts join visits/activated into one Passport-readable dashboard or weekly Intercom artifact; path documented.",
+  "advancedThisCycle": [
+    "Shipped GET /api/admin/funnel?hours=168 — one-call Passport rollup of visits + waitlist + activated + paid/entitled seats + checkout flags.",
+    "Unit tests tests/funnel-kpi.test.ts 3/3; deploy GH run 30680753945 success; prod version v2026.08.01-0e5086c.",
+    "Live smoke: funnel HTTP 200 ok=true; unauthenticated call HTTP 401 fail-closed; ops-runbook-funnel-kpi.md updated to prefer single call."
+  ],
+  "funnelKpis": {
+    "window": "last_168h_events_plus_live_counts",
+    "passportReadablePath": "GET https://problems4us.com/api/admin/funnel?hours=168",
+    "visits": {
+      "proxy": "instrumented page views via conversion events",
+      "pricing_view": 4,
+      "waitlist_view": 33
+    },
+    "waitlist": {
+      "totalRecords": 1
+    },
+    "activated": {
+      "totalAccounts": 5,
+      "activatedAccounts": 1,
+      "rule": "saved_problems>=3 OR saved_ideas>=1"
+    },
+    "paidOrEntitledSeats": {
+      "activeBuilderSeats": 1,
+      "activePilotSeats": 1,
+      "stripePaidEarlyAccessEvents": 0,
+      "checkoutReady": false,
+      "definition": "Invite/pilot Builder seats (problems4us-09a) count as entitled/paid seats until centralized Stripe (09b) is live; Stripe paid_early_access remains 0 while checkoutReady=false."
+    },
+    "otherEvents": {
+      "builder_brief_export": 5,
+      "builder_brief_share": 5,
+      "builder_brief_share_view": 1,
+      "admin_pilot_grant": 5,
+      "admin_pilot_revoke": 4,
+      "total": 57
+    }
+  },
+  "deploy": {
+    "commit": "0e5086c",
+    "version": "v2026.08.01-0e5086c",
+    "githubRunId": "30680753945",
+    "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30680753945"
+  },
+  "validationAtUtc": "2026-08-01T02:53:51Z",
+  "live": {
+    "health": "healthy",
+    "database": "connected",
+    "aiProvider": "openai",
+    "version": "v2026.08.01-0e5086c",
+    "checkoutReady": false,
+    "funnelHttp": 200,
+    "funnelUnauthHttp": 401
+  },
+  "limitations": [
+    "Stripe checkoutReady=false — no card-paid seats yet (09b HOLD on isolated Stripe; centralized billing pending).",
+    "Visit counts are product instrumentation proxies, not CDN unique visitors.",
+    "Activation gate for Month-2 done-when still short (1 activated vs >=10 target) — see problems4us-14a."
+  ],
+  "successCriteriaMet": false,
+  "remainingToClose": "problems4us-09 rollup (Stripe live OR Founder confirms invite/pilot seats as production paid path for KPI). Live one-call Passport path already shipped."
+}

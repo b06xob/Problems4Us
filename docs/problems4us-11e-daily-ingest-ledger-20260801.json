@@ -1,0 +1,70 @@
+{
+  "stepId": "problems4us-11e",
+  "correlationId": "cos-hourly-pulse-20260801T024502Z",
+  "priorCorrelationId": "cos-hourly-pulse-20260801T014503Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "asOfUtc": "2026-08-01T02:53:51Z",
+  "status": "in_progress",
+  "successCriteria": "Scheduled daily job runs ingest->score for watched sources without human poke; success rate >=60% over 3 consecutive days; failure escalates Warning+ to Passport.",
+  "advancedThisCycle": [
+    "Re-validated Passport ledger GET /api/admin/ingest-daily — consecutiveCalendarDaysPassed=2/3 unchanged.",
+    "Confirmed Day-2 (2026-08-01) and Day-1 (2026-07-31) both passed at 66% (GitHub+HN ok; Reddit soft_credentials).",
+    "Confirmed latest scheduled-daily-ingest workflow runs success (30676424173, 30674158121).",
+    "Cannot lock Day-3 until UTC calendar day 2026-08-02 (cron 06:20 UTC).",
+    "Reconfirmed App Service has no REDDIT_* / STRIPE_* settings (only ADMIN_API_KEY + OPENAI_API_KEY among those patterns); Reddit dry-run still credentials missing."
+  ],
+  "ledger": {
+    "consecutiveCalendarDaysNeeded": 3,
+    "consecutiveCalendarDaysPassed": 2,
+    "successCriteriaMet": false,
+    "passportReadablePath": "GET https://problems4us.com/api/admin/ingest-daily?limit=14",
+    "days": [
+      {
+        "calendarDayUtc": "2026-08-01",
+        "passed": true,
+        "ok": 2,
+        "attempted": 3,
+        "successRatePct": 66,
+        "githubRunId": "30676424173",
+        "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30676424173",
+        "sources": {
+          "github": "ok",
+          "hackernews": "ok",
+          "reddit": "soft_credentials"
+        },
+        "receiptId": "idr-117acc4ce7ba4552",
+        "notes": "Day-2 locked prior cycle. Streak waits for 2026-08-02."
+      },
+      {
+        "calendarDayUtc": "2026-07-31",
+        "passed": true,
+        "ok": 2,
+        "attempted": 3,
+        "successRatePct": 66,
+        "githubRunId": "30674158121",
+        "githubRunUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30674158121",
+        "sources": {
+          "github": "ok",
+          "hackernews": "ok",
+          "reddit": "soft_credentials"
+        },
+        "receiptId": "idr-f0ae9b64feef41f9",
+        "notes": "Day-1 locked prior cycle."
+      }
+    ]
+  },
+  "nextCalendarDayNeeded": "2026-08-02 (scheduled cron 06:20 UTC)",
+  "blockers": [
+    "Needs 1 more consecutive calendar-day success (2026-08-02) before close.",
+    "Full three-source bar still gated by problems4us-11a Reddit OAuth secrets on App Service (soft-fail continues)."
+  ],
+  "prod": {
+    "health": "healthy",
+    "database": "connected",
+    "aiProvider": "openai",
+    "version": "v2026.08.01-0e5086c",
+    "checkoutReady": false,
+    "checkedAtUtc": "2026-08-01T02:53:51Z"
+  }
+}
