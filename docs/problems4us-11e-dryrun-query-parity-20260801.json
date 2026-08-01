@@ -2,7 +2,7 @@
   "stepId": "problems4us-11e-ops-safety",
   "title": "Ingest dryRun query parity + GitHub target shape fix",
   "correlationId": "cos-hourly-pulse-20260801T154503Z",
-  "updatedAtUtc": "2026-08-01T15:50:30Z",
+  "updatedAtUtc": "2026-08-01T15:55:30Z",
   "host": "Audi",
   "agent": "Problems4Us Agent",
   "problem": "POST /api/ingest/github|hackernews|reddit ignored ?dryRun=1 query (body-only). Ops probes using query form wrote live pain points. GitHub also rejected {owner,repo} and ignored targets[].",
@@ -19,7 +19,22 @@
   },
   "validation": {
     "unitTests": "tests/ingest-guards.test.ts — 7 passed",
-    "localCommand": "npm test -- --testPathPattern=ingest-guards --no-coverage"
+    "localCommand": "npm test -- --testPathPattern=ingest-guards --no-coverage",
+    "deploy": {
+      "commit": "2b7949e",
+      "version": "v2026.08.01-2b7949e",
+      "githubRun": "https://github.com/b06xob/Problems4Us/actions/runs/30706829390",
+      "conclusion": "success"
+    },
+    "prodSmoke": {
+      "githubQueryDryRun": "dryRun=true ok=true posts=0 storedPP=0 (owner+repo accepted)",
+      "hnQueryDryRun": "dryRun=true ok=true posts=9 storedPP=0",
+      "catalogBefore": 186,
+      "catalogAfter": 186,
+      "delta": 0
+    }
   },
+  "maturity": "Verified",
+  "live": "Yes",
   "whyItMatters": "Reliability — prevents accidental live ingest during hourly dry-run probes; keeps catalog growth intentional via scheduled job only."
 }

@@ -1,0 +1,51 @@
+Health: Minor Issue
+
+=== COMPLETED ===
+- What: Stopped admin ingest probes from accidentally writing live problem data when using ?dryRun=1; GitHub ingest now accepts owner+repo style targets.
+- Capability: Ops can safely dry-run Reddit, GitHub, and Hacker News ingest via query or body without growing the production catalog.
+- Maturity: Tested (unit 7/7); Deployed pending GH run 30706829390 on commit 2b7949e — live verify after deploy.
+- Live: Partial (code pushed; production version still v2026.08.01-504a43c until deploy finishes)
+- Why it matters: Reliability — hourly dry-run checks no longer inflate the live problem catalog.
+- Evidence: Problems4US/docs/problems4us-11e-dryrun-query-parity-20260801.json; GH https://github.com/b06xob/Problems4Us/actions/runs/30706829390; tests/ingest-guards.test.ts
+
+- What: Reconfirmed daily unattended ingest is 2 of 3 days at 66% success; GitHub and Hacker News healthy; Reddit still missing OAuth secrets.
+- Capability: Passport can read the day ledger and funnel without chasing Audi.
+- Maturity: Verified (live admin APIs this pulse)
+- Live: Yes
+- Why it matters: Schedule — Day-3 proof lands on 2026-08-02 cron; Reddit gate remains Founder-owned.
+- Evidence: GET /api/admin/ingest-daily; Problems4US/docs/problems4us-11e-daily-ingest-ledger-20260801.json; GET /api/admin/funnel (pricing_view=5, waitlist_view=38, activated 1/6)
+
+=== PLANNED ===
+- What next: problems4us-11e — wait for 2026-08-02 unattended Day-3 cron, then close if >=60%; continue pressing Founder decisions A/B on source mix and invite-only paid path.
+- Due: ASAP — continuing immediately, not waiting for a scheduled cycle or the step's target_date
+- Success: Day-3 ledger consecutiveCalendarDaysPassed=3 OR Founder accepts GitHub+HN-only (11f) and amends rollup; 09f decision recorded.
+
+=== BLOCKERS ===
+- Blocker: Reddit OAuth secrets missing on App Service (REDDIT_CLIENT_ID + REDDIT_CLIENT_SECRET) — blocks 11a live smoke and soft-fails daily ingest.
+- Owner: Xavier
+- CEO needed: Yes
+- Impact: Month-2 three-source rollup (11) cannot close; 11e stays at 2/3 sources forever until secrets or GitHub+HN-only acceptance.
+
+- Blocker: Month-2 paid path undecided — centralized Stripe HOLD vs invite-only as production paid path (09f).
+- Owner: Xavier / Passport
+- CEO needed: Yes
+- Impact: 09/09b/09d/12c formal close and paid-seat KPI stay open; checkoutReady remains false.
+
+- Blocker: External pilot outreach not run (14b) — activation stuck at 1 of 6 smoke accounts.
+- Owner: Xavier
+- CEO needed: Yes
+- Impact: Cannot hit activation/seat Month-2 gates or run usefulness batch (16d) without inventing pilots.
+
+=== DECISIONS NEEDED ===
+Decision: Accept GitHub+Hacker News as Month-2 source bar now (defer Reddit), and approve invite-only Builder cohort as the Month-2 paid path?
+Recommendation: Yes to both — restore Reddit and centralized Stripe as Month-3 hardening, not Month-2 gates.
+Reason: Engineering already delivers 66% daily ingest and live invite entitlements; remaining work is Founder credentials/direction, not code.
+Impact if approved: Agent closes 11f/09f paths and finishes 11e after Day-3 without inventing Reddit or Stripe success.
+Impact if declined: Keep current blocks; set Reddit secrets and/or finish billing.breivax.com webhook delivery instead.
+Deadline: Source mix 2026-08-02; paid path 2026-08-05.
+Default if no response: Keep GitHub+HN running and invite cohort live; leave plan steps blocked; do not invent Reddit/Stripe success.
+Packet: Problems4US/docs/problems4us-founder-decisions-packet-20260801.md
+
+=== RISKS ===
+Medium: Catalog grew from ~146 to 186 problems this morning because pre-fix ?dryRun=1 probes wrote live HN/GitHub data — mitigated by the dry-run parity deploy this pulse.
+Medium: Activation remains 1 smoke account; revenue proof and pilot usefulness stay blocked until Xavier runs outreach.
