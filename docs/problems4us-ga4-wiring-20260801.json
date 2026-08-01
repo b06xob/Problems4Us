@@ -1,6 +1,7 @@
 {
   "correlationId": "cos-directive-20260801-ga4-problems4us",
   "task": "Wire Google Analytics 4 on problems4us.com",
+  "status": "Completed",
   "measurementId": "G-2KR0ZZPNBC",
   "gaAccount": "Breivax Technologies (62547512)",
   "sisterSiteIdsNotUsed": {
@@ -15,12 +16,45 @@
   "cspCheck": {
     "inRepo": "none found (next.config.ts has no headers; no middleware; no CSP strings)",
     "azureAppSettings": "no CSP/HEADER/SECURITY content-security settings on problems4us-linux",
-    "livePreDeployHeaders": "no Content-Security-Policy on https://problems4us.com or https://www.problems4us.com (2026-08-01T04:08Z)",
+    "livePostDeployHeaders": "no Content-Security-Policy on apex or www (home + /pricing) as of verification",
     "actionRequired": "none — no CSP to amend"
   },
-  "verificationPending": [
-    "live HTML contains G-2KR0ZZPNBC / googletagmanager.com/gtag/js",
-    "post-deploy response headers still lack CSP (or allow GTM if CSP added later)",
-    "GitHub Actions deploy receipt on main"
-  ]
+  "deploy": {
+    "commit": "c1deaa852027425dd16e0a404f5ba7e1fb911fac",
+    "shortSha": "c1deaa8",
+    "siteVersion": "v2026.08.01-c1deaa8",
+    "githubActionsRunId": 30683389022,
+    "githubActionsUrl": "https://github.com/b06xob/Problems4Us/actions/runs/30683389022",
+    "conclusion": "success",
+    "postDeploySmoke": "passed (health 200, /pricing 200, admin fail-closed)"
+  },
+  "liveVerification": {
+    "verifiedAtUtc": "2026-08-01T04:14:00Z",
+    "checks": [
+      {
+        "url": "https://problems4us.com",
+        "tagPresent": true,
+        "measurementIdInSource": "G-2KR0ZZPNBC",
+        "cspHeaderPresent": false
+      },
+      {
+        "url": "https://www.problems4us.com",
+        "tagPresent": true,
+        "measurementIdInSource": "G-2KR0ZZPNBC",
+        "cspHeaderPresent": false
+      },
+      {
+        "url": "https://problems4us.com/pricing",
+        "tagPresent": true,
+        "measurementIdInSource": "G-2KR0ZZPNBC",
+        "cspHeaderPresent": false
+      },
+      {
+        "url": "https://www.problems4us.com/pricing",
+        "tagPresent": true,
+        "measurementIdInSource": "G-2KR0ZZPNBC",
+        "cspHeaderPresent": false
+      }
+    ]
+  }
 }
