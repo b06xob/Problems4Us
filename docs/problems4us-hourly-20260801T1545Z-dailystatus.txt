@@ -3,10 +3,10 @@ Health: Minor Issue
 === COMPLETED ===
 - What: Stopped admin ingest probes from accidentally writing live problem data when using ?dryRun=1; GitHub ingest now accepts owner+repo style targets.
 - Capability: Ops can safely dry-run Reddit, GitHub, and Hacker News ingest via query or body without growing the production catalog.
-- Maturity: Tested (unit 7/7); Deployed pending GH run 30706829390 on commit 2b7949e — live verify after deploy.
-- Live: Partial (code pushed; production version still v2026.08.01-504a43c until deploy finishes)
+- Maturity: Verified
+- Live: Yes
 - Why it matters: Reliability — hourly dry-run checks no longer inflate the live problem catalog.
-- Evidence: Problems4US/docs/problems4us-11e-dryrun-query-parity-20260801.json; GH https://github.com/b06xob/Problems4Us/actions/runs/30706829390; tests/ingest-guards.test.ts
+- Evidence: Problems4US/docs/problems4us-11e-dryrun-query-parity-20260801.json; prod v2026.08.01-2b7949e; GH run 30706829390 success; catalog stayed 186 after ?dryRun=1 probes (HN dryRun=true posts=9 storedPP=0)
 
 - What: Reconfirmed daily unattended ingest is 2 of 3 days at 66% success; GitHub and Hacker News healthy; Reddit still missing OAuth secrets.
 - Capability: Passport can read the day ledger and funnel without chasing Audi.
@@ -47,5 +47,5 @@ Default if no response: Keep GitHub+HN running and invite cohort live; leave pla
 Packet: Problems4US/docs/problems4us-founder-decisions-packet-20260801.md
 
 === RISKS ===
-Medium: Catalog grew from ~146 to 186 problems this morning because pre-fix ?dryRun=1 probes wrote live HN/GitHub data — mitigated by the dry-run parity deploy this pulse.
+Medium: Catalog grew from ~146 to 186 problems this morning because pre-fix ?dryRun=1 probes wrote live HN/GitHub data — mitigated and verified fixed on v2026.08.01-2b7949e.
 Medium: Activation remains 1 smoke account; revenue proof and pilot usefulness stay blocked until Xavier runs outreach.
