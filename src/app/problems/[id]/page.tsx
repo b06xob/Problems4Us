@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { ScoreBar } from "@/components/ui/ScoreBar";
 import { ScoreFacetBreakdown } from "@/components/problems/ScoreFacetBreakdown";
+import { ProblemEngagementControls } from "@/components/problems/ProblemEngagementControls";
 import { TrendIndicator } from "@/components/ui/TrendIndicator";
 import { SourceIcon } from "@/components/ui/SourceIcon";
 import {
@@ -176,6 +177,7 @@ export default function ProblemDetailPage() {
             </span>
           </div>
         </div>
+        <ProblemEngagementControls painPointId={painPoint.PainPointId} />
       </header>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">

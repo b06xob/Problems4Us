@@ -22,6 +22,8 @@ export const PUBLIC_RATE_LIMITS: Record<string, RateLimitPolicy> = {
   waitlist: { scope: "waitlist", max: 20, windowMs: 60_000 },
   "auth-register": { scope: "auth-register", max: 10, windowMs: 60_000 },
   "auth-login": { scope: "auth-login", max: 30, windowMs: 60_000 },
+  "auth-forgot": { scope: "auth-forgot", max: 10, windowMs: 60_000 },
+  "auth-reset": { scope: "auth-reset", max: 15, windowMs: 60_000 },
   "checkout-session": { scope: "checkout-session", max: 15, windowMs: 60_000 },
 };
 

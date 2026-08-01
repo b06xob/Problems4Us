@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "./ThemeProvider";
 import { useState } from "react";
+import { useSession } from "@/lib/use-session";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -18,6 +19,7 @@ export function Navbar() {
   const pathname = usePathname();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const session = useSession();
 
   const cycleTheme = () => {
     const next: Record<string, "light" | "dark" | "system"> = {
@@ -27,6 +29,16 @@ export function Navbar() {
     };
     setTheme(next[theme]);
   };
+
+  const accountLinks = session.authenticated
+    ? [
+        { href: "/alerts", label: "Alerts" },
+        { href: "#logout", label: "Sign out" },
+      ]
+    : [
+        { href: "/login", label: "Sign in" },
+        { href: "/register", label: "Register" },
+      ];
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-lg">
@@ -67,7 +79,51 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden sm:flex items-center gap-1">
+            {session.loading ? (
+              <span className="px-2 text-xs text-text-muted">…</span>
+            ) : session.authenticated ? (
+              <>
+                <Link
+                  href="/alerts"
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    pathname.startsWith("/alerts")
+                      ? "bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-400"
+                      : "text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                  }`}
+                >
+                  Alerts
+                </Link>
+                <span
+                  className="max-w-[140px] truncate px-2 text-xs text-text-muted"
+                  title={session.email || undefined}
+                >
+                  {session.email}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void session.logout().then(() => window.location.assign("/"))}
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                >
+                  Sign in
+                </Link>
+                <Link href="/register" className="btn-primary text-sm py-1.5">
+                  Register
+                </Link>
+              </>
+            )}
+          </div>
+
           <button
             onClick={cycleTheme}
             className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
@@ -88,6 +144,7 @@ export function Navbar() {
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="rounded-lg p-2 text-text-secondary md:hidden hover:bg-surface-hover"
+            aria-label="Toggle menu"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               {mobileOpen ? (
@@ -123,6 +180,39 @@ export function Navbar() {
                 </Link>
               );
             })}
+            <div className="my-2 border-t border-border" />
+            {accountLinks.map((item) => {
+              if (item.href === "#logout") {
+                return (
+                  <button
+                    key="logout"
+                    type="button"
+                    className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-text-secondary hover:bg-surface-hover"
+                    onClick={() => {
+                      setMobileOpen(false);
+                      void session.logout().then(() => window.location.assign("/"));
+                    }}
+                  >
+                    Sign out
+                  </button>
+                );
+              }
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-lg px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+            {session.authenticated && session.email && (
+              <p className="px-3 py-1 text-xs text-text-muted truncate">
+                {session.email}
+              </p>
+            )}
           </div>
         </div>
       )}

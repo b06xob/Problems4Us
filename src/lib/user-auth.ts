@@ -111,6 +111,24 @@ export function clearSessionCookie(response: NextResponse): NextResponse {
   return response;
 }
 
+/** Session policy summary for ops/security docs and unit tests. */
+export const SESSION_POLICY = {
+  cookieName: SESSION_COOKIE,
+  ttlDays: SESSION_TTL_DAYS,
+  httpOnly: true,
+  sameSite: "lax" as const,
+  /** Login mints a new token and deletes prior UserSessions for that user. */
+  rotateOnLogin: true,
+  /** Logout deletes TokenHash row and clears cookie maxAge=0. */
+  revokeOnLogout: true,
+  /**
+   * Password reset: token APIs + pages shipped (problems4us-22a).
+   * Self-serve email delivery still requires SENDGRID_API_KEY + FROM address.
+   * Ops can issue a one-time token via POST /api/admin/password-reset/issue.
+   */
+  passwordResetStatus: "tokens_shipped_email_pending" as const,
+};
+
 export function unauthorizedJson(message = "Unauthorized"): NextResponse {
   return NextResponse.json({ error: message }, { status: 401 });
 }

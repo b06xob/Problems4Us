@@ -15,7 +15,7 @@ import type {
   ConversionEventRecord,
   PlanEntitlementRecord,
 } from './types';
-import type { WaitlistSource } from './waitlist';
+import { decideWaitlistClaim, type WaitlistSource } from './waitlist';
 import type {
   ConversionEventName,
   ConversionFunnelCounts,
@@ -928,13 +928,30 @@ async function ensureWaitlistTables(): Promise<void> {
         IF OBJECT_ID(N'dbo.WaitlistEntries', N'U') IS NULL
         BEGIN
           CREATE TABLE dbo.WaitlistEntries (
-            WaitlistId   NVARCHAR(50)  NOT NULL PRIMARY KEY,
-            Email        NVARCHAR(200) NOT NULL,
-            Source       NVARCHAR(50)  NOT NULL CONSTRAINT DF_Waitlist_Source DEFAULT ('other'),
-            CreatedAt    DATETIME2     NOT NULL CONSTRAINT DF_Waitlist_CreatedAt DEFAULT (GETUTCDATE())
+            WaitlistId     NVARCHAR(50)  NOT NULL PRIMARY KEY,
+            Email          NVARCHAR(200) NOT NULL,
+            Source         NVARCHAR(50)  NOT NULL CONSTRAINT DF_Waitlist_Source DEFAULT ('other'),
+            CreatedAt      DATETIME2     NOT NULL CONSTRAINT DF_Waitlist_CreatedAt DEFAULT (GETUTCDATE()),
+            ClaimedAt      DATETIME2     NULL,
+            ClaimedUserId  NVARCHAR(50)  NULL
           );
           CREATE UNIQUE INDEX UX_WaitlistEntries_Email ON dbo.WaitlistEntries(Email);
           CREATE INDEX IX_WaitlistEntries_CreatedAt ON dbo.WaitlistEntries(CreatedAt DESC);
+        END
+      `);
+      // Additive migration for existing WaitlistEntries (no silent drop).
+      await execute(`
+        IF OBJECT_ID(N'dbo.WaitlistEntries', N'U') IS NOT NULL
+          AND COL_LENGTH(N'dbo.WaitlistEntries', N'ClaimedAt') IS NULL
+        BEGIN
+          ALTER TABLE dbo.WaitlistEntries ADD ClaimedAt DATETIME2 NULL;
+        END
+      `);
+      await execute(`
+        IF OBJECT_ID(N'dbo.WaitlistEntries', N'U') IS NOT NULL
+          AND COL_LENGTH(N'dbo.WaitlistEntries', N'ClaimedUserId') IS NULL
+        BEGIN
+          ALTER TABLE dbo.WaitlistEntries ADD ClaimedUserId NVARCHAR(50) NULL;
         END
       `);
       await execute(`
@@ -1042,6 +1059,74 @@ export async function countWaitlistEntriesDb(): Promise<number> {
     `SELECT COUNT(*) AS cnt FROM WaitlistEntries`
   );
   return row?.cnt ?? 0;
+}
+
+/**
+ * Link a waitlist row to a newly registered account (same email).
+ * Preserves the waitlist history row; sets ClaimedAt / ClaimedUserId.
+ * Records waitlist_account_upgrade conversion event when claim succeeds.
+ */
+export async function claimWaitlistOnAccountCreateDb(input: {
+  email: string;
+  userId: string;
+}): Promise<{
+  claimed: boolean;
+  reason?: "no_waitlist_row" | "already_claimed";
+  waitlistId?: string;
+  source?: string;
+}> {
+  await ensureWaitlistTables();
+  const email = input.email.trim().toLowerCase();
+
+  const existing = await queryOne<{
+    WaitlistId: string;
+    Email: string;
+    Source: string;
+    ClaimedAt: Date | string | null;
+    ClaimedUserId: string | null;
+  }>(
+    `SELECT TOP 1 WaitlistId, Email, Source, ClaimedAt, ClaimedUserId
+     FROM WaitlistEntries WHERE Email = @email`,
+    { email }
+  );
+
+  const decision = decideWaitlistClaim({
+    waitlistId: existing?.WaitlistId,
+    source: existing?.Source,
+    claimedUserId: existing?.ClaimedUserId,
+    claimedAt: existing?.ClaimedAt,
+    newUserId: input.userId,
+  });
+
+  if (!decision.claimed) {
+    return { claimed: false, reason: decision.reason };
+  }
+
+  await execute(
+    `UPDATE WaitlistEntries
+     SET ClaimedAt = GETUTCDATE(), ClaimedUserId = @userId
+     WHERE WaitlistId = @waitlistId
+       AND ClaimedAt IS NULL
+       AND ClaimedUserId IS NULL`,
+    { waitlistId: decision.waitlistId, userId: input.userId }
+  );
+
+  try {
+    await insertConversionEventDb("waitlist_account_upgrade", "/api/auth/register", {
+      waitlistId: decision.waitlistId,
+      source: decision.source,
+      // no email / userId in props (PII strip policy)
+      claimed: true,
+    });
+  } catch (error) {
+    console.error("waitlist_account_upgrade event failed:", error);
+  }
+
+  return {
+    claimed: true,
+    waitlistId: decision.waitlistId,
+    source: decision.source,
+  };
 }
 
 export async function insertConversionEventDb(

@@ -8,6 +8,11 @@ import {
   verifyPassword,
   type SessionUser,
 } from "./user-auth";
+import {
+  hashPasswordResetToken,
+  mintPasswordResetToken,
+  PASSWORD_RESET_TTL_MINUTES,
+} from "./password-reset";
 import { computeActivation, type ActivationStatus } from "./user-accounts";
 import { isValidEmail, normalizeEmail } from "./waitlist";
 
@@ -93,6 +98,23 @@ export async function ensureUserTables(): Promise<void> {
           CREATE INDEX IX_SavedIdeas_UserId ON dbo.SavedIdeas(UserId);
         END
       `);
+      await execute(`
+        IF OBJECT_ID(N'dbo.PasswordResetTokens', N'U') IS NULL
+        BEGIN
+          CREATE TABLE dbo.PasswordResetTokens (
+            ResetId       NVARCHAR(50)  NOT NULL PRIMARY KEY,
+            UserId        NVARCHAR(50)  NOT NULL,
+            TokenHash     NVARCHAR(64)  NOT NULL,
+            ExpiresAt     DATETIME2     NOT NULL,
+            UsedAt        DATETIME2     NULL,
+            CreatedAt     DATETIME2     NOT NULL CONSTRAINT DF_PasswordResetTokens_CreatedAt DEFAULT (GETUTCDATE())
+          );
+          CREATE UNIQUE INDEX UX_PasswordResetTokens_TokenHash
+            ON dbo.PasswordResetTokens(TokenHash);
+          CREATE INDEX IX_PasswordResetTokens_UserId ON dbo.PasswordResetTokens(UserId);
+          CREATE INDEX IX_PasswordResetTokens_ExpiresAt ON dbo.PasswordResetTokens(ExpiresAt);
+        END
+      `);
     })().catch((err) => {
       userTablesReady = null;
       throw err;
@@ -135,7 +157,7 @@ export async function registerUserDb(
     { userId, email, salt, hash }
   );
 
-  const sessionToken = await createSessionForUser(userId);
+  const sessionToken = await createSessionForUser(userId, { rotate: false });
   return {
     user: { UserId: userId, Email: email, CreatedAt: new Date().toISOString() },
     sessionToken,
@@ -163,7 +185,8 @@ export async function loginUserDb(
   if (!row) return null;
   if (!verifyPassword(password, row.PasswordSalt, row.PasswordHash)) return null;
 
-  const sessionToken = await createSessionForUser(row.UserId);
+  // Login rotates: drop prior sessions for this user, then mint a fresh token.
+  const sessionToken = await createSessionForUser(row.UserId, { rotate: true });
   return {
     user: {
       UserId: row.UserId,
@@ -174,7 +197,15 @@ export async function loginUserDb(
   };
 }
 
-async function createSessionForUser(userId: string): Promise<string> {
+async function createSessionForUser(
+  userId: string,
+  opts: { rotate: boolean }
+): Promise<string> {
+  if (opts.rotate) {
+    await execute(`DELETE FROM UserSessions WHERE UserId = @userId`, { userId });
+  }
+  // Housekeeping: expire stale rows for all users when minting.
+  await execute(`DELETE FROM UserSessions WHERE ExpiresAt <= GETUTCDATE()`);
   const token = mintSessionToken();
   const tokenHash = hashSessionToken(token);
   const sessionId = `ses_${randomUUID().replace(/-/g, "").slice(0, 24)}`;
@@ -403,4 +434,94 @@ export async function listSavedIdeasDb(
     ProductIdeaId: r.ProductIdeaId,
     CreatedAt: iso(r.CreatedAt),
   }));
+}
+
+/**
+ * Create a one-time password reset token for an email (if account exists).
+ * Returns null when email is unknown (caller should still return a generic 200).
+ */
+export async function createPasswordResetTokenDb(
+  emailRaw: string
+): Promise<{ userId: string; email: string; rawToken: string } | null> {
+  await ensureUserTables();
+  const email = normalizeEmail(emailRaw);
+  if (!isValidEmail(email)) return null;
+
+  const user = await queryOne<{ UserId: string; Email: string }>(
+    `SELECT TOP 1 UserId, Email FROM UserAccounts WHERE Email = @email`,
+    { email }
+  );
+  if (!user) return null;
+
+  // Invalidate prior unused tokens for this user.
+  await execute(
+    `UPDATE PasswordResetTokens SET UsedAt = GETUTCDATE()
+     WHERE UserId = @userId AND UsedAt IS NULL`,
+    { userId: user.UserId }
+  );
+  await execute(
+    `DELETE FROM PasswordResetTokens WHERE ExpiresAt <= GETUTCDATE() OR UsedAt IS NOT NULL`
+  );
+
+  const rawToken = mintPasswordResetToken();
+  const tokenHash = hashPasswordResetToken(rawToken);
+  const resetId = `pwr_${randomUUID().replace(/-/g, "").slice(0, 24)}`;
+  await execute(
+    `INSERT INTO PasswordResetTokens (ResetId, UserId, TokenHash, ExpiresAt, UsedAt, CreatedAt)
+     VALUES (@resetId, @userId, @tokenHash, DATEADD(minute, @ttl, GETUTCDATE()), NULL, GETUTCDATE())`,
+    {
+      resetId,
+      userId: user.UserId,
+      tokenHash,
+      ttl: PASSWORD_RESET_TTL_MINUTES,
+    }
+  );
+
+  return { userId: user.UserId, email: user.Email, rawToken };
+}
+
+/**
+ * Consume a valid unused reset token and set a new password.
+ * Rotates sessions after success.
+ */
+export async function consumePasswordResetTokenDb(
+  rawToken: string,
+  newPassword: string
+): Promise<{ ok: true; userId: string; email: string } | { ok: false; reason: string }> {
+  await ensureUserTables();
+  const tokenHash = hashPasswordResetToken(rawToken);
+  const row = await queryOne<{
+    ResetId: string;
+    UserId: string;
+    Email: string;
+  }>(
+    `SELECT TOP 1 t.ResetId, t.UserId, u.Email
+     FROM PasswordResetTokens t
+     INNER JOIN UserAccounts u ON u.UserId = t.UserId
+     WHERE t.TokenHash = @tokenHash
+       AND t.UsedAt IS NULL
+       AND t.ExpiresAt > GETUTCDATE()`,
+    { tokenHash }
+  );
+  if (!row) {
+    return { ok: false, reason: "INVALID_OR_EXPIRED" };
+  }
+
+  const { salt, hash } = hashPassword(newPassword);
+  await execute(
+    `UPDATE UserAccounts
+     SET PasswordSalt = @salt, PasswordHash = @hash, UpdatedAt = GETUTCDATE()
+     WHERE UserId = @userId`,
+    { salt, hash, userId: row.UserId }
+  );
+  await execute(
+    `UPDATE PasswordResetTokens SET UsedAt = GETUTCDATE() WHERE ResetId = @resetId`,
+    { resetId: row.ResetId }
+  );
+  // Force re-login: drop all sessions for this user.
+  await execute(`DELETE FROM UserSessions WHERE UserId = @userId`, {
+    userId: row.UserId,
+  });
+
+  return { ok: true, userId: row.UserId, email: row.Email };
 }

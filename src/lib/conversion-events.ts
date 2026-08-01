@@ -2,6 +2,7 @@ export const CONVERSION_EVENT_NAMES = [
   "waitlist_view",
   "waitlist_submit",
   "waitlist_success",
+  "waitlist_account_upgrade",
   "pricing_view",
   "pricing_cta_click",
   "early_access_interest",

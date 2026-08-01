@@ -5,6 +5,7 @@ import {
 } from "@/lib/user-auth";
 import { getActivationForUserDb, registerUserDb } from "@/lib/user-db";
 import { isValidEmail, normalizeEmail } from "@/lib/waitlist";
+import { claimWaitlistOnAccountCreateDb } from "@/lib/db-service";
 import {
   decideRateLimit,
   extractClientIp,
@@ -49,11 +50,28 @@ export async function POST(request: NextRequest) {
 
     const { user, sessionToken } = await registerUserDb(email, password);
     const activation = await getActivationForUserDb(user.UserId);
+
+    let waitlistClaim: {
+      claimed: boolean;
+      reason?: string;
+      waitlistId?: string;
+      source?: string;
+    } = { claimed: false, reason: "no_waitlist_row" };
+    try {
+      waitlistClaim = await claimWaitlistOnAccountCreateDb({
+        email: user.Email,
+        userId: user.UserId,
+      });
+    } catch (claimError) {
+      console.error("Waitlist claim on register failed:", claimError);
+    }
+
     const response = NextResponse.json(
       {
         ok: true,
         user: { userId: user.UserId, email: user.Email },
         activation,
+        waitlistClaim,
       },
       { status: 201 }
     );

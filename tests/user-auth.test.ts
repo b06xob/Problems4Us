@@ -6,12 +6,18 @@ import {
   isNonEmptyId,
 } from "@/lib/user-accounts";
 import {
+  clearSessionCookie,
   hashPassword,
   hashSessionToken,
   isValidPassword,
   mintSessionToken,
+  SESSION_COOKIE,
+  SESSION_POLICY,
+  SESSION_TTL_DAYS,
   verifyPassword,
 } from "@/lib/user-auth";
+import { decideWaitlistClaim } from "@/lib/waitlist";
+import { NextResponse } from "next/server";
 
 describe("user-accounts activation", () => {
   it("activates on >=1 saved idea", () => {
@@ -62,5 +68,63 @@ describe("user-auth crypto", () => {
   it("enforces password length", () => {
     expect(isValidPassword("short")).toBe(false);
     expect(isValidPassword("long-enough")).toBe(true);
+  });
+
+  it("documents session expiry + rotation policy", () => {
+    expect(SESSION_TTL_DAYS).toBe(30);
+    expect(SESSION_POLICY.rotateOnLogin).toBe(true);
+    expect(SESSION_POLICY.revokeOnLogout).toBe(true);
+    expect(SESSION_POLICY.passwordResetStatus).toBe(
+      "tokens_shipped_email_pending"
+    );
+    expect(SESSION_POLICY.cookieName).toBe(SESSION_COOKIE);
+  });
+
+  it("logout clears session cookie (maxAge 0)", () => {
+    const response = NextResponse.json({ ok: true });
+    clearSessionCookie(response);
+    const cookie = response.cookies.get(SESSION_COOKIE);
+    expect(cookie?.value).toBe("");
+    expect(cookie?.maxAge).toBe(0);
+  });
+});
+
+describe("waitlist account claim decision", () => {
+  it("claims when waitlist row exists and is unclaimed", () => {
+    expect(
+      decideWaitlistClaim({
+        waitlistId: "wl-1",
+        source: "pricing",
+        claimedUserId: null,
+        claimedAt: null,
+        newUserId: "usr_abc",
+      })
+    ).toEqual(
+      expect.objectContaining({
+        claimed: true,
+        waitlistId: "wl-1",
+        source: "pricing",
+      })
+    );
+  });
+
+  it("skips when no waitlist row", () => {
+    expect(
+      decideWaitlistClaim({
+        waitlistId: null,
+        newUserId: "usr_abc",
+      })
+    ).toEqual({ claimed: false, reason: "no_waitlist_row" });
+  });
+
+  it("skips when already claimed", () => {
+    expect(
+      decideWaitlistClaim({
+        waitlistId: "wl-1",
+        claimedUserId: "usr_old",
+        claimedAt: "2026-07-01T00:00:00Z",
+        newUserId: "usr_abc",
+      })
+    ).toEqual({ claimed: false, reason: "already_claimed" });
   });
 });
