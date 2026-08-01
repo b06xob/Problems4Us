@@ -389,6 +389,19 @@ export async function recordScoreMoveAlertDb(input: {
     }
   );
 
+  try {
+    const { TELEMETRY_EVENTS, trackAppEventFireAndForget } = await import(
+      "@/lib/app-insights"
+    );
+    trackAppEventFireAndForget(TELEMETRY_EVENTS.alertEmitted, {
+      alertId,
+      painPointId: input.painPointId,
+      alertType: "score_change",
+    });
+  } catch {
+    /* telemetry must not break alerts */
+  }
+
   return {
     AlertId: alertId,
     UserId: input.userId,

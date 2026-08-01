@@ -9,6 +9,10 @@ import {
   decideAiAnalyzeBudget,
   recordAiBudgetUsage,
 } from "@/lib/ai-budget";
+import {
+  TELEMETRY_EVENTS,
+  trackAppEventFireAndForget,
+} from "@/lib/app-insights";
 
 export async function POST(request: NextRequest) {
   const authError = requireAdminAuth(request);
@@ -28,6 +32,11 @@ export async function POST(request: NextRequest) {
     const trimmed = text.trim();
     const budget = decideAiAnalyzeBudget(trimmed);
     if (!budget.ok) {
+      trackAppEventFireAndForget(TELEMETRY_EVENTS.aiBudgetDenied, {
+        reason: budget.reason,
+        dailyUsed: budget.dailyUsed,
+        dailyCap: budget.dailyCap,
+      });
       return NextResponse.json(
         {
           error: budget.error,

@@ -1,0 +1,29 @@
+{
+  "stepId": "problems4us-30a",
+  "correlationId": "cos-hourly-pulse-20260801T054503Z",
+  "updatedAtUtc": "2026-08-01T06:02:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "status": "in_progress",
+  "verdict": "App Insights REST helper + custom events wired (ingest_complete, ai_budget_denied, builder_brief_export, alert_emitted); production emission waits on APPLICATIONINSIGHTS_CONNECTION_STRING",
+  "code": [
+    "Problems4US/src/lib/app-insights.ts",
+    "Problems4US/tests/app-insights.test.ts",
+    "Problems4US/src/app/api/ai/analyze/route.ts",
+    "Problems4US/src/app/api/builder/briefs/route.ts",
+    "Problems4US/src/app/api/ingest/github/route.ts",
+    "Problems4US/src/app/api/ingest/hackernews/route.ts",
+    "Problems4US/src/app/api/ingest/reddit/route.ts",
+    "Problems4US/src/lib/alerts-db.ts"
+  ],
+  "unitTests": "app-insights suite 4/4 green",
+  "blocker": {
+    "owner": "Xavier Boyd",
+    "ceoNeeded": false,
+    "action": "Create Azure Application Insights resource (or reuse Breivax) and set APPLICATIONINSIGHTS_CONNECTION_STRING on problems4us-linux"
+  },
+  "azureCheck": {
+    "settingPresent": false,
+    "note": "az webapp config appsettings list on rg-problems4us/problems4us-linux — APPLICATIONINSIGHTS_CONNECTION_STRING absent (names-only)"
+  }
+}

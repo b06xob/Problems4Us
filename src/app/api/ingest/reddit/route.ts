@@ -73,6 +73,18 @@ export async function POST(request: NextRequest) {
     const summaryCore = summarizeIngestResults(results);
     const allErrors = results.flatMap((r) => r.errors);
 
+    const { TELEMETRY_EVENTS, trackAppEventFireAndForget } = await import(
+      "@/lib/app-insights"
+    );
+    trackAppEventFireAndForget(TELEMETRY_EVENTS.ingestComplete, {
+      source: "reddit",
+      ok: summaryCore.ok,
+      posts: summaryCore.totalPostsCollected,
+      painPoints: summaryCore.totalPainPointsExtracted,
+      dryRun,
+      mode,
+    });
+
     return NextResponse.json({
       success: summaryCore.ok,
       summary: {

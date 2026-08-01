@@ -105,6 +105,14 @@ export async function GET(request: NextRequest) {
           "/api/builder/briefs",
           audit
         );
+        const { TELEMETRY_EVENTS, trackAppEventFireAndForget } = await import(
+          "@/lib/app-insights"
+        );
+        trackAppEventFireAndForget(TELEMETRY_EVENTS.builderBriefExport, {
+          problemId: painPoint.PainPointId,
+          ideaCount: ideas.length,
+          format,
+        });
       } catch (auditError) {
         console.error("Failed to record builder_brief_export:", auditError);
       }

@@ -28,6 +28,17 @@ export async function POST(request: NextRequest) {
       dryRun: Boolean(body.dryRun),
     });
 
+    const { TELEMETRY_EVENTS, trackAppEventFireAndForget } = await import(
+      "@/lib/app-insights"
+    );
+    trackAppEventFireAndForget(TELEMETRY_EVENTS.ingestComplete, {
+      source: "hackernews",
+      ok: result.errors.length === 0,
+      posts: result.postsCollected,
+      painPoints: result.painPointsExtracted,
+      dryRun: Boolean(body.dryRun),
+    });
+
     return NextResponse.json({
       success: result.errors.length === 0,
       summary: {

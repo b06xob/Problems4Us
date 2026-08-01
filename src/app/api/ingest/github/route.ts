@@ -57,6 +57,18 @@ export async function POST(request: NextRequest) {
 
     const errorCount = results.reduce((n, r) => n + r.errors.length, 0);
     const totalPosts = results.reduce((n, r) => n + r.postsCollected, 0);
+    const totalPainPoints = results.reduce((n, r) => n + r.painPointsExtracted, 0);
+
+    const { TELEMETRY_EVENTS, trackAppEventFireAndForget } = await import(
+      "@/lib/app-insights"
+    );
+    trackAppEventFireAndForget(TELEMETRY_EVENTS.ingestComplete, {
+      source: "github",
+      ok: errorCount === 0,
+      posts: totalPosts,
+      painPoints: totalPainPoints,
+      dryRun: Boolean(body.dryRun),
+    });
 
     return NextResponse.json({
       success: errorCount === 0,
@@ -64,7 +76,7 @@ export async function POST(request: NextRequest) {
         ok: errorCount === 0,
         repoCount: results.length,
         totalPostsCollected: totalPosts,
-        totalPainPoints: results.reduce((n, r) => n + r.painPointsExtracted, 0),
+        totalPainPoints,
         errorCount,
         dryRun: Boolean(body.dryRun),
         totalRawPostsStored: getCollectedRawPosts().length,
