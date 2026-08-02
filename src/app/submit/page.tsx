@@ -1,10 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ProblemSubmissionForm } from "@/components/submit/ProblemSubmissionForm";
 
-export const metadata = {
-  title: "Submit a Problem — Problems4Us",
+export const metadata: Metadata = {
+  title: "Submit a Problem",
   description:
     "Share a problem you need solved. Help builders and entrepreneurs discover real opportunities.",
+  alternates: { canonical: "/submit" },
+  openGraph: {
+    title: "Submit a Problem — Problems4Us",
+    description:
+      "Share a problem you need solved. Help builders and entrepreneurs discover real opportunities.",
+    url: "https://problems4us.com/submit",
+  },
 };
 
 export default function SubmitPage() {

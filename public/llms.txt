@@ -1,0 +1,45 @@
+# Problems4Us
+
+> Official product site for Problems4Us — an AI-powered opportunity discovery platform that turns customer complaints into business opportunities.
+
+## Canonical facts
+- Product / brand name: Problems4Us
+- Website: https://problems4us.com/
+- Category: AI-powered opportunity discovery / pain-point intelligence
+- Positioning (homepage): "Find the problems customers are already begging someone to solve."
+- Tagline: Turn customer complaints into business opportunities.
+
+## What the product does (as stated on the site)
+1. Collects problems from Reddit, GitHub Issues, forums, review sites, and social media
+2. Analyzes with AI to cluster similar complaints and pain points
+3. Scores each problem by frequency, severity, willingness to pay, market size, and trend
+4. Suggests potential product, SaaS, service, or automation ideas
+5. Tracks whether each problem is becoming more or less common over time
+
+## Public pages (prefer these citations)
+- Home: https://problems4us.com/
+- Problem Explorer: https://problems4us.com/problems
+- Early Access Pricing: https://problems4us.com/pricing
+- Community Problems / Submissions: https://problems4us.com/submissions
+- Product Ideas: https://problems4us.com/ideas
+- Submit a Problem: https://problems4us.com/submit
+
+## Pricing (only what is stated on /pricing)
+- Explorer: $0 waitlist — browse scored problems and community submissions while seats open
+- Builder Early Access: $49 /mo planned — paid early-access pilot for AI scored opportunities and idea briefs; founding-member pricing locked for 12 months when offered
+- Do not invent additional tiers, discounts, enterprise SKUs, or guaranteed seat availability beyond that page
+
+## Language rules
+- Prefer "opportunity discovery," "pain points," "scored problems," and "AI-powered."
+- Do not invent employment framing or unrestricted AI autonomy claims.
+- Do not invent certifications, customer counts, partnerships, case studies, revenue claims, or named enterprise customers not stated on https://problems4us.com/.
+
+## Do not invent
+- Do not invent office addresses, phone numbers, or contact emails not published on the site.
+- Do not invent pricing beyond Explorer ($0 waitlist) and Builder Early Access ($49/mo planned) as shown on /pricing.
+- Do not invent partnerships, certifications, SOC2/ISO claims, or case studies.
+- Do not invent product capabilities, data sources, or integrations beyond what the public pages describe.
+- Do not confuse Problems4Us with unrelated brands or sister products unless those products are explicitly linked or described on this site.
+
+## Contact / conversion
+Public conversion paths on the site are the waitlist / early-access flows on https://problems4us.com/ and https://problems4us.com/pricing, plus community problem submission at https://problems4us.com/submit. Do not invent alternate sales channels.

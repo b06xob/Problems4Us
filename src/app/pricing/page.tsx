@@ -1,10 +1,18 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import PricingPageClient from "./PricingPageClient";
 
-export const metadata = {
-  title: "Early Access Pricing — Problems4Us",
+export const metadata: Metadata = {
+  title: "Early Access Pricing",
   description:
     "Join the Problems4Us waitlist and request Builder early-access seats for AI opportunity discovery.",
+  alternates: { canonical: "/pricing" },
+  openGraph: {
+    title: "Early Access Pricing — Problems4Us",
+    description:
+      "Join the Problems4Us waitlist and request Builder early-access seats for AI opportunity discovery.",
+    url: "https://problems4us.com/pricing",
+  },
 };
 
 export default function PricingPage() {
