@@ -55,6 +55,24 @@
     "command": "npm test -- --testPathPattern=ingest-guards|ops-readiness|ingest-daily-receipt|source-public --no-coverage",
     "result": "suites passed locally (ingest-guards, ops-readiness, ingest-daily-receipt); source-public added"
   },
-  "deployRequired": true,
-  "deployNote": "Public HTML/meta/llms still show Reddit until main deploy ships; DB attribution already clean after SQL relabel."
+  "deployRequired": false,
+  "deploy": {
+    "commit": "8bf3dc3",
+    "githubRun": "https://github.com/b06xob/Problems4Us/actions/runs/30761491526",
+    "conclusion": "success"
+  },
+  "liveChecksUtc": "2026-08-02T18:40:30Z",
+  "liveChecks": {
+    "homeRedditHits": 0,
+    "problemsPageRedditHits": 0,
+    "llmsTxtRedditHits": 0,
+    "healthRedditHits": 0,
+    "versionRedditHits": 0,
+    "sitemapRedditHits": 0,
+    "robotsRedditHits": 0,
+    "problemsApiSourceTypes": { "community": 5, "forum": 94, "github": 1 },
+    "problemsApiRedditishRows": 0,
+    "ingestRedditHttp": 404,
+    "appServiceRedditSettings": []
+  }
 }
