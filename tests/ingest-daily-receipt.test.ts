@@ -125,45 +125,6 @@ describe("ingest-daily-receipt (problems4us-11e)", () => {
     expect(okSummary.escalateWarning).toBeNull();
   });
 
-  it("flags founder Reddit action after 2 soft_credentials days", () => {
-    const soft: IngestDailyReceiptRecord[] = [
-      {
-        ReceiptId: "a",
-        CalendarDayUtc: "2026-08-01",
-        RunAtUtc: "2026-08-01T06:20:00Z",
-        OkCount: 2,
-        Attempted: 3,
-        SuccessRatePct: 66,
-        Passed: true,
-        SourcesJson:
-          '{"github":"ok","hackernews":"ok","reddit":"soft_credentials"}',
-        GithubRunId: null,
-        GithubRunUrl: null,
-        Note: null,
-        CreatedAt: "2026-08-01T06:20:00Z",
-      },
-      {
-        ReceiptId: "b",
-        CalendarDayUtc: "2026-07-31",
-        RunAtUtc: "2026-07-31T06:20:00Z",
-        OkCount: 2,
-        Attempted: 3,
-        SuccessRatePct: 66,
-        Passed: true,
-        SourcesJson:
-          '{"github":"ok","hackernews":"ok","reddit":"soft_credentials"}',
-        GithubRunId: null,
-        GithubRunUrl: null,
-        Note: null,
-        CreatedAt: "2026-07-31T06:20:00Z",
-      },
-    ];
-    const summary = buildLedgerSummary(soft, 3);
-    expect(summary.consecutiveRedditSoftCredentialDays).toBe(2);
-    expect(summary.founderActionRequiredReddit).toBe(true);
-    expect(summary.founderActionReddit).toMatch(/11f/);
-  });
-
   it("normalizeReceiptInput computes rate and passed", () => {
     const bad = normalizeReceiptInput({ calendarDayUtc: "bad" });
     expect(bad.ok).toBe(false);
@@ -171,26 +132,26 @@ describe("ingest-daily-receipt (problems4us-11e)", () => {
     const good = normalizeReceiptInput({
       calendarDayUtc: "2026-07-31",
       ok: 2,
-      attempted: 3,
-      sources: { github: "ok", hackernews: "ok", reddit: "soft_credentials" },
+      attempted: 2,
+      sources: { github: "ok", hackernews: "ok" },
       githubRunId: "123",
     });
     expect(good.ok).toBe(true);
     if (good.ok) {
-      expect(good.value.successRatePct).toBe(66);
+      expect(good.value.successRatePct).toBe(100);
       expect(good.value.passed).toBe(true);
-      expect(good.value.sources?.reddit).toBe("soft_credentials");
+      expect(good.value.sources?.github).toBe("ok");
     }
 
     const fail = normalizeReceiptInput({
       calendarDayUtc: "2026-07-31",
       ok: 1,
-      attempted: 3,
+      attempted: 2,
     });
     expect(fail.ok).toBe(true);
     if (fail.ok) {
       expect(fail.value.passed).toBe(false);
-      expect(fail.value.successRatePct).toBe(33);
+      expect(fail.value.successRatePct).toBe(50);
     }
   });
 });

@@ -1,192 +1,60 @@
-# Ops runbook: admin sources + Reddit ingest (M1.3)
-
-Owner: Problems4Us Agent (Audi)  
-Production: https://problems4us.com  
-Auth: `ADMIN_API_KEY` via header `x-admin-api-key` (or `Authorization: Bearer <key>`)
+# Ops runbook: admin sources + GitHub/HN ingest
 
 ## Safety rules
 
-1. Never commit `ADMIN_API_KEY` or Reddit OAuth secrets.
-2. Prefer `dryRun: true` for first smoke after deploy.
-3. Caps (enforced by API): `postLimit` 1–100, max 20 subreddits, max 10 search keywords.
-4. Without `ADMIN_API_KEY` configured, owner endpoints return **503**. Wrong key → **401**.
-5. On Windows PowerShell, always use `curl.exe` (not `curl`). Bare `curl` is an alias for `Invoke-WebRequest`; `curl -s URL` binds `-s` to `-SessionVariable` and leaves `-Uri` empty, which hangs on an interactive `Uri:` prompt.
+1. Never commit `ADMIN_API_KEY` or other secrets.
+2. Prefer `dryRun=true` (or `?dryRun=1`) before any live write.
+3. Caps (enforced by API): GitHub/HN routes clamp page sizes; do not invent unbounded batch jobs.
 
-## Reddit ToS + rate-limit mitigations (problems4us-11a)
+## Content moderation (problems4us-32)
 
-| Control | Implementation |
-|---------|----------------|
-| Auth | OAuth client credentials / password grant via `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` (optional username/password). Never scrape HTML. |
-| User-Agent | `Problems4Us/1.0 (Data Collection Bot)` on all Reddit HTTP calls (`src/lib/reddit-client.ts`). |
-| 429 handling | On HTTP 429, honor `Retry-After` (default 5s) and retry once (`redditGet`). |
-| Inter-request pacing | ~1200ms between comment-thread fetches; ~2000ms between subreddits in `ingestAllSubreddits`. |
-| Request caps | API clamps `postLimit` ≤100, ≤20 subs, ≤10 search keywords (`ingest-guards`). |
-| Quality filters | Min post score/comments, keyword denylist, ExternalId dedupe (`src/lib/reddit-quality-filters.ts`) before DB/AI writes. |
-| Content moderation (problems4us-32) | After quality/dedupe, drop toxic phrases + PII-heavy posts (`src/lib/ingest-moderation.ts`) before DB/AI. Applies to Reddit, GitHub, and HN. |
-| Ops preference | Always dry-run first; avoid tight loops of live ingest against production. |
+After ExternalId dedupe, drop toxic phrases + PII-heavy posts (`src/lib/ingest-moderation.ts`) before DB/AI. Applies to GitHub Issues and Hacker News.
 
-**Compliance posture:** Public subreddit content only via official Reddit API. Do not increase concurrency without Passport review. Escalate Warning to Passport if repeated 429s or auth failures persist >1 hour.
-
-Defaults (code): `minPostScore=2`, `minPostComments=1`, `minCommentScore=1`, denylist includes spam/promo phrases (`upvote if`, giveaways, crypto airdrops, etc.).
-
-## GitHub Issues ingest (problems4us-11b)
-
-| Control | Implementation |
-|---------|----------------|
-| Auth | Optional `GITHUB_TOKEN` Bearer on App Service; unauthenticated works with lower rate limit |
-| User-Agent | `Problems4Us/1.0 (Data Collection Bot)` |
-| 429/403 | Honor `Retry-After` / retry once (`github-client`) |
-| Caps | Max 10 repos/request; `perPage` ≤100; `maxPages` ≤5 |
-| Quality | Drops PRs, short titles; ExternalId dedupe `github-issue-{id}` |
-| Admin path | `GET/POST /api/ingest/github` (ADMIN_API_KEY) |
+## GitHub Issues ingest
 
 ```powershell
-# Dry-run default Azure/azure-cli issues (body dryRun OR ?dryRun=1)
-curl.exe -s -X POST "https://problems4us.com/api/ingest/github?dryRun=1" `
+curl.exe -s -X POST https://problems4us.com/api/ingest/github `
   -H "x-admin-api-key: $env:ADMIN_API_KEY" `
   -H "content-type: application/json" `
-  -d '{"repo":"Azure/azure-cli","perPage":10}'
-# Equivalent body form:
-# -d '{"repo":"Azure/azure-cli","perPage":10,"dryRun":true}'
-# Also accepted: {"owner":"Azure","repo":"azure-cli"} or {"repos":["Azure/azure-cli"]}
+  -d '{"repo":"Azure/azure-cli","perPage":10,"dryRun":true}'
 ```
 
-## Hacker News forums ingest (problems4us-11c)
-
-| Control | Implementation |
-|---------|----------------|
-| Auth | None (public Algolia HN API) |
-| User-Agent | `Problems4Us/1.0 (Data Collection Bot)` |
-| Quality | Min title/body length + points floor (`hackernews-client`) |
-| Caps | Max 5 queries; hitsPerPage ≤50; ~600ms between queries |
-| Admin path | `GET/POST /api/ingest/hackernews` (ADMIN_API_KEY) |
+## Hacker News ingest
 
 ```powershell
-curl.exe -s -X POST "https://problems4us.com/api/ingest/hackernews?dryRun=1" `
+curl.exe -s -X POST https://problems4us.com/api/ingest/hackernews `
   -H "x-admin-api-key: $env:ADMIN_API_KEY" `
   -H "content-type: application/json" `
-  -d '{"hitsPerPage":10}'
+  -d '{"hitsPerPage":10,"dryRun":true}'
 ```
 
-Set the key once per shell session:
+## Create a source row
 
 ```powershell
-$env:ADMIN_API_KEY = "<secret>"   # or rely on a User env var already set
-```
-
-## Health first
-
-```powershell
-curl.exe -s https://problems4us.com/api/health
-# Expect: status=healthy, database=connected
-```
-
-## List configured Reddit targets
-
-```powershell
-curl.exe -s https://problems4us.com/api/ingest/reddit -H "x-admin-api-key: $env:ADMIN_API_KEY"
-```
-
-## Dry-run ingest (collect only, no AI / pain-point writes)
-
-Body form:
-
-```powershell
-curl.exe -s -X POST https://problems4us.com/api/ingest/reddit `
-  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
-  -H "content-type: application/json" `
-  -d '{"mode":"fetch","subreddits":["sysadmin"],"postLimit":10,"dryRun":true}'
-```
-
-Query form (parity with GitHub/HN ops probes — `?mode=` and `?dryRun=1` honored; empty body OK):
-
-```powershell
-curl.exe -s -X POST "https://problems4us.com/api/ingest/reddit?dryRun=1&mode=all" `
-  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
-  -H "content-type: application/json" `
-  -d "{}"
-```
-
-## Live ingest (writes raw posts + AI extraction when provider configured)
-
-```powershell
-curl.exe -s -X POST https://problems4us.com/api/ingest/reddit `
-  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
-  -H "content-type: application/json" `
-  -d '{"mode":"fetch","subreddits":["sysadmin"],"postLimit":25,"dryRun":false}'
-```
-
-## Sources CRUD (admin)
-
-```powershell
-# List
-curl.exe -s https://problems4us.com/api/sources -H "x-admin-api-key: $env:ADMIN_API_KEY"
-
-# Create
 curl.exe -s -X POST https://problems4us.com/api/sources `
   -H "x-admin-api-key: $env:ADMIN_API_KEY" `
   -H "content-type: application/json" `
-  -d '{"SourceType":"reddit","SourceName":"r/devops","SourceUrl":"https://reddit.com/r/devops"}'
+  -d '{"SourceType":"github","SourceName":"Azure CLI Issues","SourceUrl":"https://github.com/Azure/azure-cli/issues"}'
 ```
 
-## Failure triage
+Valid `SourceType` values: `github`, `forum`, `review`, `social`, `community`.
+Reddit was removed entirely (Founder directive 2026-08-02, correlation `cos-remove-reddit-20260802`).
 
-| Symptom | Likely cause | Action |
-|---------|--------------|--------|
-| PowerShell prompts `Uri:` after `curl -s …` | Used `curl` alias (Invoke-WebRequest); `-s` → `-SessionVariable` | Cancel with Ctrl+C; re-run with `curl.exe` |
-| 503 on ingest/sources | `ADMIN_API_KEY` unset in App Service | Set key; restart app |
-| 401 | Wrong/missing key | Rotate check; confirm header name |
-| 400 | Invalid mode / missing subreddits / over caps | Fix JSON body; see GET usage |
-| 500 + Reddit errors | Reddit rate limit / OAuth | Retry later; verify Reddit app creds |
-| AI errors in results | `AI_PROVIDER=mock` or missing Azure OpenAI | Keep mock for dryRun; set secrets for live AI |
-| health degraded | SQL down | Check Azure SQL firewall / connection string |
+## Scheduled daily ingest (problems4us-11e)
 
-## Evidence to publish (Intercom)
+| Field | Value |
+| --- | --- |
+| Workflow | `.github/workflows/scheduled-daily-ingest.yml` |
+| Sources | GitHub Issues + Hacker News (hard-required) |
+| Success | Both sources HTTP 200 (≥60% of attempted; currently 2/2) |
+| Ledger | `POST/GET /api/admin/ingest-daily` |
 
-After a successful dry-run or live ingest, note in DailyStatus / Progress:
+Escalate Warning+ to Passport if the scheduled job fails twice in a row, or success rate stays below 60% for 2 consecutive days. `GET /api/admin/ingest-daily` exposes `ledger.escalateWarningToPassport` and `escalateWarning` for agent wakes — publish Intercom Warning+ when true.
 
-- HTTP status and `summary.totalPostsCollected`
-- `summary.dryRun` and `summary.errorCount`
-- Correlation id of the directing CoS task
+## Common errors
 
-## Unattended daily ingest (problems4us-11e)
-
-| Item | Value |
-|------|--------|
-| Scheduler | GitHub Actions `.github/workflows/scheduled-daily-ingest.yml` |
-| Cadence | `cron: 20 6 * * *` (daily 06:20 UTC) + `workflow_dispatch` |
-| Sources | GitHub Issues + Hacker News hard-required; Reddit soft-fails while OAuth secrets missing |
-| Secret | Repo secret `ADMIN_API_KEY` (same as alerts evaluate) |
-| Passport ledger | `GET /api/admin/ingest-daily` (ADMIN_API_KEY) — consecutive-day streak without chasing Audi |
-| Receipt write | Scheduled job `POST /api/admin/ingest-daily` after each run (upsert per UTC calendar day) |
-
-```powershell
-curl.exe -s "https://problems4us.com/api/admin/ingest-daily?limit=14" `
-  -H "x-admin-api-key: $env:ADMIN_API_KEY"
-```
-
-Escalate Warning to Passport if the scheduled job fails twice in a row, or success rate stays below 60% for 2 consecutive days after Reddit secrets are restored. `GET /api/admin/ingest-daily` exposes `ledger.escalateWarningToPassport` and `escalateWarning` for agent wakes — publish Intercom Warning+ when true. Failed receipts also set `escalateWarning` on POST and leave `passed=false` on the ledger.
-
-## Builder entitlement pilot (G7 bypass)
-
-While Stripe keys are unset, grant a pilot seat then verify briefs:
-
-```powershell
-curl.exe -s -X POST https://problems4us.com/api/checkout/entitlements `
-  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
-  -H "content-type: application/json" `
-  -d '{"action":"grant","email":"pilot@example.com","note":"ops-pilot"}'
-
-# Expect 200 + markdown when seat active and problemId exists
-curl.exe -s "https://problems4us.com/api/builder/briefs?email=pilot@example.com&problemId=<id>"
-
-# After smoke: dry-run then wipe leftover pilot seats only (paid Stripe seats untouched)
-curl.exe -s -X POST https://problems4us.com/api/checkout/entitlements `
-  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
-  -H "content-type: application/json" `
-  -d '{"action":"revoke_all_pilots","confirm":"REVOKE_ALL_PILOTS","dryRun":true}'
-curl.exe -s -X POST https://problems4us.com/api/checkout/entitlements `
-  -H "x-admin-api-key: $env:ADMIN_API_KEY" `
-  -H "content-type: application/json" `
-  -d '{"action":"revoke_all_pilots","confirm":"REVOKE_ALL_PILOTS"}'
-```
+| Status | Meaning | Action |
+| --- | --- | --- |
+| 401 | Missing/invalid admin key | Set `x-admin-api-key` |
+| 400 | Invalid body | Fix JSON; see route GET usage |
+| 500 | Upstream API / DB | Retry; check App Service logs |

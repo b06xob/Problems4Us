@@ -13,7 +13,7 @@ const SITE_NAME = "Problems4Us";
 const SITE_TITLE =
   "Problems4Us — Turn Customer Complaints into Business Opportunities";
 const SITE_DESCRIPTION =
-  "AI-powered opportunity discovery platform. Scan Reddit, GitHub, forums, reviews, and social media to discover repeated customer pain points, cluster them with AI, score the opportunity, and suggest product ideas.";
+  "AI-powered opportunity discovery platform. Scan GitHub Issues, Hacker News, forums, reviews, and social media to discover repeated customer pain points, cluster them with AI, score the opportunity, and suggest product ideas.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

@@ -14,6 +14,8 @@ Last updated: 2026-07-31 (Audi / Problems4Us Agent)
 | Shared brief PII strip + revoke | `/share/briefs` redacts emails/secret-like props; admin `POST /api/admin/share/revoke` denylists token hash (`src/lib/brief-share-revoke.ts`) |
 | Public POST rate limits | Waitlist / auth register+login / checkout session return **429** when per-IP window exceeded (`src/lib/public-rate-limit.ts`, `tests/public-rate-limit.test.ts`) |
 | AI analyze cost caps | Per-request char + daily token budget; **429** fail-soft (`src/lib/ai-budget.ts`, `docs/ops-runbook-ai-budget.md`) |
+| Session expiry + rotation | Cookie `p4u_session` TTL 30d; login rotates prior sessions; logout revokes + clears cookie (`SESSION_POLICY`, `docs/ops-runbook-session-auth.md`) |
+| Waitlist → account claim | Register links same-email waitlist row (`ClaimedAt`/`ClaimedUserId`) + `waitlist_account_upgrade` event |
 
 ## Public rate limits (problems4us-23)
 
@@ -53,4 +55,6 @@ Expiry remains HMAC TTL (default 7 days). Revoke is immediate via `BriefShareRev
 1. Azure OpenAI App Service secrets (M1.2) — flip `AI_PROVIDER=azure-openai` (deferred; direct OpenAI is production standard).
 2. Stripe merchant keys (G7 / M2.2) — HELD pending shared `billing.breivax.com/webhooks/stripe`.
 3. Rotate `ADMIN_API_KEY` if ever exposed in logs/chat.
-4. Reddit OAuth App Service secrets for live Reddit ingest (`problems4us-11a`).
+4. *(Removed 2026-08-02)* Reddit OAuth is no longer used — Founder directive `cos-remove-reddit-20260802`.
+5. Password reset self-serve — deferred until email provider; risk documented in `ops-runbook-session-auth.md`.
+6. Email delivery for score alerts (`problems4us-10a`) — deferred; in-app alerts remain.

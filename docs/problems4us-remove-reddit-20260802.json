@@ -1,0 +1,60 @@
+{
+  "correlationId": "cos-remove-reddit-20260802",
+  "stepId": "problems4us-11g",
+  "asOfUtc": "2026-08-02T18:36:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "directive": "Xavier Founder directive 2026-08-02: remove Reddit entirely from Problems4Us (not defer, not optional).",
+  "catalogHandling": {
+    "decision": "Re-label legacy Reddit sources to community and scrub reddit.com / redd.it URLs from Sources + RawPosts",
+    "rationale": "Keeps the five scored problems in the catalog without public Reddit attribution; fits existing SourceType model (community).",
+    "sql": "Problems4US/database/relabel-reddit-sources-20260802.sql",
+    "before": { "community": 1, "forum": 2, "github": 2, "reddit": 4 },
+    "after": { "community": 5, "forum": 2, "github": 2 },
+    "remainingRedditSources": 0,
+    "remainingRedditRawUrls": 0,
+    "apiDefense": "src/lib/source-public.ts maps SourceType=reddit → community and scrubs r/ names + reddit URLs on all public/API responses"
+  },
+  "codeRemoval": {
+    "deleted": [
+      "src/app/api/ingest/reddit/route.ts",
+      "src/app/auth/reddit/route.ts",
+      "src/app/auth/reddit/callback/route.ts",
+      "src/lib/reddit-client.ts",
+      "src/lib/reddit-oauth.ts",
+      "src/lib/reddit-quality-filters.ts",
+      "tests/reddit-quality-filters.test.ts"
+    ],
+    "updated": [
+      "src/lib/data-ingestion.ts",
+      "src/lib/ingest-guards.ts",
+      "src/lib/ops-readiness.ts",
+      "src/lib/ingest-daily-receipt.ts",
+      ".github/workflows/scheduled-daily-ingest.yml",
+      "public/llms.txt",
+      "src/app/layout.tsx",
+      "src/app/page.tsx",
+      "src/app/problems/*",
+      "src/components/layout/Footer.tsx",
+      "docs/ops-runbook-admin-ingest.md",
+      "docs/ops-runbook-admin-triage.md",
+      ".env.example"
+    ]
+  },
+  "config": {
+    "appServiceRedditSettings": [],
+    "note": "az webapp config appsettings list filtered for REDDIT returned empty — nothing to delete on problems4us-linux",
+    "localEnv": "REDDIT_* removed from .env.example and .env.local"
+  },
+  "plan": {
+    "path": "Intercom/Docs/project-plans/problems4us-plan.json",
+    "closed": ["problems4us-11a", "problems4us-11f", "problems4us-11g"],
+    "resolution": "Removed per Founder directive 2026-08-02 — not blocked, not deferred, not GitHub+HN-accepted-with-Reddit-pending"
+  },
+  "tests": {
+    "command": "npm test -- --testPathPattern=ingest-guards|ops-readiness|ingest-daily-receipt|source-public --no-coverage",
+    "result": "suites passed locally (ingest-guards, ops-readiness, ingest-daily-receipt); source-public added"
+  },
+  "deployRequired": true,
+  "deployNote": "Public HTML/meta/llms still show Reddit until main deploy ships; DB attribution already clean after SQL relabel."
+}

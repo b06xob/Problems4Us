@@ -1,8 +1,7 @@
 # Scheduled daily ingest → score (problems4us-11e)
 
 # Live POST to GitHub Issues + Hacker News admin ingest (AI extract on write).
-# Reddit is attempted and counted; missing OAuth secrets fail soft so the job
-# can still succeed on the two live sources (>=60% of attempted sources).
+# Reddit removed entirely per Founder directive 2026-08-02 (cos-remove-reddit-20260802).
 # Failure must escalate Warning+ to Passport (ops-runbook-admin-ingest.md).
 
 name: Scheduled daily ingest
@@ -17,13 +16,12 @@ jobs:
   daily-ingest:
     runs-on: ubuntu-latest
     steps:
-      - name: Ingest watched sources (GitHub + HN + Reddit best-effort)
+      - name: Ingest watched sources (GitHub + Hacker News)
         id: ingest
         env:
           ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
           GITHUB_INGEST_URL: https://problems4us.com/api/ingest/github
           HN_INGEST_URL: https://problems4us.com/api/ingest/hackernews
-          REDDIT_INGEST_URL: https://problems4us.com/api/ingest/reddit
         run: |
           set -euo pipefail
           if [ -z "${ADMIN_API_KEY:-}" ]; then
@@ -42,7 +40,6 @@ jobs:
             local name="$1"
             local url="$2"
             local body="$3"
-            local soft="${4:-0}"
             attempted=$((attempted + 1))
             echo "=== ${name} ==="
             CODE=$(curl -sS -o "/tmp/p4u-ingest/${name}.json" -w "%{http_code}" \
@@ -54,19 +51,8 @@ jobs:
             cat "/tmp/p4u-ingest/${name}.json" || true
             echo
             if [ "$CODE" = "200" ]; then
-              # Treat credential-missing Reddit responses as soft failure even on 200
-              if grep -qi "credentials missing\|REDDIT_CLIENT" "/tmp/p4u-ingest/${name}.json" 2>/dev/null; then
-                echo "${name}: soft-fail (credentials missing in body)"
-                echo "${name}=soft_credentials" >> /tmp/p4u-ingest/sources.env
-                return 0
-              fi
               ok=$((ok + 1))
               echo "${name}=ok" >> /tmp/p4u-ingest/sources.env
-              return 0
-            fi
-            if [ "$soft" = "1" ]; then
-              echo "${name}: soft-fail HTTP ${CODE}"
-              echo "${name}=soft_http_${CODE}" >> /tmp/p4u-ingest/sources.env
               return 0
             fi
             echo "${name}: hard-fail HTTP ${CODE}"
@@ -74,10 +60,8 @@ jobs:
             return 1
           }
 
-          attempt github "$GITHUB_INGEST_URL" '{"repo":"Azure/azure-cli","perPage":10,"dryRun":false}' 0
-          attempt hackernews "$HN_INGEST_URL" '{"hitsPerPage":10,"dryRun":false}' 0
-          # Soft: Reddit OAuth may be unset (problems4us-11a blocker)
-          attempt reddit "$REDDIT_INGEST_URL" '{"mode":"fetch","subreddits":["sysadmin"],"postLimit":10,"dryRun":false}' 1 || true
+          attempt github "$GITHUB_INGEST_URL" '{"repo":"Azure/azure-cli","perPage":10,"dryRun":false}' || true
+          attempt hackernews "$HN_INGEST_URL" '{"hitsPerPage":10,"dryRun":false}' || true
 
           RATE_PCT=0
           if [ "$attempted" -gt 0 ]; then
@@ -112,7 +96,7 @@ jobs:
               os.environ.get("GITHUB_REPOSITORY", "b06xob/Problems4Us"),
               os.environ.get("GITHUB_RUN_ID", "0"),
             ),
-            "note": "Reddit soft-fails while OAuth secrets missing; close needs 3 consecutive calendar days >=60%.",
+            "note": "Watched sources: GitHub Issues + Hacker News (Reddit removed 2026-08-02).",
           }
           open("/tmp/p4u-ingest/receipt.json", "w", encoding="utf-8").write(json.dumps(receipt, indent=2))
           print(json.dumps(receipt, indent=2))
@@ -120,8 +104,7 @@ jobs:
 
           echo "ok=${ok} attempted=${attempted} successRatePct=${RATE_PCT}"
 
-          # Success when at least 2 of 3 sources fully succeeded (GitHub+HN),
-          # which is >=60% of watched sources while Reddit remains blocked.
+          # Success when both watched sources succeed (100% of attempted).
           if [ "$ok" -ge 2 ]; then
             echo "daily ingest success rate >=60% this run"
             exit 0

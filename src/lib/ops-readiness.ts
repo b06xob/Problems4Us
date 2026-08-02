@@ -8,7 +8,6 @@ import { getStripeCheckoutPublicStatus } from "./stripe-checkout";
 
 export type OpsReadiness = {
   asOfUtc: string;
-  redditOAuthConfigured: boolean;
   passwordResetEmailConfigured: boolean;
   appInsightsConfigured: boolean;
   billingForwardSecretConfigured: boolean;
@@ -22,10 +21,6 @@ export type OpsReadiness = {
 
 function envSet(...names: string[]): boolean {
   return names.every((n) => Boolean(process.env[n]?.trim()));
-}
-
-export function isRedditOAuthConfigured(): boolean {
-  return envSet("REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET");
 }
 
 export function isPasswordResetEmailConfigured(): boolean {
@@ -46,7 +41,6 @@ export function isBillingForwardSecretConfigured(): boolean {
  */
 export function getPublicOpsFlags() {
   return {
-    redditOAuthConfigured: isRedditOAuthConfigured(),
     passwordResetEmailConfigured: isPasswordResetEmailConfigured(),
     appInsightsConfigured: isAppInsightsConfigured(),
     billingForwardSecretConfigured: isBillingForwardSecretConfigured(),
@@ -58,14 +52,6 @@ export function getOpsReadiness(): OpsReadiness {
   const checkout = getStripeCheckoutPublicStatus();
   const openFounderGates: OpsReadiness["openFounderGates"] = [];
 
-  if (!flags.redditOAuthConfigured) {
-    openFounderGates.push({
-      stepId: "problems4us-11a",
-      missing: "REDDIT_CLIENT_ID + REDDIT_CLIENT_SECRET",
-      action:
-        "Set Reddit OAuth on problems4us-linux, or formally accept GitHub+HN-only via problems4us-11f.",
-    });
-  }
   if (!flags.passwordResetEmailConfigured) {
     openFounderGates.push({
       stepId: "problems4us-22a",

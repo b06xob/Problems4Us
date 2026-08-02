@@ -21,7 +21,7 @@ export function Footer() {
             </div>
             <p className="mt-3 max-w-md text-sm text-text-secondary">
               Turn customer complaints into business opportunities. AI-powered
-              opportunity discovery from Reddit, GitHub, forums, reviews, and
+              opportunity discovery from GitHub, Hacker News, forums, reviews, and
               social media.
             </p>
           </div>

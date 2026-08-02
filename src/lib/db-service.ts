@@ -15,6 +15,11 @@ import type {
   ConversionEventRecord,
   PlanEntitlementRecord,
 } from './types';
+import {
+  toPublicSourceName,
+  toPublicSourceType,
+  toPublicSourceUrl,
+} from './source-public';
 import { decideWaitlistClaim, type WaitlistSource } from './waitlist';
 import type {
   ConversionEventName,
@@ -134,7 +139,9 @@ async function getPrimarySourceTypes(): Promise<Map<string, SourceType>> {
     ) s
   `);
 
-  return new Map(rows.map((r) => [r.PainPointId, r.SourceType ?? 'forum']));
+  return new Map(
+    rows.map((r) => [r.PainPointId, toPublicSourceType(r.SourceType)])
+  );
 }
 
 async function getTrendSnapshotsByPainPoint(): Promise<Map<string, TrendSnapshot[]>> {
@@ -190,7 +197,9 @@ export async function listPainPoints(
     const snapshots = snapshotsByPainPoint.get(painPoint.PainPointId) ?? [];
     return {
       ...painPoint,
-      SourceType: sourceTypes.get(painPoint.PainPointId) ?? 'forum',
+      SourceType: toPublicSourceType(
+        sourceTypes.get(painPoint.PainPointId) ?? 'forum'
+      ),
       TrendDirection: computeTrendDirection(painPoint.TrendScore, snapshots),
     };
   });
@@ -297,9 +306,9 @@ export async function getPainPointDetail(
 
   let sourceType: SourceType = "forum";
   try {
-    sourceType =
+    sourceType = toPublicSourceType(
       (
-        await queryOne<{ SourceType: SourceType }>(
+        await queryOne<{ SourceType: string }>(
           `SELECT TOP 1 s.SourceType
            FROM PainPointMentions m
            INNER JOIN RawPosts r ON m.RawPostId = r.RawPostId
@@ -308,7 +317,8 @@ export async function getPainPointDetail(
            ORDER BY m.CreatedAt DESC`,
           { id }
         )
-      )?.SourceType ?? "forum";
+      )?.SourceType
+    );
   } catch (error) {
     console.error("getPainPointDetail sourceType:", error);
   }
@@ -382,8 +392,8 @@ export async function getPainPointDetail(
   }
 
   const sourceExamples: SourceExample[] = mentionRows.map((m) => ({
-    source: m.SourceName,
-    sourceType: m.SourceType,
+    source: toPublicSourceName(m.SourceType, m.SourceName),
+    sourceType: toPublicSourceType(m.SourceType),
     text: m.ExtractedText,
     author: m.Author || "Anonymous",
     date: m.PublishedAt
@@ -393,7 +403,7 @@ export async function getPainPointDetail(
           year: "numeric",
         })
       : "",
-    url: m.Url || "#",
+    url: toPublicSourceUrl(m.SourceType, m.Url) || "#",
   }));
 
   const productIdeas = ideaRows.map((i) => ({
@@ -562,6 +572,9 @@ export async function listSources(): Promise<SourceWithStats[]> {
 
   return rows.map((row) => ({
     ...row,
+    SourceType: toPublicSourceType(row.SourceType),
+    SourceName: toPublicSourceName(row.SourceType, row.SourceName),
+    SourceUrl: toPublicSourceUrl(row.SourceType, row.SourceUrl),
     IsActive: Boolean(row.IsActive),
     CreatedAt: new Date(row.CreatedAt).toISOString(),
     LastScraped: row.LastScraped
@@ -579,6 +592,9 @@ export async function getSourceById(id: string): Promise<Source | undefined> {
   if (!row) return undefined;
   return {
     ...row,
+    SourceType: toPublicSourceType(row.SourceType),
+    SourceName: toPublicSourceName(row.SourceType, row.SourceName),
+    SourceUrl: toPublicSourceUrl(row.SourceType, row.SourceUrl),
     IsActive: Boolean(row.IsActive),
     CreatedAt: new Date(row.CreatedAt).toISOString(),
   };

@@ -5,7 +5,7 @@ import { SourceIcon } from "@/components/ui/SourceIcon";
 
 interface DataSource {
   SourceId: string;
-  SourceType: "reddit" | "github" | "forum" | "review" | "social" | "community";
+  SourceType: "github" | "forum" | "review" | "social" | "community";
   SourceName: string;
   SourceUrl: string;
   IsActive: boolean;
@@ -22,7 +22,6 @@ type StatusFilter = DataSource["Status"] | "all";
 type TypeFilter = SourceType | "all";
 
 const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
-  reddit: "Reddit",
   github: "GitHub",
   forum: "Forum",
   review: "Review",
@@ -53,7 +52,7 @@ interface FormState {
 }
 
 const emptyForm: FormState = {
-  SourceType: "reddit",
+  SourceType: "github",
   SourceName: "",
   SourceUrl: "",
   IsActive: true,
@@ -62,8 +61,6 @@ const emptyForm: FormState = {
 
 function getDefaultConfig(type: SourceType): Record<string, string> {
   switch (type) {
-    case "reddit":
-      return { subreddit: "", sort: "hot", limit: "50" };
     case "github":
       return { owner: "", repo: "", label: "", state: "open" };
     case "forum":
@@ -157,7 +154,7 @@ export default function AdminDataSourcesPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<FormState>({ ...emptyForm, Config: getDefaultConfig("reddit") });
+  const [form, setForm] = useState<FormState>({ ...emptyForm, Config: getDefaultConfig("github") });
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
@@ -239,7 +236,7 @@ export default function AdminDataSourcesPage() {
 
   function openAddForm() {
     setEditingId(null);
-    setForm({ ...emptyForm, Config: getDefaultConfig("reddit") });
+    setForm({ ...emptyForm, Config: getDefaultConfig("github") });
     setShowForm(true);
   }
 
@@ -506,26 +503,6 @@ export default function AdminDataSourcesPage() {
             </div>
 
             {/* Dynamic config fields */}
-            {form.SourceType === "reddit" && (
-              <>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-text-secondary">Subreddit Name</label>
-                  <input className="input" placeholder="sysadmin" value={form.Config.subreddit ?? ""} onChange={(e) => handleConfigChange("subreddit", e.target.value)} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-text-secondary">Sort Order</label>
-                  <select className="select" value={form.Config.sort ?? "hot"} onChange={(e) => handleConfigChange("sort", e.target.value)}>
-                    <option value="hot">Hot</option>
-                    <option value="new">New</option>
-                    <option value="top">Top</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-text-secondary">Post Limit</label>
-                  <input className="input" type="number" placeholder="50" value={form.Config.limit ?? ""} onChange={(e) => handleConfigChange("limit", e.target.value)} />
-                </div>
-              </>
-            )}
             {form.SourceType === "github" && (
               <>
                 <div>

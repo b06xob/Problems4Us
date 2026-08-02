@@ -1,7 +1,7 @@
 /**
  * Content moderation before score publish (problems4us-32).
  * Drops clearly toxic / PII-heavy raw posts before DB write and AI extraction.
- * Applies to Reddit, GitHub Issues, and Hacker News ingest paths.
+ * Applies to GitHub Issues and Hacker News ingest paths.
  */
 
 export type ModerationAction = "keep" | "drop_toxic" | "drop_pii";

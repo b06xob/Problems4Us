@@ -345,38 +345,6 @@ export async function listIngestDailyReceipts(
   return rows.map(rowToRecord);
 }
 
-/** Consecutive newest-first days where reddit source is soft_credentials. */
-export function countConsecutiveRedditSoftCredentialDays(
-  days: Array<{ calendarDayUtc: string; sources?: Record<string, string> }>
-): number {
-  if (!days.length) return 0;
-  const sorted = [...days].sort((a, b) =>
-    a.calendarDayUtc < b.calendarDayUtc
-      ? 1
-      : a.calendarDayUtc > b.calendarDayUtc
-        ? -1
-        : 0
-  );
-  let streak = 0;
-  let expectDay: string | null = null;
-  for (const day of sorted) {
-    const reddit = day.sources?.reddit ?? "";
-    if (reddit !== "soft_credentials") break;
-    if (expectDay === null) {
-      streak = 1;
-      expectDay = previousUtcDay(day.calendarDayUtc);
-      continue;
-    }
-    if (day.calendarDayUtc !== expectDay) break;
-    streak += 1;
-    expectDay = previousUtcDay(day.calendarDayUtc);
-  }
-  return streak;
-}
-
-/** Escalate founder Reddit decision after this many soft_credentials days. */
-export const REDDIT_SOFT_CREDENTIALS_FOUNDER_AFTER_DAYS = 2;
-
 export function buildLedgerSummary(records: IngestDailyReceiptRecord[], needed = 3) {
   const days = records.map((r) => ({
     calendarDayUtc: r.CalendarDayUtc,
@@ -393,12 +361,8 @@ export function buildLedgerSummary(records: IngestDailyReceiptRecord[], needed =
     days,
     INGEST_DAILY_ESCALATE_AFTER_FAILED_DAYS
   );
-  const consecutiveRedditSoftCredentials =
-    countConsecutiveRedditSoftCredentialDays(days);
   const escalateWarningToPassport =
     consecutiveFailed >= INGEST_DAILY_ESCALATE_AFTER_FAILED_DAYS;
-  const founderActionRequiredReddit =
-    consecutiveRedditSoftCredentials >= REDDIT_SOFT_CREDENTIALS_FOUNDER_AFTER_DAYS;
   return {
     consecutiveCalendarDaysNeeded: needed,
     consecutiveCalendarDaysPassed: consecutive,
@@ -408,11 +372,6 @@ export function buildLedgerSummary(records: IngestDailyReceiptRecord[], needed =
     escalateWarningToPassport,
     escalateWarning: escalateWarningToPassport
       ? `Scheduled daily ingest failed ${consecutiveFailed} consecutive calendar days — escalate Warning+ to Passport (ops-runbook-admin-ingest.md).`
-      : null,
-    consecutiveRedditSoftCredentialDays: consecutiveRedditSoftCredentials,
-    founderActionRequiredReddit,
-    founderActionReddit: founderActionRequiredReddit
-      ? `Reddit soft_credentials for ${consecutiveRedditSoftCredentials} consecutive calendar days — Xavier: restore REDDIT_* secrets (11a) or accept GitHub+HN-only (11f).`
       : null,
     days,
   };

@@ -19,11 +19,10 @@ curl.exe -sS https://problems4us.com/api/health
 | `database` | `connected` | Firewall, connection string, Azure SQL status |
 | `aiProvider` | `openai` (prod) | Verify `AI_PROVIDER` + `OPENAI_API_KEY` |
 | `checkout.checkoutReady` | `false` (expected until Stripe) | Not an outage — G7 gate |
-| `ops.redditOAuthConfigured` | `true` when REDDIT_* set | Else 11a/11f Founder gate |
 | `ops.passwordResetEmailConfigured` | `true` when SendGrid wired | Else 22a self-serve email blocked |
 | `ops.appInsightsConfigured` | `true` when App Insights CS set | Else 30a emission fail-soft |
 
-Passport credential checklist (admin): `GET /api/admin/ops-readiness` — returns `openFounderGates[]` without secret values.
+Passport credential checklist (admin): `GET /api/admin/ops-readiness` — returns `openFounderGates[]` without secret values. Reddit OAuth gate removed 2026-08-02 (`cos-remove-reddit-20260802`).
 
 Hourly probe: `.github/workflows/health-uptime-probe.yml` — see `ops-runbook-uptime-health.md`.
 
@@ -113,14 +112,12 @@ Ingest responses include per-source `errors[]` in JSON body; HTTP may still be 2
 | Symptom | Likely cause |
 |---------|--------------|
 | `painPointsExtracted: 0` with posts | `AI_PROVIDER=mock` or OpenAI failure |
-| Reddit message in errors | Missing `REDDIT_CLIENT_ID/SECRET` |
 | GitHub 403/429 in errors | Rate limit — optional `GITHUB_TOKEN` |
 
 **Log prefixes:**
 
 - `GitHub ingestion error:` → 500
 - `HN ingestion error:` → 500
-- `Reddit ingestion error:` → 500
 
 ---
 
@@ -132,16 +129,10 @@ See `ops-runbook-admin-ingest.md` for full matrix. Summary:
 |------|-------|
 | 401 | Bad admin key |
 | 503 | Admin key unset |
-| 400 | Invalid body (Reddit guards: mode, subreddits, caps) |
+| 400 | Invalid body (missing repo / bad params) |
 | 500 | Uncaught exception — read `error` string in body |
 
-**Reddit-specific (200 with errors):**
-
-```json
-"error": "Reddit API credentials missing. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET."
-```
-
-Evidence: `problems4us-11a-blocked-reddit-secrets-20260731.json`.
+Reddit ingest was removed 2026-08-02 (`cos-remove-reddit-20260802`). Do not expect `/api/ingest/reddit` or `REDDIT_*` settings.
 
 ---
 
@@ -156,7 +147,6 @@ Failed to fetch pain point detail:
 Failed to verify Builder entitlement:
 GitHub ingestion error:
 HN ingestion error:
-Reddit ingestion error:
 Evaluate alerts failed:
 Register failed:
 Login failed:
@@ -196,8 +186,8 @@ Until wired, use:
   └─ Fix x-admin-api-key header
 
 Ingest returns errors[] but HTTP 200?
-  ├─ Reddit credentials → set REDDIT_* secrets
   ├─ AI zero extraction → check AI_PROVIDER + OPENAI_API_KEY
+  └─ Upstream rate limits → retry / GITHUB_TOKEN
   └─ Rate limit → retry with dryRun, smaller limits
 
 AI analyze 429?

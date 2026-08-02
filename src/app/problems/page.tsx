@@ -274,7 +274,6 @@ export default function ProblemsPage() {
             className="select"
           >
             <option value="">All Sources</option>
-            <option value="reddit">Reddit</option>
             <option value="github">GitHub</option>
             <option value="forum">Forum</option>
             <option value="review">Review</option>

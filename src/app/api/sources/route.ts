@@ -46,7 +46,6 @@ export async function POST(request: NextRequest) {
     }
 
     const validTypes: SourceType[] = [
-      "reddit",
       "github",
       "forum",
       "review",

@@ -10,7 +10,7 @@
 - Tagline: Turn customer complaints into business opportunities.
 
 ## What the product does (as stated on the site)
-1. Collects problems from Reddit, GitHub Issues, forums, review sites, and social media
+1. Collects problems from GitHub Issues, Hacker News, forums, review sites, and social media
 2. Analyzes with AI to cluster similar complaints and pain points
 3. Scores each problem by frequency, severity, willingness to pay, market size, and trend
 4. Suggests potential product, SaaS, service, or automation ideas

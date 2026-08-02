@@ -9,7 +9,7 @@ const steps = [
   {
     num: 1,
     title: "Collect",
-    desc: "We scan Reddit, GitHub Issues, forums, review sites, and social media for customer complaints.",
+    desc: "We scan GitHub Issues, Hacker News, forums, review sites, and social media for customer complaints.",
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="11" cy="11" r="8" />
@@ -57,11 +57,11 @@ const steps = [
 
 const sources = [
   {
-    name: "Reddit",
-    desc: "Subreddit complaints and feature requests",
+    name: "Hacker News",
+    desc: "Discussion threads and Ask HN pain signals",
     icon: (
       <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0Zm5.01 4.74c.69 0 1.25.56 1.25 1.25a1.25 1.25 0 0 1-2.08.93l-2.1.87A2.56 2.56 0 0 0 12 5.53a2.56 2.56 0 0 0-2.08 2.26l-2.1-.87a1.25 1.25 0 0 1-.83-1.18 1.25 1.25 0 1 1 1.25 1.25l2.1.87a2.56 2.56 0 0 0 0 1.28l-2.1.87a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 .83.32l2.1-.87a2.56 2.56 0 0 0 4.16 0l2.1.87a1.25 1.25 0 0 1 .83-.32 1.25 1.25 0 1 1 0 2.5l-2.1-.87a2.56 2.56 0 0 0 0-1.28l2.1-.87c.17.2.4.35.66.42v.01ZM8.5 14.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm7 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm-3.5 3c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5Z" />
+        <path d="M0 24V0h24v24H0zM6.951 5.896l4.112 7.708v5.064h1.583v-4.972l4.148-7.799h-1.749l-2.457 4.875c-.372.745-.688 1.434-.688 1.434s-.297-.708-.651-1.434L8.831 5.896h-1.88z" />
       </svg>
     ),
   },
@@ -129,7 +129,7 @@ const examplePainPoints = [
     category: "Cloud Infrastructure",
     score: 87,
     trend: "up" as const,
-    summary: "Enterprises are repeatedly blindsided by unexpected Azure RI charges, especially when usage patterns change after initial commitment. Over 340 complaints across Reddit and GitHub.",
+    summary: "Enterprises are repeatedly blindsided by unexpected Azure RI charges, especially when usage patterns change after initial commitment. Over 340 complaints across GitHub Issues and forums.",
   },
   {
     title: "Active Directory Stale Account Cleanup",
@@ -199,7 +199,7 @@ export default function HomePage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-text-secondary">
-            Problems4Us scans Reddit, GitHub, forums, reviews, and social media
+            Problems4Us scans GitHub, Hacker News, forums, reviews, and social media
             to discover repeated customer pain points, cluster them with AI,
             score the opportunity, and suggest product ideas.
           </p>
