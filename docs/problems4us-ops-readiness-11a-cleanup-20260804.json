@@ -1,12 +1,21 @@
-﻿{
+{
   "stepId": "ops-readiness-cleanup",
   "correlationId": "cos-hourly-pulse-20260804T024503Z",
   "asOfUtc": "2026-08-04T02:49:58Z",
   "change": "Derive /api/admin/ops-readiness stepIds from openFounderGates; stop hardcoding removed problems4us-11a (Reddit).",
-  "tests": "npm test -- --testPathPattern=ops-readiness — 3 passed",
+  "tests": "npm test -- --testPathPattern=ops-readiness \u2014 3 passed",
   "files": [
     "src/app/api/admin/ops-readiness/route.ts",
     "tests/ops-readiness.test.ts"
   ],
-  "expectedLiveAfterDeploy": "stepIds equals open founder gates only (09b, 22a, 30a) — no 11a"
+  "expectedLiveAfterDeploy": "stepIds equals open founder gates only (09b, 22a, 30a) \u2014 no 11a",
+  "liveVerifiedUtc": "2026-08-04T02:56:07Z",
+  "liveVersion": "v2026.08.04-57651c6",
+  "liveStepIds": [
+    "problems4us-22a",
+    "problems4us-30a",
+    "problems4us-09b"
+  ],
+  "deployRun": "https://github.com/b06xob/Problems4Us/actions/runs/30873032910",
+  "maturity": "Verified"
 }
