@@ -1,0 +1,112 @@
+﻿{
+    "correlationId":  "cos-hourly-pulse-20260804T024503Z",
+    "asOfUtc":  "2026-08-04T02:49:58Z",
+    "host":  "Audi",
+    "agent":  "Problems4Us Agent",
+    "health":  {
+                   "ops":  {
+                               "passwordResetEmailConfigured":  false,
+                               "billingForwardSecretConfigured":  false,
+                               "appInsightsConfigured":  false
+                           },
+                   "database":  "connected",
+                   "aiProvider":  "openai",
+                   "http":  200,
+                   "checkoutReady":  false,
+                   "status":  "healthy"
+               },
+    "version":  {
+                    "commit":  "9b67d6c0a3c8a190bb801da4c7681fa7eab91d85",
+                    "version":  "v2026.08.02-9b67d6c",
+                    "deployedAt":  "2026-08-02T18:41:34Z"
+                },
+    "catalog":  {
+                    "redditishRows":  0,
+                    "sourceTypes":  {
+                                        "github":  1,
+                                        "community":  5,
+                                        "forum":  479
+                                    },
+                    "total":  485,
+                    "fetched":  485
+                },
+    "funnel":  {
+                   "checkout":  {
+                                    "gate":  "G7",
+                                    "checkoutReady":  false,
+                                    "sessionConfigured":  false,
+                                    "webhookConfigured":  false
+                                },
+                   "otherEvents":  {
+                                       "builder_brief_share_view":  1,
+                                       "total":  66,
+                                       "builder_brief_export":  5,
+                                       "builder_brief_share":  5,
+                                       "admin_pilot_revoke":  4,
+                                       "admin_pilot_grant":  5
+                                   },
+                   "gate":  "M2.5",
+                   "stepId":  "problems4us-12c",
+                   "passportReadablePath":  "GET /api/admin/funnel?hours=168",
+                   "windowHours":  168,
+                   "visits":  {
+                                  "proxy":  "instrumented page views via conversion events",
+                                  "waitlist_view":  42,
+                                  "pricing_view":  4
+                              },
+                   "activated":  {
+                                     "rule":  "saved_problems\u003e=3 OR saved_ideas\u003e=1",
+                                     "activatedAccounts":  1,
+                                     "totalAccounts":  6
+                                 },
+                   "ok":  true,
+                   "asOfUtc":  "2026-08-04T02:49:58Z",
+                   "waitlist":  {
+                                    "totalRecords":  1
+                                },
+                   "paidOrEntitledSeats":  {
+                                               "checkoutReady":  false,
+                                               "activePilotSeats":  1,
+                                               "activeBuilderSeats":  1,
+                                               "stripePaidEarlyAccessEvents":  0,
+                                               "definition":  "Invite/pilot Builder seats (problems4us-09a) count as entitled/paid seats until centralized Stripe (09b) is live; Stripe paid_early_access remains 0 while checkoutReady=false."
+                                           }
+               },
+    "activation":  {
+                       "activationRule":  "saved_problems\u003e=3 OR saved_ideas\u003e=1",
+                       "ok":  true,
+                       "totalAccounts":  6,
+                       "activatedAccounts":  1
+                   },
+    "ingestDaily":  {
+                        "latestSources":  {
+                                              "hackernews":  "ok",
+                                              "github":  "ok"
+                                          },
+                        "latestRunUrl":  "https://github.com/b06xob/Problems4Us/actions/runs/30793957984",
+                        "consecutiveCalendarDaysPassed":  3,
+                        "successCriteriaMet":  true,
+                        "latestDay":  "2026-08-03"
+                    },
+    "ranking":  {
+                    "http":  200,
+                    "contractVersion":  "1.0.0-draft",
+                    "stale":  false
+                },
+    "aiCostCeiling":  {
+                          "status":  "invoice_pending",
+                          "activatedAccounts":  1,
+                          "http":  200,
+                          "breachAny":  false,
+                          "mrrUsd":  0
+                      },
+    "engineeringThisCycle":  [
+                                 "Removed stale problems4us-11a from /api/admin/ops-readiness stepIds (derive from openFounderGates after Reddit removal)."
+                             ],
+    "openFounderGates":  [
+                             "problems4us-09b",
+                             "problems4us-22a",
+                             "problems4us-30a"
+                         ],
+    "note":  "22:45 ET pulse revalidation. Funnel 168h window slid (pricing_view 5-\u003e4, waitlist_view 47-\u003e42). Formal monetization still Founder-gated."
+}

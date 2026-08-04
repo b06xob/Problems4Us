@@ -51,4 +51,14 @@ describe("ops-readiness", () => {
     process.env.PASSWORD_RESET_FROM_EMAIL = "noreply@problems4us.com";
     expect(isPasswordResetEmailConfigured()).toBe(true);
   });
+
+  it("open founder gates never include removed Reddit step 11a", () => {
+    delete process.env.SENDGRID_API_KEY;
+    delete process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
+    delete process.env.STRIPE_SECRET_KEY;
+    const stepIds = getOpsReadiness().openFounderGates.map((g) => g.stepId);
+    expect(stepIds).not.toContain("problems4us-11a");
+    expect(new Set(stepIds).size).toBe(stepIds.length);
+  });
 });
+

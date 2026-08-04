@@ -1,0 +1,62 @@
+﻿{
+    "stepId":  "problems4us-12c",
+    "correlationId":  "cos-hourly-pulse-20260804T024503Z",
+    "updatedAtUtc":  "2026-08-04T02:49:58Z",
+    "status":  "in_progress",
+    "path":  "GET /api/admin/funnel?hours=168",
+    "verdict":  "Funnel rollup revalidated live. pricing_view=4, waitlist_view=42, activated=1/6, invite seats=1, Stripe paid=0, checkoutReady=false. Catalog 485. Formal close still waits on problems4us-09.",
+    "funnel":  {
+                   "checkout":  {
+                                    "gate":  "G7",
+                                    "checkoutReady":  false,
+                                    "sessionConfigured":  false,
+                                    "webhookConfigured":  false
+                                },
+                   "otherEvents":  {
+                                       "builder_brief_share_view":  1,
+                                       "total":  66,
+                                       "builder_brief_export":  5,
+                                       "builder_brief_share":  5,
+                                       "admin_pilot_revoke":  4,
+                                       "admin_pilot_grant":  5
+                                   },
+                   "gate":  "M2.5",
+                   "stepId":  "problems4us-12c",
+                   "passportReadablePath":  "GET /api/admin/funnel?hours=168",
+                   "windowHours":  168,
+                   "visits":  {
+                                  "proxy":  "instrumented page views via conversion events",
+                                  "waitlist_view":  42,
+                                  "pricing_view":  4
+                              },
+                   "activated":  {
+                                     "rule":  "saved_problems\u003e=3 OR saved_ideas\u003e=1",
+                                     "activatedAccounts":  1,
+                                     "totalAccounts":  6
+                                 },
+                   "ok":  true,
+                   "asOfUtc":  "2026-08-04T02:49:58Z",
+                   "waitlist":  {
+                                    "totalRecords":  1
+                                },
+                   "paidOrEntitledSeats":  {
+                                               "checkoutReady":  false,
+                                               "activePilotSeats":  1,
+                                               "activeBuilderSeats":  1,
+                                               "stripePaidEarlyAccessEvents":  0,
+                                               "definition":  "Invite/pilot Builder seats (problems4us-09a) count as entitled/paid seats until centralized Stripe (09b) is live; Stripe paid_early_access remains 0 while checkoutReady=false."
+                                           }
+               },
+    "activation":  {
+                       "activationRule":  "saved_problems\u003e=3 OR saved_ideas\u003e=1",
+                       "ok":  true,
+                       "totalAccounts":  6,
+                       "activatedAccounts":  1
+                   },
+    "catalogTotal":  485,
+    "blocker":  "problems4us-09 / 09f Founder paid-path decision",
+    "evidencePaths":  [
+                          "Problems4US/docs/problems4us-2245et-pulse-evidence-20260804.json",
+                          "Problems4US/docs/ops-runbook-funnel-kpi.md"
+                      ]
+}

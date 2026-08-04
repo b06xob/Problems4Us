@@ -1,0 +1,12 @@
+﻿{
+  "stepId": "ops-readiness-cleanup",
+  "correlationId": "cos-hourly-pulse-20260804T024503Z",
+  "asOfUtc": "2026-08-04T02:49:58Z",
+  "change": "Derive /api/admin/ops-readiness stepIds from openFounderGates; stop hardcoding removed problems4us-11a (Reddit).",
+  "tests": "npm test -- --testPathPattern=ops-readiness — 3 passed",
+  "files": [
+    "src/app/api/admin/ops-readiness/route.ts",
+    "tests/ops-readiness.test.ts"
+  ],
+  "expectedLiveAfterDeploy": "stepIds equals open founder gates only (09b, 22a, 30a) — no 11a"
+}

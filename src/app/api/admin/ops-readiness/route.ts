@@ -4,7 +4,8 @@ import { getOpsReadiness } from "@/lib/ops-readiness";
 
 /**
  * GET /api/admin/ops-readiness
- * Passport-readable credential/gate checklist (problems4us-22a/30a/11a/09b).
+ * Passport-readable credential/gate checklist (problems4us-22a/30a/09b).
+ * Reddit (11a) removed 2026-08-02 — no longer an open founder gate.
  */
 export async function GET(request: NextRequest) {
   const unauthorized = requireAdminAuth(request);
@@ -12,9 +13,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const readiness = getOpsReadiness();
+    const stepIds = Array.from(
+      new Set(readiness.openFounderGates.map((g) => g.stepId))
+    );
     return NextResponse.json({
       ok: true,
-      stepIds: ["problems4us-11a", "problems4us-09b", "problems4us-22a", "problems4us-30a"],
+      stepIds,
       readiness,
       humanActionRequired: readiness.openFounderGates.length > 0,
     });
