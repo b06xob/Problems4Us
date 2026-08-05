@@ -121,10 +121,14 @@ export async function sendSmtpPlainText(input: {
     await expectCode(socket, 250, `EHLO problems4us`);
     await expectCode(socket, 220, `STARTTLS`);
 
+    if (!socket) {
+      return { sent: false, reason: "smtp_error:socket_missing_after_starttls" };
+    }
+    const plainSocket: net.Socket = socket;
     tlsSocket = await new Promise<tls.TLSSocket>((resolve, reject) => {
       const ts = tls.connect(
         {
-          socket,
+          socket: plainSocket,
           host: config.host,
           servername: config.host,
         },
@@ -132,6 +136,8 @@ export async function sendSmtpPlainText(input: {
       );
       ts.on("error", reject);
     });
+    // Ownership transferred to TLS wrapper
+    socket = null;
 
     await expectCode(tlsSocket, 250, `EHLO problems4us`);
     await expectCode(tlsSocket, 334, `AUTH LOGIN`);

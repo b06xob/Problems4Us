@@ -20,10 +20,6 @@ export type OpsReadiness = {
   }>;
 };
 
-function envSet(...names: string[]): boolean {
-  return names.every((n) => Boolean(process.env[n]?.trim()));
-}
-
 export function isPasswordResetEmailConfigured(): boolean {
   const apiKey = Boolean(process.env.SENDGRID_API_KEY?.trim());
   const from = Boolean(
