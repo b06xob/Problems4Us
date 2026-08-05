@@ -1,8 +1,15 @@
 node_modules/
 .next/
 out/
-.env.local
-.env*.local
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+secrets.json
+credentials.json
 *.tsbuildinfo
 next-env.d.ts
 deploy.zip

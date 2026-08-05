@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveBuilderBriefCaller } from "@/lib/builder-brief-auth";
 import {
   getPainPointById,
   getPlanEntitlementByEmailDb,
@@ -9,7 +10,6 @@ import {
 import {
   buildBuilderBriefExportAudit,
   decideBuilderGate,
-  isEntitlementEmail,
 } from "@/lib/entitlements";
 import {
   buildBriefShareAudit,
@@ -20,16 +20,19 @@ import {
 } from "@/lib/brief-share";
 import { formatOpportunityBriefMarkdown } from "@/lib/opportunity-brief";
 import { formatOpportunityBriefPdf } from "@/lib/opportunity-brief-pdf";
+import { extractSessionToken } from "@/lib/user-auth";
+import { resolveSessionUser } from "@/lib/user-db";
 
 /**
  * GET /api/builder/briefs?email=&problemId=&format=markdown|pdf
  * Builder-gated opportunity brief export (M2.2 gate + M3.1 share links + M3.1b PDF).
- * Header x-builder-email is accepted as an email alternate.
+ * Authz (2026-08-05): requires signed-in session (email from session) OR
+ * ADMIN_API_KEY (ops/pilot harness may pass email / x-builder-email).
  * Successful exports record builder_brief_export funnel events (seat → usage)
  * and mint a signed shareUrl (builder_brief_share) when a share secret is set.
  */
 export async function GET(request: NextRequest) {
-  const emailParam =
+  const claimedEmail =
     request.nextUrl.searchParams.get("email")?.trim() ||
     request.headers.get("x-builder-email")?.trim() ||
     "";
@@ -53,16 +56,32 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (!emailParam || !isEntitlementEmail(emailParam)) {
+  let sessionUser = null;
+  try {
+    sessionUser = await resolveSessionUser(extractSessionToken(request));
+  } catch (error) {
+    console.error("Failed to resolve session for Builder brief:", error);
     return NextResponse.json(
-      { error: "Valid email required for Builder access", gate: "M2.2" },
-      { status: 400 }
+      { error: "Failed to verify session", gate: "M2.2" },
+      { status: 500 }
+    );
+  }
+
+  const caller = resolveBuilderBriefCaller({
+    request,
+    sessionUser,
+    claimedEmail,
+  });
+  if (!caller.ok) {
+    return NextResponse.json(
+      { error: caller.error, gate: "M2.2" },
+      { status: caller.status }
     );
   }
 
   let entitlement = null;
   try {
-    const record = await getPlanEntitlementByEmailDb(emailParam);
+    const record = await getPlanEntitlementByEmailDb(caller.email);
     entitlement = toPlanEntitlement(record);
   } catch (error) {
     console.error("Failed to load Builder entitlement:", error);
@@ -72,7 +91,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const gate = decideBuilderGate(emailParam, entitlement);
+  const gate = decideBuilderGate(caller.email, entitlement);
   if (!gate.ok) {
     return NextResponse.json(
       { error: gate.error, gate: "M2.2", activeBuilder: false },

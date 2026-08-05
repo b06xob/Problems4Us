@@ -31,10 +31,10 @@ Funnel event: `admin_pilot_grant`.
 
 ```powershell
 # Without seat → 403
-curl.exe -s "https://problems4us.com/api/builder/briefs?email=nosuch@example.com&problemId=pp-1"
+curl.exe -s -H "x-admin-api-key: $env:ADMIN_API_KEY" "https://problems4us.com/api/builder/briefs?email=nosuch@example.com&problemId=pp-1"
 
 # With seat → 200 markdown brief
-curl.exe -s "https://problems4us.com/api/builder/briefs?email=$email&problemId=pp-1"
+curl.exe -s -H "x-admin-api-key: $env:ADMIN_API_KEY" "https://problems4us.com/api/builder/briefs?email=$email&problemId=pp-1"
 ```
 
 ## Cohort list / hygiene

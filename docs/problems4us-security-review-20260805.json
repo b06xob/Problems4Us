@@ -1,0 +1,261 @@
+{
+  "evidenceId": "problems4us-security-review-20260805",
+  "correlationId": "cos-security-review-20260805",
+  "product": "Problems4Us",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "reviewedAtUtc": "2026-08-05T11:10:00Z",
+  "directive": "FOUNDER DIRECTIVE full security review — 8 areas, severity-rated findings, evidence required",
+  "summary": "Real review completed. CRITICAL Builder brief email-claim bypass FIXED in code (session or ADMIN_API_KEY required). HIGH forgot-password account enumeration FIXED. HIGH missing security headers FIXED via middleware. HIGH plaintext App Service secrets and Next.js nested CVEs documented (KV migration / Next 16 need Founder-aware change — not rotated/forced here). Remaining MEDIUM/LOW tracked in plan.json.",
+  "verificationMethods": {
+    "gitignore": "git check-ignore -v exercised for .env/.env.local/.env.production/secrets.json/credentials.json/id_rsa; before: only .env*.local ignored; after: .env and siblings ignored, .env.example kept",
+    "gitHistory": "git log/name-only for .env/secret/credential adds; git log -S ADMIN_API_KEY= on tracked files shows example placeholders only; remote URL has no embedded token; .git/config remote is https://github.com/b06xob/Problems4Us.git",
+    "workingTreeSecretPatterns": "rg for sk_live_/ghp_/xox/BEGIN PRIVATE KEY/AccountKey — only test fixture path hit (tests/checkout-session.test.ts)",
+    "prodHeaders": "HEAD https://problems4us.com/ before fix: no CSP/HSTS/X-Content-Type-Options/Referrer-Policy/Permissions-Policy; X-Powered-By: Next.js present",
+    "seoSurfaces": "sitemap.xml public pages only (no /admin or /api); llms.txt has no admin routes; JSON-LD in layout is static brand schema only",
+    "forgotPasswordProbe": "POST /api/auth/forgot-password with unknown email returned generic ok message; code previously added deliverySent/deliveryChannel only when account existed",
+    "appSettings": "az webapp config appsettings list --name problems4us-linux --resource-group rg-problems4us — classified KeyVaultRef vs plaintext(len) without dumping values",
+    "npmAudit": "npm audit --json: high=4 critical=0 (brace-expansion, next→postcss/sharp, postcss, sharp). Bumped next 15.5.20→15.5.22. Force to next@16 declined (breaking).",
+    "unitTests": "npm test builder-brief-auth|password-reset|user-auth|entitlements|ingest-moderation|checkout — 6 suites, 63 passed"
+  },
+  "areas": [
+    {
+      "area": 1,
+      "name": "Secrets & Credentials",
+      "status": "FINDINGS",
+      "findings": [
+        {
+          "id": "SEC-01",
+          "severity": "HIGH",
+          "title": "Production secrets stored as plaintext App Service settings",
+          "exposure": "Any principal with Microsoft.Web/sites/config/list can read ADMIN_API_KEY, OPENAI_API_KEY, AZURE_SQL_CONNECTION_STRING, SMTP_PASSWORD, Application Insights connection string in cleartext from problems4us-linux. BREIVAX_BILLING_FORWARD_SECRET is already a Key Vault reference — others are not.",
+          "disposition": "ACCEPTED",
+          "rationale": "Migrating to Key Vault references requires Founder-approved rewiring and must not be done as an in-band credential rotation during this review (standing DO NOT rotate credentials). Tracked for KV conversion.",
+          "evidence": "az appsettings classification 2026-08-05"
+        },
+        {
+          "id": "SEC-02",
+          "severity": "MEDIUM",
+          "title": ".gitignore did not cover .env / secrets.json / key material",
+          "exposure": "A future `git add .env` or secrets.json could be committed accidentally; only .env*.local was ignored.",
+          "disposition": "FIXED",
+          "evidence": "Updated .gitignore; git check-ignore now ignores .env, .env.production, secrets.json, credentials.json, id_rsa; .env.example remains tracked"
+        },
+        {
+          "id": "SEC-03",
+          "severity": "LOW",
+          "title": "No SESSION_SECRET App Setting — session/reset pepper falls back to ADMIN_API_KEY",
+          "exposure": "ADMIN_API_KEY blast radius includes session token hashing and password-reset token hashing; compromising one key compromises both.",
+          "disposition": "ACCEPTED",
+          "rationale": "Introducing SESSION_SECRET would invalidate live sessions and outstanding reset tokens (operational disruption). Recommend dedicated SESSION_SECRET via Key Vault without rotating ADMIN_API_KEY in the same change window."
+        }
+      ]
+    },
+    {
+      "area": 2,
+      "name": "Authentication & Authorization",
+      "status": "FINDINGS",
+      "findings": [
+        {
+          "id": "SEC-04",
+          "severity": "CRITICAL",
+          "title": "Builder brief export authorized by claimable email only",
+          "exposure": "GET /api/builder/briefs?email=<entitled>&problemId=… returned paid markdown/PDF briefs and could mint share URLs with no session cookie. Knowing or guessing any active Builder email bypassed paid-tier gate.",
+          "disposition": "FIXED",
+          "evidence": "src/lib/builder-brief-auth.ts + route requires session email match OR ADMIN_API_KEY; tests/builder-brief-auth.test.ts (5 cases) pass; Critical Intercom event published immediately"
+        },
+        {
+          "id": "SEC-05",
+          "severity": "HIGH",
+          "title": "Forgot-password response enumerated accounts via delivery fields",
+          "exposure": "When an account existed, response included deliverySent/deliveryChannel; when not, only generic message — enabling account existence oracle.",
+          "disposition": "FIXED",
+          "evidence": "src/app/api/auth/forgot-password/route.ts always returns GENERIC_FORGOT; delivery failures logged server-side only"
+        },
+        {
+          "id": "SEC-06",
+          "severity": "LOW",
+          "title": "Admin UI stores ADMIN_API_KEY in sessionStorage",
+          "exposure": "XSS on admin origin could exfiltrate the owner key for the browser tab lifetime.",
+          "disposition": "ACCEPTED",
+          "rationale": "Admin page is not in sitemap/nav; CSP middleware reduces XSS risk; moving to httpOnly cookie would be a larger UX change. Tracked as hardening."
+        },
+        {
+          "id": "SEC-07",
+          "severity": "INFO",
+          "title": "Password reset token properties verified",
+          "verification": "32-byte base64url mint; SHA-256 peppered hash stored; 60-minute TTL; single-use (UsedAt); prior tokens invalidated; sessions deleted on consume; rate limits on forgot/reset; generic messaging after SEC-05 fix"
+        },
+        {
+          "id": "SEC-08",
+          "severity": "INFO",
+          "title": "Admin routes use requireAdminAuth with timing-safe compare; fail closed if ADMIN_API_KEY unset (503)",
+          "verification": "src/lib/admin-auth.ts; ingest/github, ingest/hackernews, sources, AI, admin/* gated"
+        }
+      ]
+    },
+    {
+      "area": 3,
+      "name": "Public Exposure",
+      "status": "FINDINGS",
+      "findings": [
+        {
+          "id": "SEC-09",
+          "severity": "HIGH",
+          "title": "Missing security headers on production responses",
+          "exposure": "No CSP/HSTS/X-Content-Type-Options/Referrer-Policy/Permissions-Policy; X-Powered-By advertised Next.js — weaker browser XSS/clickjacking/MIME defenses.",
+          "disposition": "FIXED",
+          "evidence": "src/middleware.ts adds headers; next.config.ts poweredByHeader:false — pending deploy verification on problems4us.com"
+        },
+        {
+          "id": "SEC-10",
+          "severity": "INFO",
+          "title": "Unauthenticated surface inventory (intentional)",
+          "items": [
+            "GET / and marketing pages",
+            "GET /problems, /ideas, /submissions, /pricing, /submit",
+            "GET /api/health (ops flags boolean only)",
+            "GET /api/problems, /api/ideas, /api/dashboard, /api/version",
+            "GET /api/submissions (emails stripped unless admin)",
+            "POST /api/waitlist, /api/submissions, /api/auth/*, /api/events",
+            "POST /api/checkout/billing-forward (secret required)",
+            "POST /api/checkout/webhook (Stripe sig; currently 503 until STRIPE_WEBHOOK_SECRET — intentional HOLD)",
+            "GET /share/briefs (signed token)",
+            "GET /admin page shell (API calls still need key)"
+          ]
+        },
+        {
+          "id": "SEC-11",
+          "severity": "INFO",
+          "title": "SEO/AEO surfaces do not advertise admin",
+          "verification": "sitemap.ts excludes auth/admin; live sitemap.xml clean; public/llms.txt clean; JSON-LD static"
+        }
+      ]
+    },
+    {
+      "area": 4,
+      "name": "Webhook / Signature Verification",
+      "status": "FINDINGS",
+      "findings": [
+        {
+          "id": "SEC-12",
+          "severity": "INFO",
+          "title": "Stripe webhook verify path is correct when configured",
+          "verification": "Raw body via request.text(); HMAC SHA-256; 300s replay tolerance; fails closed without secret (503); idempotent paid_early_access by stripeEventId"
+        },
+        {
+          "id": "SEC-13",
+          "severity": "MEDIUM",
+          "title": "Billing-forward auth is shared secret header, not body HMAC",
+          "exposure": "If BREIVAX_BILLING_FORWARD_SECRET leaks, attacker can grant Builder entitlements without Stripe proof (mitigated: secret is Key Vault ref; TLS).",
+          "disposition": "ACCEPTED",
+          "rationale": "Company-wide forward design (HOLD vs isolated Stripe). Recommend request signing + timestamp in a later hardening task; secret already KV-backed."
+        }
+      ]
+    },
+    {
+      "area": 5,
+      "name": "Dependencies",
+      "status": "FINDINGS",
+      "findings": [
+        {
+          "id": "SEC-14",
+          "severity": "HIGH",
+          "title": "npm audit reports 4 high (0 critical)",
+          "counts": { "critical": 0, "high": 4, "moderate": 0, "low": 0, "info": 0 },
+          "packages": ["brace-expansion", "next (via postcss/sharp)", "postcss", "sharp"],
+          "disposition": "ACCEPTED",
+          "rationale": "Patched within Next 15 line to 15.5.22. Remaining fixes require next@16 (breaking). Do not force major upgrade mid-security-review without regression QA.",
+          "evidence": "npm audit 2026-08-05 after next@15.5.22"
+        }
+      ]
+    },
+    {
+      "area": 6,
+      "name": "Data Protection",
+      "status": "FINDINGS",
+      "findings": [
+        {
+          "id": "SEC-15",
+          "severity": "MEDIUM",
+          "title": "PII inventory and controls",
+          "holds": [
+            "UserAccounts: email + password salt/hash (scrypt)",
+            "Waitlist emails",
+            "UserProblemSubmission.SubmitterEmail (stripped from public GET)",
+            "PlanEntitlements.Email",
+            "Conversion/funnel events (emailDomain preferred; some admin events retain email)",
+            "Third-party ingest titles/bodies (GitHub/HN) after moderation drop"
+          ],
+          "transit": "HTTPS on problems4us.com (ARRAffinity Secure cookies observed)",
+          "rest": "Azure SQL — encryption-at-rest is platform default; connection string currently plaintext in App Settings (SEC-01)",
+          "disposition": "ACCEPTED",
+          "rationale": "Data minimization for submissions emails already applied; further retention policy needs product decision"
+        },
+        {
+          "id": "SEC-16",
+          "severity": "INFO",
+          "title": "Ingest XSS / moderation",
+          "verification": "UI renders Title/Summary as React text children (escaped). Moderation drops toxic/PII/secret-like patterns before DB (fail-closed drop). JSON-LD does not embed ingested content."
+        }
+      ]
+    },
+    {
+      "area": 7,
+      "name": "Logging & Monitoring",
+      "status": "FINDINGS",
+      "findings": [
+        {
+          "id": "SEC-17",
+          "severity": "MEDIUM",
+          "title": "Auth failures not structured into App Insights security events",
+          "exposure": "Failed logins return 401 but are not tracked via TELEMETRY_EVENTS — brute-force / credential stuffing harder to detect in Application Insights.",
+          "disposition": "ACCEPTED",
+          "rationale": "Rate limits exist (PUBLIC_RATE_LIMITS auth-login). Adding auth_failure telemetry is a follow-up task in plan.json."
+        },
+        {
+          "id": "SEC-18",
+          "severity": "INFO",
+          "title": "App Insights configured; health exposes appInsightsConfigured boolean only",
+          "verification": "GET /api/health ops.appInsightsConfigured=true; no secret values in health JSON"
+        }
+      ]
+    },
+    {
+      "area": 8,
+      "name": "Access Control / Blast Radius",
+      "status": "FINDINGS",
+      "findings": [
+        {
+          "id": "SEC-19",
+          "severity": "HIGH",
+          "title": "Single ADMIN_API_KEY is a broad owner credential",
+          "exposure": "One leaked key unlocks ingest, sources CRUD, AI tools, password-reset issue, entitlement grant/revoke, funnel/admin APIs, and (via pepper fallback) weakens session/reset crypto separation.",
+          "disposition": "ACCEPTED",
+          "rationale": "Key not in client bundles (only sessionStorage after manual paste on /admin). Not recoverable from public API error bodies (401 Unauthorized). Rotation + split keys (ingest vs entitlement) need Founder sign-off — not performed per DO NOT rotate."
+        },
+        {
+          "id": "SEC-20",
+          "severity": "MEDIUM",
+          "title": "SQL + OpenAI + SMTP credentials share App Service identity plane",
+          "exposure": "Compromise of App Service configuration plane yields database, AI spend, and mail relay credentials together.",
+          "disposition": "ACCEPTED",
+          "rationale": "Addressed by SEC-01 Key Vault migration plan; Managed Identity for SQL recommended"
+        }
+      ]
+    }
+  ],
+  "fixesShippedInThisReview": [
+    "Builder brief session/admin identity gate (SEC-04)",
+    "Forgot-password enumeration removal (SEC-05)",
+    "Security headers middleware + poweredByHeader false (SEC-09)",
+    ".gitignore secret coverage (SEC-02)",
+    "next 15.5.22 bump (partial SEC-14)"
+  ],
+  "founderDecisionsRequired": [
+    "Approve Key Vault references for ADMIN_API_KEY, OPENAI_API_KEY, AZURE_SQL_*, SMTP_PASSWORD, APPLICATIONINSIGHTS_CONNECTION_STRING (and optional SESSION_SECRET)",
+    "Approve Next.js 16 major upgrade window to clear remaining npm high CVEs",
+    "Approve ADMIN_API_KEY rotation after KV cutover (not before)"
+  ],
+  "remainingRisk": "CRITICAL brief bypass remains live on production until this commit deploys. Plaintext App Settings and Next nested CVEs remain until Founder-approved follow-through."
+}

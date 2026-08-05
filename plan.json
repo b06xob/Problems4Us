@@ -1,0 +1,92 @@
+{
+  "product": "Problems4Us",
+  "updatedUtc": "2026-08-05T11:10:00Z",
+  "correlationId": "cos-security-review-20260805",
+  "tasks": [
+    {
+      "id": "sec-kv-appsettings",
+      "title": "Convert plaintext App Service secrets to Key Vault references",
+      "severity": "HIGH",
+      "status": "open",
+      "findingIds": ["SEC-01", "SEC-20"],
+      "notes": "Requires Founder sign-off. Do not rotate in-band without cutover plan."
+    },
+    {
+      "id": "sec-next16-cve",
+      "title": "Plan Next.js 16 upgrade to clear nested postcss/sharp highs",
+      "severity": "HIGH",
+      "status": "open",
+      "findingIds": ["SEC-14"],
+      "notes": "npm audit fix --force pulls next@16 (breaking)."
+    },
+    {
+      "id": "sec-admin-key-split",
+      "title": "Split ADMIN_API_KEY blast radius (ingest vs entitlements vs reset-issue)",
+      "severity": "HIGH",
+      "status": "open",
+      "findingIds": ["SEC-19"],
+      "notes": "After KV; rotation needs Founder."
+    },
+    {
+      "id": "sec-session-secret",
+      "title": "Add dedicated SESSION_SECRET (KV) separate from ADMIN_API_KEY",
+      "severity": "LOW",
+      "status": "open",
+      "findingIds": ["SEC-03"],
+      "notes": "Will invalidate sessions/reset tokens on cutover — schedule maintenance."
+    },
+    {
+      "id": "sec-billing-forward-hmac",
+      "title": "Add timestamped HMAC body signing for billing-forward",
+      "severity": "MEDIUM",
+      "status": "open",
+      "findingIds": ["SEC-13"]
+    },
+    {
+      "id": "sec-auth-failure-telemetry",
+      "title": "Emit App Insights events for auth failures and admin unlock failures",
+      "severity": "MEDIUM",
+      "status": "open",
+      "findingIds": ["SEC-17"]
+    },
+    {
+      "id": "sec-admin-key-storage",
+      "title": "Harden /admin key handling beyond sessionStorage",
+      "severity": "LOW",
+      "status": "open",
+      "findingIds": ["SEC-06"]
+    },
+    {
+      "id": "sec-builder-brief-auth",
+      "title": "Require session or ADMIN_API_KEY for Builder brief export",
+      "severity": "CRITICAL",
+      "status": "done",
+      "completed_utc": "2026-08-05T11:05:00Z",
+      "findingIds": ["SEC-04"]
+    },
+    {
+      "id": "sec-forgot-enumeration",
+      "title": "Remove deliverySent/deliveryChannel from forgot-password responses",
+      "severity": "HIGH",
+      "status": "done",
+      "completed_utc": "2026-08-05T11:05:00Z",
+      "findingIds": ["SEC-05"]
+    },
+    {
+      "id": "sec-security-headers",
+      "title": "Add CSP/HSTS/nosniff/Referrer/Permissions-Policy middleware",
+      "severity": "HIGH",
+      "status": "done",
+      "completed_utc": "2026-08-05T11:05:00Z",
+      "findingIds": ["SEC-09"]
+    },
+    {
+      "id": "sec-gitignore",
+      "title": "Expand .gitignore for .env and credential filenames",
+      "severity": "MEDIUM",
+      "status": "done",
+      "completed_utc": "2026-08-05T11:05:00Z",
+      "findingIds": ["SEC-02"]
+    }
+  ]
+}
