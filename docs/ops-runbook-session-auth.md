@@ -30,12 +30,19 @@ Last updated: 2026-08-01 (Audi / Problems4Us Agent)
 
 ### Email delivery
 
-Self-serve email requires App Service settings:
+Self-serve email requires **either** SendGrid **or** company SMTP on App Service:
 
+**SendGrid path**
 - `SENDGRID_API_KEY`
 - `PASSWORD_RESET_FROM_EMAIL` or `SENDGRID_FROM_EMAIL`
 
-Until those are set, forgot-password still creates tokens but `deliverySent=false`. Formal user self-serve without admin is blocked on Founder wiring the mailer (same deferral posture as problems4us-10a).
+**SMTP path (equivalent — wired 2026-08-05)**
+- `SMTP_HOST` (e.g. `smtp.mail.att.net`)
+- `SMTP_PORT` (default `587`, STARTTLS)
+- `SMTP_USER` / `SMTP_PASSWORD`
+- `PASSWORD_RESET_FROM_EMAIL` (or falls back to `SMTP_USER`)
+
+When configured, `GET /api/health` → `ops.passwordResetEmailConfigured=true` and forgot-password sets `deliverySent=true` with `deliveryChannel` of `sendgrid` or `smtp`. Ops can still issue tokens via admin for smoke.
 
 ### Ops smoke (no SendGrid)
 

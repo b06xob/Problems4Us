@@ -122,11 +122,10 @@ export const SESSION_POLICY = {
   /** Logout deletes TokenHash row and clears cookie maxAge=0. */
   revokeOnLogout: true,
   /**
-   * Password reset: token APIs + pages shipped (problems4us-22a).
-   * Self-serve email delivery still requires SENDGRID_API_KEY + FROM address.
-   * Ops can issue a one-time token via POST /api/admin/password-reset/issue.
+   * Password reset: token APIs + pages + self-serve email (SendGrid or SMTP).
+   * Ops can also issue a one-time token via POST /api/admin/password-reset/issue.
    */
-  passwordResetStatus: "tokens_shipped_email_pending" as const,
+  passwordResetStatus: "self_serve_email_live" as const,
 };
 
 export function unauthorizedJson(message = "Unauthorized"): NextResponse {

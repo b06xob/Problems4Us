@@ -4,6 +4,7 @@
  */
 
 import { isAppInsightsConfigured } from "./app-insights";
+import { getSmtpConfig } from "./smtp-mail";
 import { getStripeCheckoutPublicStatus } from "./stripe-checkout";
 
 export type OpsReadiness = {
@@ -29,7 +30,8 @@ export function isPasswordResetEmailConfigured(): boolean {
     process.env.PASSWORD_RESET_FROM_EMAIL?.trim() ||
       process.env.SENDGRID_FROM_EMAIL?.trim()
   );
-  return apiKey && from;
+  if (apiKey && from) return true;
+  return getSmtpConfig() !== null;
 }
 
 export function isBillingForwardSecretConfigured(): boolean {
@@ -55,9 +57,9 @@ export function getOpsReadiness(): OpsReadiness {
   if (!flags.passwordResetEmailConfigured) {
     openFounderGates.push({
       stepId: "problems4us-22a",
-      missing: "SENDGRID_API_KEY + PASSWORD_RESET_FROM_EMAIL",
+      missing: "SENDGRID_API_KEY+FROM or SMTP_HOST/USER/PASSWORD",
       action:
-        "Wire SendGrid (or equivalent) so forgot-password emails without admin issue tokens.",
+        "Wire SendGrid or company SMTP so forgot-password emails without admin issue tokens.",
     });
   }
   if (!flags.appInsightsConfigured) {

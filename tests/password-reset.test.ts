@@ -34,8 +34,6 @@ describe("password-reset tokens (problems4us-22a)", () => {
 
   it("exposes policy TTL and session policy status", () => {
     expect(PASSWORD_RESET_POLICY.ttlMinutes).toBe(60);
-    expect(SESSION_POLICY.passwordResetStatus).toBe(
-      "tokens_shipped_email_pending"
-    );
+    expect(SESSION_POLICY.passwordResetStatus).toBe("self_serve_email_live");
   });
 });

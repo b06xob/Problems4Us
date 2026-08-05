@@ -74,9 +74,7 @@ describe("user-auth crypto", () => {
     expect(SESSION_TTL_DAYS).toBe(30);
     expect(SESSION_POLICY.rotateOnLogin).toBe(true);
     expect(SESSION_POLICY.revokeOnLogout).toBe(true);
-    expect(SESSION_POLICY.passwordResetStatus).toBe(
-      "tokens_shipped_email_pending"
-    );
+    expect(SESSION_POLICY.passwordResetStatus).toBe("self_serve_email_live");
     expect(SESSION_POLICY.cookieName).toBe(SESSION_COOKIE);
   });
 
