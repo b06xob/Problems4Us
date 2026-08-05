@@ -257,5 +257,15 @@
     "Approve Next.js 16 major upgrade window to clear remaining npm high CVEs",
     "Approve ADMIN_API_KEY rotation after KV cutover (not before)"
   ],
-  "remainingRisk": "CRITICAL brief bypass remains live on production until this commit deploys. Plaintext App Settings and Next nested CVEs remain until Founder-approved follow-through."
+  "deploy": {
+    "commit": "004b94a",
+    "actionsRun": "https://github.com/b06xob/Problems4Us/actions/runs/31000241066",
+    "conclusion": "success",
+    "duration": "4m42s",
+    "postDeployProbes": {
+      "builderBriefUnauth": "GET /api/builder/briefs?email=pilot@example.com&problemId=pp-1 → 401 Sign in required for Builder brief export",
+      "securityHeaders": "CSP, HSTS, nosniff, Referrer-Policy, Permissions-Policy, X-Frame-Options present; X-Powered-By absent"
+    }
+  },
+  "remainingRisk": "Plaintext App Settings (SEC-01/19/20) and Next.js nested high CVEs (SEC-14) remain until Founder-approved Key Vault migration and Next 16 upgrade."
 }
