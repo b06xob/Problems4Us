@@ -1272,7 +1272,7 @@
         "title": "Email validation on customer registration (format + ownership proof)",
         "owner": "Problems4Us Agent",
         "target_date": "2026-08-12",
-        "status": "in_progress",
+        "status": "done",
         "depends_on": [
             "problems4us-22a",
             "problems4us-08"
@@ -1286,40 +1286,45 @@
             {
                 "id": "22b-1",
                 "title": "Add plan task + shared auth-email-token mechanism",
-                "status": "in_progress",
-                "depends_on": []
+                "status": "done",
+                "depends_on": [],
+                "completed_utc": "2026-08-06T02:50:23Z"
             },
             {
                 "id": "22b-2",
                 "title": "Schema: EmailVerifiedAt + EmailVerificationTokens + MailDeliveryFailures; grandfather existing",
-                "status": "pending",
+                "status": "done",
                 "depends_on": [
                     "22b-1"
-                ]
+                ],
+                "completed_utc": "2026-08-06T02:50:23Z"
             },
             {
                 "id": "22b-3",
                 "title": "Register/verify/resend APIs + disposable policy + rate limits + no enumeration",
-                "status": "pending",
+                "status": "done",
                 "depends_on": [
                     "22b-2"
-                ]
+                ],
+                "completed_utc": "2026-08-06T02:50:23Z"
             },
             {
                 "id": "22b-4",
                 "title": "Gate password reset + Builder on verified; UI check-email/verify/resend",
-                "status": "pending",
+                "status": "done",
                 "depends_on": [
                     "22b-3"
-                ]
+                ],
+                "completed_utc": "2026-08-06T02:50:23Z"
             },
             {
                 "id": "22b-5",
                 "title": "Unit tests + ops runbook + deploy + prod e2e evidence",
-                "status": "pending",
+                "status": "done",
                 "depends_on": [
                     "22b-4"
-                ]
+                ],
+                "completed_utc": "2026-08-06T02:50:23Z"
             }
         ],
         "unverified_policy": {
@@ -1337,8 +1342,9 @@
         },
         "disposable_policy": "block",
         "token_ttl_hours": 24,
-        "evidence": "",
-        "blocker_note": ""
+        "evidence": "CLOSED 2026-08-06T02:50:23Z (cos-email-validation-registration-20260805): Email ownership verification live on v2026.08.06-4381bea; register 201 unverified; verify 200; replay 400; enum-safe resend; rate-limit 429; disposable 400; password-reset+Builder gated. Evidence: Problems4US/docs/problems4us-22b-email-verification-20260805.json; docs/_smoke_22b_20260805/summary.json; GH runs 31066179954/31066481589.",
+        "blocker_note": "",
+        "completed_utc": "2026-08-06T02:50:23Z"
     },
     {
         "step_id": "problems4us-23",

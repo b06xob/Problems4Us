@@ -1,0 +1,6 @@
+{
+    "/verify-email":  200,
+    "/resend-verification":  200,
+    "/register":  200,
+    "/check-email":  200
+}

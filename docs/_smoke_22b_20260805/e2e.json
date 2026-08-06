@@ -1,0 +1,109 @@
+﻿{
+    "correlationId":  "cos-email-validation-registration-20260805",
+    "ranAtUtc":  "2026-08-06T02:50:05.9991339Z",
+    "host":  "Audi",
+    "agent":  "Problems4Us Agent",
+    "deploy":  {
+                   "version":  "v2026.08.06-4381bea",
+                   "commit":  "4381bea3bef67de7653af04d652142292559f7a9",
+                   "deployedAt":  "2026-08-06T02:45:17Z"
+               },
+    "healthOps":  {
+                      "passwordResetEmailConfigured":  true,
+                      "emailVerificationConfigured":  true,
+                      "appInsightsConfigured":  true,
+                      "billingForwardSecretConfigured":  true
+                  },
+    "smokeEmail":  "p4u22b+1785984605@example.com",
+    "register":  {
+                     "emailVerificationRequired":  true,
+                     "hasUser":  true,
+                     "message":  "If this email can be used, we created an account and sent a verification link. Check your inbox.",
+                     "http":  201,
+                     "emailVerified":  false
+                 },
+    "enumerationReregister":  {
+                                  "message":  "If this email can be used, we created an account and sent a verification link. Check your inbox.",
+                                  "hasUser":  false,
+                                  "http":  200,
+                                  "bodyKeys":  [
+                                                   "ok",
+                                                   "message"
+                                               ],
+                                  "sameMessageAsGeneric":  true
+                              },
+    "enumerationResend":  {
+                              "sameHttp":  true,
+                              "knownHttp":  200,
+                              "sameMessage":  true,
+                              "unknownMessage":  "If an unverified account exists for that email, a verification link was sent.",
+                              "knownMessage":  "If an unverified account exists for that email, a verification link was sent.",
+                              "unknownHttp":  200
+                          },
+    "disposable":  {
+                       "body":  "{\"error\":\"Disposable email addresses are not allowed. Use a durable inbox.\"}",
+                       "http":  400
+                   },
+    "adminIssue":  {
+                       "expiresInHours":  24,
+                       "email":  "p4u22b+1785984605@example.com",
+                       "http":  200,
+                       "tokenLen":  43,
+                       "hasToken":  true
+                   },
+    "verify":  {
+                   "ok":  true,
+                   "http":  200,
+                   "emailVerified":  true
+               },
+    "replay":  {
+                   "body":  "{\"error\":\"Invalid or expired verification link.\"}",
+                   "rejected":  true,
+                   "http":  400
+               },
+    "loginMe":  {
+                    "meHttp":  200,
+                    "emailVerified":  true,
+                    "loginHttp":  200
+                },
+    "pages":  {
+                  "/verify-email":  200,
+                  "/resend-verification":  200,
+                  "/login":  200,
+                  "/register":  200,
+                  "/check-email":  200
+              },
+    "rateLimitResend":  {
+                            "saw429":  true,
+                            "note":  "auth-verify-resend-email max=3/hour; requests 4-5 should 429 if per-email bucket applies",
+                            "results":  [
+                                            {
+                                                "n":  1,
+                                                "http":  200
+                                            },
+                                            {
+                                                "n":  2,
+                                                "http":  200
+                                            },
+                                            {
+                                                "n":  3,
+                                                "http":  200
+                                            },
+                                            {
+                                                "n":  4,
+                                                "http":  429
+                                            },
+                                            {
+                                                "n":  5,
+                                                "http":  429
+                                            }
+                                        ]
+                        },
+    "unverifiedResetGate":  {
+                                "adminIssueHttp":  404,
+                                "forgotHttp":  200,
+                                "forgotOk":  true,
+                                "adminHasToken":  false
+                            },
+    "success":  true
+}

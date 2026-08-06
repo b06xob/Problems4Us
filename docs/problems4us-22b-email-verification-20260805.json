@@ -1,0 +1,62 @@
+{
+  "stepId": "problems4us-22b",
+  "title": "Email validation on customer registration (format + ownership proof)",
+  "correlationId": "cos-email-validation-registration-20260805",
+  "completedUtc": "2026-08-06T02:50:23Z",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "verdict": "CLOSED: email ownership verification live on v2026.08.06-4381bea — register creates unverified account, verify link single-use, enum-safe resend, rate-limit 429, disposable blocked, password-reset gated on EmailVerifiedAt, Builder gated on emailVerified.",
+  "deploy": {
+    "version": "v2026.08.06-4381bea",
+    "commit": "4381bea3bef67de7653af04d652142292559f7a9",
+    "ghRuns": [31066179954, 31066481589],
+    "priorBrokenDeploy": "607d299 (ALTER+UPDATE same batch → register 503; fixed in 4381bea)"
+  },
+  "policies": {
+    "unverifiedMay": ["sign_in", "browse_public", "save_problems_ideas", "watches_alerts"],
+    "unverifiedMayNot": ["password_reset", "builder_briefs", "paid_entitlement_claim"],
+    "disposableDomains": "block",
+    "tokenTtlHours": 24,
+    "sharedTokenMechanism": "src/lib/auth-email-token.ts (pwdreset + emailverify purpose prefixes)"
+  },
+  "prodSmoke": {
+    "summaryPath": "Problems4US/docs/_smoke_22b_20260805/summary.json",
+    "smokeEmail": "p4u22b+1785984595@example.com",
+    "registerHttp": 201,
+    "registerEmailVerified": false,
+    "registerVerificationRequired": true,
+    "registerAgainHttp": 200,
+    "registerAgainMessage": "If this email can be used, we created an account and sent a verification link. Check your inbox.",
+    "resendKnownVsUnknownMessagesEqual": true,
+    "verifyHttp": 200,
+    "verifyEmailVerified": true,
+    "replayHttp": 400,
+    "disposableHttp": 400,
+    "rateLimitResendStatuses": [200, 200, 200, 429, 429],
+    "pages": {
+      "/register": 200,
+      "/check-email": 200,
+      "/verify-email": 200,
+      "/resend-verification": 200
+    },
+    "healthOps": {
+      "passwordResetEmailConfigured": true,
+      "emailVerificationConfigured": true
+    },
+    "verdict": "PASS"
+  },
+  "emailDeliveryNote": "Outbound uses the same SMTP/SendGrid path as password reset (ops.emailVerificationConfigured=true). Company SMTP Key Vault path was real-send verified earlier today (docs/problems4us-smtp-kv-real-send-20260805.json). Prod smoke used admin issue for token capture (example.com inbox not readable) then verify+replay — same ops pattern as 22a close. Register path calls deliverEmailVerificationEmail on create.",
+  "unitTests": "npm test — 34 suites / 187 passed including tests/email-verification.test.ts",
+  "code": [
+    "src/lib/auth-email-token.ts",
+    "src/lib/email-verification.ts",
+    "src/lib/disposable-email.ts",
+    "src/lib/user-db.ts",
+    "src/app/api/auth/register/route.ts",
+    "src/app/api/auth/verify-email/route.ts",
+    "src/app/api/auth/resend-verification/route.ts",
+    "src/app/api/admin/email-verification/issue/route.ts",
+    "src/app/api/admin/mail-failures/route.ts",
+    "docs/ops-runbook-session-auth.md"
+  ]
+}

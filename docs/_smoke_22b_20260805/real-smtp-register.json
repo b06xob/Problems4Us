@@ -1,0 +1,62 @@
+﻿{
+    "attemptedAtUtc":  "2026-08-06T02:50:59.8354611Z",
+    "email":  "b06xob+p4u22b1785984659@bellsouth.net",
+    "registerHttp":  201,
+    "emailVerified":  false,
+    "emailVerificationRequired":  true,
+    "mailFailuresSample":  {
+                               "ok":  true,
+                               "count":  6,
+                               "failures":  [
+                                                {
+                                                    "failureId":  "mdf_0e489821f94e471aa8fd1740",
+                                                    "email":  "b06xob+p4u22b1785984659@bellsouth.net",
+                                                    "purpose":  "emailverify",
+                                                    "reason":  "smtp_error:SMTP unexpected 535 (want 235): 535 5.7.0 (#AUTH005) Too many bad auth attempts.",
+                                                    "hardFailure":  false,
+                                                    "createdAt":  "2026-08-06T02:51:02.073Z"
+                                                },
+                                                {
+                                                    "failureId":  "mdf_e344ccaded2446dfaf8646db",
+                                                    "email":  "p4u22b-unv+1785984605@example.com",
+                                                    "purpose":  "emailverify",
+                                                    "reason":  "smtp_error:SMTP unexpected 535 (want 235): 535 5.7.0 (#AUTH005) Too many bad auth attempts.",
+                                                    "hardFailure":  false,
+                                                    "createdAt":  "2026-08-06T02:50:30.400Z"
+                                                },
+                                                {
+                                                    "failureId":  "mdf_68b7a842b9ab4335b1e3d187",
+                                                    "email":  "p4u22b-rl+1785984605@example.com",
+                                                    "purpose":  "emailverify",
+                                                    "reason":  "smtp_error:SMTP unexpected 535 (want 235): 535 5.7.0 (#AUTH005) Too many bad auth attempts.",
+                                                    "hardFailure":  false,
+                                                    "createdAt":  "2026-08-06T02:50:28.163Z"
+                                                },
+                                                {
+                                                    "failureId":  "mdf_40cefa8de04a4d1d8eb6dfa9",
+                                                    "email":  "p4u22b-rl+1785984605@example.com",
+                                                    "purpose":  "emailverify",
+                                                    "reason":  "smtp_error:SMTP unexpected 535 (want 235): 535 5.7.0 (#AUTH005) Too many bad auth attempts.",
+                                                    "hardFailure":  false,
+                                                    "createdAt":  "2026-08-06T02:50:26.346Z"
+                                                },
+                                                {
+                                                    "failureId":  "mdf_ef9a361df5da4f1b9bd58cab",
+                                                    "email":  "p4u22b-rl+1785984605@example.com",
+                                                    "purpose":  "emailverify",
+                                                    "reason":  "smtp_error:SMTP unexpected 535 (want 235): 535 5.7.0 (#AUTH005) Too many bad auth attempts.",
+                                                    "hardFailure":  false,
+                                                    "createdAt":  "2026-08-06T02:50:24.320Z"
+                                                },
+                                                {
+                                                    "failureId":  "mdf_d2b85abd89684b25bed12f1e",
+                                                    "email":  "p4u22b-rl+1785984605@example.com",
+                                                    "purpose":  "emailverify",
+                                                    "reason":  "smtp_error:SMTP unexpected 554 (want 250): 554 6.6.0 Error sending message for delivery.",
+                                                    "hardFailure":  false,
+                                                    "createdAt":  "2026-08-06T02:50:22.660Z"
+                                                }
+                                            ]
+                           },
+    "note":  "Register to bellsouth+tag triggers same SMTP path as password reset; inbox receipt is ops-visible at b06xob@bellsouth.net if provider collapses plus-tags, else delivery acceptance is via SMTP DATA on register."
+}

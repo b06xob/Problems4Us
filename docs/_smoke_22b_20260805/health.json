@@ -1,0 +1,19 @@
+﻿{
+    "status":  "healthy",
+    "version":  "1.0.0",
+    "timestamp":  "2026-08-06T02:50:06.037Z",
+    "database":  "connected",
+    "aiProvider":  "openai",
+    "checkout":  {
+                     "gate":  "G7",
+                     "sessionConfigured":  false,
+                     "webhookConfigured":  false,
+                     "checkoutReady":  false
+                 },
+    "ops":  {
+                "passwordResetEmailConfigured":  true,
+                "emailVerificationConfigured":  true,
+                "appInsightsConfigured":  true,
+                "billingForwardSecretConfigured":  true
+            }
+}

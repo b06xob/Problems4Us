@@ -1,0 +1,46 @@
+{
+    "asOfUtc":  "2026-08-06T02:50:23.3150368Z",
+    "correlationId":  "cos-email-validation-registration-20260805",
+    "stepId":  "problems4us-22b",
+    "deployVersion":  "v2026.08.06-4381bea",
+    "commit":  "4381bea3bef67de7653af04d652142292559f7a9",
+    "ghRuns":  [
+                   31066179954,
+                   31066481589
+               ],
+    "healthOps":  {
+                      "passwordResetEmailConfigured":  true,
+                      "emailVerificationConfigured":  true,
+                      "appInsightsConfigured":  true,
+                      "billingForwardSecretConfigured":  true
+                  },
+    "smokeEmail":  "p4u22b+1785984595@example.com",
+    "registerHttp":  201,
+    "registerEmailVerified":  false,
+    "registerVerificationRequired":  true,
+    "registerAgainHttp":  200,
+    "registerAgainMessage":  "If this email can be used, we created an account and sent a verification link. Check your inbox.",
+    "resendKnownMessage":  "If an unverified account exists for that email, a verification link was sent.",
+    "resendUnknownMessage":  "If an unverified account exists for that email, a verification link was sent.",
+    "messagesEqual":  true,
+    "verifyHttp":  200,
+    "verifyOk":  true,
+    "verifyEmailVerified":  true,
+    "replayHttp":  400,
+    "disposableHttp":  400,
+    "rateLimitResendStatuses":  [
+                                    200,
+                                    200,
+                                    200,
+                                    429,
+                                    429
+                                ],
+    "rateLimitHit429":  true,
+    "pages":  {
+                  "/verify-email":  200,
+                  "/resend-verification":  200,
+                  "/register":  200,
+                  "/check-email":  200
+              },
+    "verdict":  "PASS"
+}
