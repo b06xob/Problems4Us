@@ -122,14 +122,21 @@ export async function ensureUserTables(): Promise<void> {
         END
       `);
       // problems4us-22b: EmailVerifiedAt + verification tokens + mail failure log
+      // ALTER and UPDATE must be separate batches (SQL Server metadata visibility).
       await execute(`
         IF COL_LENGTH(N'dbo.UserAccounts', N'EmailVerifiedAt') IS NULL
         BEGIN
           ALTER TABLE dbo.UserAccounts ADD EmailVerifiedAt DATETIME2 NULL;
-          -- Grandfather pre-22b accounts so password reset / entitlements keep working.
+        END
+      `);
+      await execute(`
+        IF COL_LENGTH(N'dbo.UserAccounts', N'EmailVerifiedAt') IS NOT NULL
+        BEGIN
+          -- Grandfather only pre-22b rows (CreatedAt before this feature shipped).
           UPDATE dbo.UserAccounts
           SET EmailVerifiedAt = CreatedAt
-          WHERE EmailVerifiedAt IS NULL;
+          WHERE EmailVerifiedAt IS NULL
+            AND CreatedAt < '2026-08-06T02:30:00';
         END
       `);
       await execute(`
