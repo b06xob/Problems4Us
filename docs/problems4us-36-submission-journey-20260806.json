@@ -1,0 +1,101 @@
+{
+  "evidenceId": "problems4us-36-submission-journey-20260806",
+  "correlationId": "cos-submission-journey-20260806",
+  "product": "Problems4Us",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "completedAtUtc": "2026-08-06T23:56:30Z",
+  "deploy": {
+    "version": "v2026.08.06-3f23ca6",
+    "commit": "3f23ca64a8c4b2d7044edbf7a5ef9aae54d733ea",
+    "githubActionsRun": "https://github.com/b06xob/Problems4Us/actions/runs/31132454501",
+    "deployedAtUtc": "2026-08-06T23:50:19Z"
+  },
+  "founderDecision": "User submissions become first-class scored inputs (moderation gates scoring gates notification). Builder intros / pricing deferred.",
+  "smtpKeyVault": "Already migrated 2026-08-05 (problems4us-smtp-keyvault-migration-20260805); not re-done.",
+  "unitTests": {
+    "suite": "tests/submission-journey.test.ts",
+    "passed": 6
+  },
+  "productionE2E": {
+    "cleanStandalone": {
+      "reference": "sub-1786060494375-0eqmvj",
+      "triage": "accepted",
+      "pipelineOutcome": "standalone",
+      "painPointId": "pp-sub-msi6b2n7-wgto6r",
+      "opportunityScore": 68,
+      "percentileRank": 80,
+      "sourceTypeOnDetail": "community",
+      "confirmationEmailSent": true,
+      "outcomeEmailSent": true,
+      "submitterEmailEchoedToBrowser": false
+    },
+    "mergeIntoExisting": {
+      "reference": "sub-1786060515810-utxl2i",
+      "pipelineOutcome": "merged",
+      "painPointId": "pp-1",
+      "similarReporterCount": 2,
+      "percentileRank": 100,
+      "confirmationEmailSent": true,
+      "outcomeEmailSent": true,
+      "note": "Matched Azure Reserved Instance Cost Surprises; corroborating community mention attributed to Merge Probe"
+    },
+    "toxicityGate": {
+      "triage": "declined",
+      "publicListingIncludes": false
+    },
+    "piiQueueGate": {
+      "triage": "reviewing",
+      "pipeline": null,
+      "publicListingIncludes": false
+    },
+    "publicListing": {
+      "beforeDeployStuckVisible": "CoS verified pending were public; after deploy public_total started at 0 with 4 admin-only stuck rows",
+      "afterE2EPublicAcceptedOnly": 6,
+      "adminStatusCounts": {
+        "accepted": 6,
+        "reviewing": 1,
+        "declined": 1
+      }
+    },
+    "stuckSubmissionsActioned": [
+      {
+        "id": "sub-1786033545921-da4wso",
+        "outcome": "standalone",
+        "painPointId": "pp-sub-msi6bqbn-c9l1iv",
+        "score": 68
+      },
+      {
+        "id": "sub-seed-3",
+        "outcome": "standalone",
+        "painPointId": "pp-sub-msi6bv5c-gl7lvi",
+        "score": 70
+      },
+      {
+        "id": "sub-seed-1",
+        "outcome": "standalone",
+        "painPointId": "pp-sub-msi6bwaz-1tux3s",
+        "score": 68
+      },
+      {
+        "id": "sub-seed-2",
+        "outcome": "standalone",
+        "painPointId": "pp-sub-msi6bxii-xkviyr",
+        "score": 68
+      }
+    ]
+  },
+  "adminSurfaces": {
+    "patchRoute": "PATCH /api/submissions/[id]",
+    "ui": "/admin/submissions"
+  },
+  "notBuiltPerFounder": [
+    "Builder notifications when someone claims a problem",
+    "Consent-gated builder->submitter introductions",
+    "Pricing / paid gating claims"
+  ],
+  "remainingRisk": [
+    "Outcome/confirmation emails sent via SMTP (timestamps stamped); inbox open of b06xob@bellsouth.net not independently scraped in this run — treat SMTP success + OutcomeEmailSentAt as delivery evidence pending human glance.",
+    "Catalog match uses deterministic token Jaccard (threshold 0.28), not full semantic embedding — may miss paraphrases; merge of pp-1 verified on a strong title overlap case."
+  ]
+}

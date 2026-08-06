@@ -1522,73 +1522,78 @@
         "title": "ROLLUP: User submissions become first-class scored inputs (intake+moderation+score+notify)",
         "owner": "Problems4Us Agent",
         "target_date": "2026-08-07",
-        "status": "in_progress",
+        "status": "done",
         "depends_on": [
             "problems4us-32"
         ],
         "success_criteria": "End-to-end production evidence: submit -> triage -> scored (merged or standalone) -> notification with real numbers; Steps 1-3 shipped as one coherent change; pending submissions not public.",
-        "evidence": "",
+        "evidence": "CLOSED 2026-08-06T23:56:30Z (cos-submission-journey-20260806): Prod v2026.08.06-3f23ca6. Public listing excludes non-accepted. Auto-triage reuses problems4us-32. Admin PATCH + /admin/submissions. E2E: sub-1786060494375-0eqmvj standalone scored 68 + emails; merge into pp-1 similar=2; toxic declined; PII queued; 4 stuck approved. Evidence: docs/problems4us-36-submission-journey-20260806.json; https://github.com/b06xob/Problems4Us/actions/runs/31132454501",
         "roadmap_month": 3,
         "roadmap_milestone": "submission-journey",
         "source_roadmap": "cos-submission-journey-20260806",
-        "blocker_note": ""
+        "blocker_note": "",
+        "completed_utc": "2026-08-06T23:56:30Z"
     },
     {
         "step_id": "problems4us-36a",
         "title": "Honest intake + acknowledgement (email framing, honest success copy, confirmation email, reference)",
         "owner": "Problems4Us Agent",
         "target_date": "2026-08-07",
-        "status": "in_progress",
+        "status": "done",
         "depends_on": [],
         "success_criteria": "/submit frames email as payoff; success copy honest about check+score; reference number shown; confirmation email when address given (SMTP Key Vault already live).",
-        "evidence": "",
+        "evidence": "CLOSED 2026-08-06T23:56:30Z: Honest intake UI + confirmation email + reference. Evidence: problems4us-36-submission-journey-20260806.json",
         "roadmap_month": 3,
         "roadmap_milestone": "submission-journey",
-        "source_roadmap": "cos-submission-journey-20260806"
+        "source_roadmap": "cos-submission-journey-20260806",
+        "completed_utc": "2026-08-06T23:56:30Z"
     },
     {
         "step_id": "problems4us-36b",
         "title": "Auto-triage before publication + admin approve/reject (HIGHEST RISK)",
         "owner": "Problems4Us Agent",
         "target_date": "2026-08-07",
-        "status": "in_progress",
+        "status": "done",
         "depends_on": [
             "problems4us-32"
         ],
         "success_criteria": "Public listing excludes non-accepted; reuse ingest-moderation filter; clean auto-approve / PII queue / toxic decline; PATCH /api/submissions/[id] + admin view; stuck submissions actionable.",
-        "evidence": "",
+        "evidence": "CLOSED 2026-08-06T23:56:30Z: Public hide + triage + admin PATCH; stuck actioned. Evidence: problems4us-36-submission-journey-20260806.json",
         "roadmap_month": 3,
         "roadmap_milestone": "submission-journey",
-        "source_roadmap": "cos-submission-journey-20260806"
+        "source_roadmap": "cos-submission-journey-20260806",
+        "completed_utc": "2026-08-06T23:56:30Z"
     },
     {
         "step_id": "problems4us-36c",
         "title": "Score and cluster: same AI pipeline; merge corroborating evidence with attribution; community provenance",
         "owner": "Problems4Us Agent",
         "target_date": "2026-08-07",
-        "status": "in_progress",
+        "status": "done",
         "depends_on": [
             "problems4us-36b"
         ],
         "success_criteria": "On approval, score via same dimensions; match/merge into existing pain point with visible submitter attribution OR standalone community-sourced entry; no duplicate near-identical entries.",
-        "evidence": "",
+        "evidence": "CLOSED 2026-08-06T23:56:30Z: Score/merge with community provenance (standalone + merged pp-1). Evidence: problems4us-36-submission-journey-20260806.json",
         "roadmap_month": 3,
         "roadmap_milestone": "submission-journey",
-        "source_roadmap": "cos-submission-journey-20260806"
+        "source_roadmap": "cos-submission-journey-20260806",
+        "completed_utc": "2026-08-06T23:56:30Z"
     },
     {
         "step_id": "problems4us-36d",
         "title": "Close the loop: outcome email with real counts/ranks only",
         "owner": "Problems4Us Agent",
         "target_date": "2026-08-07",
-        "status": "in_progress",
+        "status": "done",
         "depends_on": [
             "problems4us-36c"
         ],
         "success_criteria": "After scoring, email submitter with live status; if merged, real similar-reporter count; percentile/rank only from catalog data \u2014 never invented.",
-        "evidence": "",
+        "evidence": "CLOSED 2026-08-06T23:56:30Z: Outcome emails with real score/percentile/similar counts; ConfirmationEmailSentAt/OutcomeEmailSentAt stamped. Evidence: problems4us-36-submission-journey-20260806.json",
         "roadmap_month": 3,
         "roadmap_milestone": "submission-journey",
-        "source_roadmap": "cos-submission-journey-20260806"
+        "source_roadmap": "cos-submission-journey-20260806",
+        "completed_utc": "2026-08-06T23:56:30Z"
     }
 ]
