@@ -338,7 +338,11 @@ export default function AdminDataSourcesPage() {
           <p className="mt-2 text-sm text-text-secondary">
             Data source management is owner-only. Enter the server{" "}
             <code className="text-xs">ADMIN_API_KEY</code> to continue. This page is
-            excluded from public navigation and search indexing.
+            excluded from public navigation and search indexing.{" "}
+            <a href="/admin/submissions" className="text-brand-600 underline">
+              Submission moderation
+            </a>
+            {" "}is separate.
           </p>
         </div>
         <form onSubmit={handleUnlock} className="card space-y-4">

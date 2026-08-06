@@ -5,11 +5,23 @@ import Link from "next/link";
 import { SUBMISSION_CATEGORIES } from "@/lib/user-submissions";
 import type { SubmissionUrgency } from "@/lib/types";
 
-const URGENCY_OPTIONS: { value: SubmissionUrgency; label: string; desc: string }[] = [
+const URGENCY_OPTIONS: {
+  value: SubmissionUrgency;
+  label: string;
+  desc: string;
+}[] = [
   { value: "low", label: "Low", desc: "Nice to have, not blocking work" },
-  { value: "medium", label: "Medium", desc: "Slowing us down but we have workarounds" },
+  {
+    value: "medium",
+    label: "Medium",
+    desc: "Slowing us down but we have workarounds",
+  },
   { value: "high", label: "High", desc: "Costing time or money every week" },
-  { value: "critical", label: "Critical", desc: "Blocking operations or revenue" },
+  {
+    value: "critical",
+    label: "Critical",
+    desc: "Blocking operations or revenue",
+  },
 ];
 
 interface ProblemSubmissionFormProps {
@@ -26,6 +38,9 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [triageStatus, setTriageStatus] = useState<string | null>(null);
+  const [confirmationEmailSent, setConfirmationEmailSent] = useState(false);
+  const [pipelineLive, setPipelineLive] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -53,17 +68,31 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
         return;
       }
 
-      const id = json.data.SubmissionId as string;
+      const id = (json.reference ?? json.data?.SubmissionId) as string;
       setSubmittedId(id);
+      setTriageStatus(json.triage?.status ?? json.data?.Status ?? null);
+      setConfirmationEmailSent(Boolean(json.confirmationEmailSent));
+      setPipelineLive(
+        Boolean(
+          json.pipeline?.painPointId &&
+            (json.pipeline?.outcome === "standalone" ||
+              json.pipeline?.outcome === "merged")
+        )
+      );
       onSuccess?.(id);
     } catch {
-      setError("Unable to submit right now. Please check your connection and try again.");
+      setError(
+        "Unable to submit right now. Please check your connection and try again."
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
   if (submittedId) {
+    const declined = triageStatus === "declined";
+    const reviewing = triageStatus === "reviewing";
+
     return (
       <div className="card text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/30">
@@ -82,20 +111,43 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
             <polyline points="22 4 12 14.01 9 11.01" />
           </svg>
         </div>
-        <h2 className="mt-4 text-xl font-bold">Problem submitted!</h2>
-        <p className="mt-2 text-sm text-text-secondary">
-          Thank you for sharing. Your problem has been added to the community board
-          where builders and entrepreneurs can discover opportunities to solve it.
+        <h2 className="mt-4 text-xl font-bold">
+          {declined ? "Submission received — not published" : "Got it — thanks"}
+        </h2>
+        <p className="mt-2 text-sm font-medium text-text-primary">
+          Reference number:{" "}
+          <code className="rounded bg-surface-alt px-1.5 py-0.5 text-xs">
+            {submittedId}
+          </code>
         </p>
+        <p className="mt-3 text-sm text-text-secondary">
+          {declined
+            ? "Our automated check could not publish this submission. Keep the reference if you need to follow up."
+            : reviewing
+              ? "We need a quick human review before this can go live (usually for sensitive details in the problem text). If you left an email, we will update you."
+              : pipelineLive
+                ? "It passed checking and scoring. It is live on the opportunity board, typically within the hour for new submissions."
+                : "We are checking and scoring it now. Approved problems usually go live within about an hour."}
+        </p>
+        {confirmationEmailSent && (
+          <p className="mt-2 text-xs text-text-muted">
+            A confirmation was sent to the email you provided.
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/submissions" className="btn-primary">
-            View Community Problems
-          </Link>
+          {!declined && (
+            <Link href="/submissions" className="btn-primary">
+              Browse approved community problems
+            </Link>
+          )}
           <button
             type="button"
             className="btn-secondary"
             onClick={() => {
               setSubmittedId(null);
+              setTriageStatus(null);
+              setConfirmationEmailSent(false);
+              setPipelineLive(false);
               setTitle("");
               setDescription("");
               setCategory("");
@@ -104,7 +156,7 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
               setSubmitterEmail("");
             }}
           >
-            Submit Another
+            Submit another
           </button>
         </div>
       </div>
@@ -120,7 +172,10 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
       )}
 
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-text-primary">
+        <label
+          htmlFor="title"
+          className="block text-sm font-medium text-text-primary"
+        >
           Problem title <span className="text-red-500">*</span>
         </label>
         <p className="mt-0.5 text-xs text-text-muted">
@@ -140,11 +195,16 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-text-primary">
+        <label
+          htmlFor="description"
+          className="block text-sm font-medium text-text-primary"
+        >
           Describe the problem <span className="text-red-500">*</span>
         </label>
         <p className="mt-0.5 text-xs text-text-muted">
-          What&apos;s broken? Who is affected? What have you tried? The more detail, the better.
+          What&apos;s broken? Who is affected? What have you tried? The more
+          detail, the better. Do not paste passwords, API keys, or private
+          contact details into this field.
         </p>
         <textarea
           id="description"
@@ -161,7 +221,10 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
-          <label htmlFor="category" className="block text-sm font-medium text-text-primary">
+          <label
+            htmlFor="category"
+            className="block text-sm font-medium text-text-primary"
+          >
             Category <span className="text-red-500">*</span>
           </label>
           <select
@@ -181,7 +244,10 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
         </div>
 
         <div>
-          <label htmlFor="urgency" className="block text-sm font-medium text-text-primary">
+          <label
+            htmlFor="urgency"
+            className="block text-sm font-medium text-text-primary"
+          >
             How urgent is this? <span className="text-red-500">*</span>
           </label>
           <select
@@ -201,13 +267,21 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
       </div>
 
       <div className="rounded-lg border border-border bg-surface-alt p-4">
-        <h3 className="text-sm font-semibold text-text-primary">Contact info (optional)</h3>
+        <h3 className="text-sm font-semibold text-text-primary">
+          Where should we reach you?
+        </h3>
         <p className="mt-1 text-xs text-text-muted">
-          Leave your details if you&apos;d like builders to reach out when they have a solution.
+          Tell us where to reach you and we&apos;ll let you know if someone
+          builds this — and when your problem is scored and live. Email is how
+          we close the loop; without it, you only get the on-screen reference
+          number.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="name" className="block text-xs font-medium text-text-secondary">
+            <label
+              htmlFor="name"
+              className="block text-xs font-medium text-text-secondary"
+            >
               Your name
             </label>
             <input
@@ -221,8 +295,11 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
             />
           </div>
           <div>
-            <label htmlFor="email" className="block text-xs font-medium text-text-secondary">
-              Email
+            <label
+              htmlFor="email"
+              className="block text-xs font-medium text-text-secondary"
+            >
+              Email (recommended)
             </label>
             <input
               id="email"
@@ -238,9 +315,14 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
         <p className="text-xs text-text-muted">
-          Submissions are public on the community board. Do not include confidential data.
+          Submissions are checked before they appear publicly. Only approved
+          problems are listed.
         </p>
-        <button type="submit" disabled={submitting} className="btn-primary min-w-[140px]">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="btn-primary min-w-[140px]"
+        >
           {submitting ? "Submitting…" : "Submit Problem"}
         </button>
       </div>

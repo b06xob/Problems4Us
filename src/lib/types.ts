@@ -130,6 +130,13 @@ export interface UserProblemSubmission {
   Status: SubmissionStatus;
   CreatedAt: string;
   UpdatedAt: string;
+  /** Pipeline fields (additive; may be empty on legacy rows). */
+  ModerationAction?: string;
+  ModerationReason?: string;
+  LinkedPainPointId?: string | null;
+  PipelineOutcome?: string | null;
+  ConfirmationEmailSentAt?: string | null;
+  OutcomeEmailSentAt?: string | null;
 }
 
 export interface CreateSubmissionInput {

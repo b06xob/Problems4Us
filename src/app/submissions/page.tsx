@@ -92,8 +92,8 @@ export default function SubmissionsPage() {
             Problems needing solutions
           </h1>
           <p className="mt-2 max-w-2xl text-text-secondary">
-            Real problems submitted by people looking for better tools, workflows,
-            and products. Browse for inspiration or submit your own.
+            Approved community submissions — real problems people asked us to
+            score. Pending items stay private until they pass moderation.
           </p>
         </div>
         <Link href="/submit" className="btn-primary shrink-0">
@@ -104,7 +104,7 @@ export default function SubmissionsPage() {
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <div className="card py-4 text-center">
           <p className="text-2xl font-bold text-brand-600">{stats.total}</p>
-          <p className="text-xs text-text-muted">Total submissions</p>
+          <p className="text-xs text-text-muted">Approved submissions</p>
         </div>
         <div className="card py-4 text-center">
           <p className="text-2xl font-bold text-score-critical">{stats.critical}</p>

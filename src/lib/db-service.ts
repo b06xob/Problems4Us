@@ -20,6 +20,7 @@ import {
   toPublicSourceType,
   toPublicSourceUrl,
 } from './source-public';
+import { calculateOpportunityScore } from './scoring';
 import { decideWaitlistClaim, type WaitlistSource } from './waitlist';
 import type {
   ConversionEventName,
@@ -754,15 +755,84 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   };
 }
 
+let userSubmissionColumnsReady: Promise<void> | null = null;
+
+/** Additive columns for submission journey (moderation + score link + mail stamps). */
+export async function ensureUserSubmissionColumns(): Promise<void> {
+  if (!userSubmissionColumnsReady) {
+    userSubmissionColumnsReady = (async () => {
+      const alters: Array<{ col: string; ddl: string }> = [
+        {
+          col: "ModerationAction",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD ModerationAction NVARCHAR(40) NULL",
+        },
+        {
+          col: "ModerationReason",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD ModerationReason NVARCHAR(400) NULL",
+        },
+        {
+          col: "LinkedPainPointId",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD LinkedPainPointId NVARCHAR(50) NULL",
+        },
+        {
+          col: "PipelineOutcome",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD PipelineOutcome NVARCHAR(40) NULL",
+        },
+        {
+          col: "ConfirmationEmailSentAt",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD ConfirmationEmailSentAt DATETIME2 NULL",
+        },
+        {
+          col: "OutcomeEmailSentAt",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD OutcomeEmailSentAt DATETIME2 NULL",
+        },
+      ];
+      for (const a of alters) {
+        await execute(`
+          IF OBJECT_ID(N'dbo.UserSubmissions', N'U') IS NOT NULL
+            AND COL_LENGTH(N'dbo.UserSubmissions', N'${a.col}') IS NULL
+          BEGIN
+            ${a.ddl};
+          END
+        `);
+      }
+    })();
+  }
+  await userSubmissionColumnsReady;
+}
+
+function mapSubmissionRow(row: UserProblemSubmission): UserProblemSubmission {
+  return {
+    ...row,
+    SubmitterName: row.SubmitterName ?? "",
+    SubmitterEmail: row.SubmitterEmail ?? "",
+    ModerationAction: row.ModerationAction ?? undefined,
+    ModerationReason: row.ModerationReason ?? undefined,
+    LinkedPainPointId: row.LinkedPainPointId ?? null,
+    PipelineOutcome: row.PipelineOutcome ?? null,
+    ConfirmationEmailSentAt: row.ConfirmationEmailSentAt
+      ? new Date(row.ConfirmationEmailSentAt).toISOString()
+      : null,
+    OutcomeEmailSentAt: row.OutcomeEmailSentAt
+      ? new Date(row.OutcomeEmailSentAt).toISOString()
+      : null,
+    CreatedAt: new Date(row.CreatedAt).toISOString(),
+    UpdatedAt: new Date(row.UpdatedAt).toISOString(),
+  };
+}
+
 export async function listUserSubmissions(filters: {
   category?: string;
   urgency?: string;
   status?: string;
   search?: string;
 } = {}): Promise<UserProblemSubmission[]> {
+  await ensureUserSubmissionColumns();
   let rows = await query<UserProblemSubmission>(`
     SELECT SubmissionId, Title, Description, Category, Urgency,
-           SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt
+           SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt,
+           ModerationAction, ModerationReason, LinkedPainPointId, PipelineOutcome,
+           ConfirmationEmailSentAt, OutcomeEmailSentAt
     FROM UserSubmissions
     ORDER BY CreatedAt DESC
   `);
@@ -786,50 +856,59 @@ export async function listUserSubmissions(filters: {
     );
   }
 
-  return rows.map((row) => ({
-    ...row,
-    SubmitterName: row.SubmitterName ?? '',
-    SubmitterEmail: row.SubmitterEmail ?? '',
-    CreatedAt: new Date(row.CreatedAt).toISOString(),
-    UpdatedAt: new Date(row.UpdatedAt).toISOString(),
-  }));
+  return rows.map(mapSubmissionRow);
+}
+
+export async function getUserSubmissionById(
+  id: string
+): Promise<UserProblemSubmission | undefined> {
+  await ensureUserSubmissionColumns();
+  const row = await queryOne<UserProblemSubmission>(
+    `SELECT SubmissionId, Title, Description, Category, Urgency,
+            SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt,
+            ModerationAction, ModerationReason, LinkedPainPointId, PipelineOutcome,
+            ConfirmationEmailSentAt, OutcomeEmailSentAt
+     FROM UserSubmissions WHERE SubmissionId = @id`,
+    { id }
+  );
+  return row ? mapSubmissionRow(row) : undefined;
 }
 
 export async function createUserSubmissionDb(
-  input: CreateSubmissionInput
+  input: CreateSubmissionInput & {
+    status?: SubmissionStatus;
+    moderationAction?: string;
+    moderationReason?: string;
+  }
 ): Promise<UserProblemSubmission> {
+  await ensureUserSubmissionColumns();
   const submissionId = `sub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const now = new Date().toISOString();
+  const status = input.status ?? "pending";
 
   await execute(
     `INSERT INTO UserSubmissions
-       (SubmissionId, Title, Description, Category, Urgency, SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt)
+       (SubmissionId, Title, Description, Category, Urgency, SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt,
+        ModerationAction, ModerationReason)
      VALUES
-       (@submissionId, @title, @description, @category, @urgency, @submitterName, @submitterEmail, 'pending', @now, @now)`,
+       (@submissionId, @title, @description, @category, @urgency, @submitterName, @submitterEmail, @status, @now, @now,
+        @moderationAction, @moderationReason)`,
     {
       submissionId,
       title: input.title.trim(),
       description: input.description.trim(),
       category: input.category.trim(),
       urgency: input.urgency,
-      submitterName: input.submitterName?.trim() ?? '',
-      submitterEmail: input.submitterEmail?.trim() ?? '',
+      submitterName: input.submitterName?.trim() ?? "",
+      submitterEmail: input.submitterEmail?.trim() ?? "",
+      status,
       now,
+      moderationAction: input.moderationAction ?? null,
+      moderationReason: input.moderationReason ?? null,
     }
   );
 
-  return {
-    SubmissionId: submissionId,
-    Title: input.title.trim(),
-    Description: input.description.trim(),
-    Category: input.category.trim(),
-    Urgency: input.urgency,
-    SubmitterName: input.submitterName?.trim() ?? '',
-    SubmitterEmail: input.submitterEmail?.trim() ?? '',
-    Status: 'pending',
-    CreatedAt: now,
-    UpdatedAt: now,
-  };
+  return (await getUserSubmissionById(submissionId))!;
 }
 
 export async function insertPainPoint(painPoint: PainPoint): Promise<void> {
@@ -924,15 +1003,185 @@ export async function getTrendSnapshotsForPainPoint(
 
 export async function updateSubmissionStatusDb(
   id: string,
-  status: SubmissionStatus
+  status: SubmissionStatus,
+  extras?: {
+    moderationAction?: string;
+    moderationReason?: string;
+  }
 ): Promise<UserProblemSubmission | undefined> {
+  await ensureUserSubmissionColumns();
   const rows = await execute(
-    `UPDATE UserSubmissions SET Status = @status, UpdatedAt = GETUTCDATE() WHERE SubmissionId = @id`,
-    { id, status }
+    `UPDATE UserSubmissions SET
+       Status = @status,
+       UpdatedAt = GETUTCDATE(),
+       ModerationAction = COALESCE(@moderationAction, ModerationAction),
+       ModerationReason = COALESCE(@moderationReason, ModerationReason)
+     WHERE SubmissionId = @id`,
+    {
+      id,
+      status,
+      moderationAction: extras?.moderationAction ?? null,
+      moderationReason: extras?.moderationReason ?? null,
+    }
   );
   if (rows === 0) return undefined;
-  const all = await listUserSubmissions();
-  return all.find((s) => s.SubmissionId === id);
+  return getUserSubmissionById(id);
+}
+
+export async function updateSubmissionPipelineFields(
+  id: string,
+  fields: {
+    linkedPainPointId?: string | null;
+    pipelineOutcome?: string | null;
+    moderationAction?: string;
+    moderationReason?: string;
+    confirmationEmailSentAt?: string | null;
+    outcomeEmailSentAt?: string | null;
+    status?: SubmissionStatus;
+  }
+): Promise<void> {
+  await ensureUserSubmissionColumns();
+  const existing = await getUserSubmissionById(id);
+  if (!existing) return;
+
+  await execute(
+    `UPDATE UserSubmissions SET
+       Status = @status,
+       LinkedPainPointId = @linkedPainPointId,
+       PipelineOutcome = @pipelineOutcome,
+       ModerationAction = @moderationAction,
+       ModerationReason = @moderationReason,
+       ConfirmationEmailSentAt = COALESCE(@confirmationEmailSentAt, ConfirmationEmailSentAt),
+       OutcomeEmailSentAt = COALESCE(@outcomeEmailSentAt, OutcomeEmailSentAt),
+       UpdatedAt = GETUTCDATE()
+     WHERE SubmissionId = @id`,
+    {
+      id,
+      status: fields.status ?? existing.Status,
+      linkedPainPointId:
+        fields.linkedPainPointId !== undefined
+          ? fields.linkedPainPointId
+          : existing.LinkedPainPointId ?? null,
+      pipelineOutcome:
+        fields.pipelineOutcome !== undefined
+          ? fields.pipelineOutcome
+          : existing.PipelineOutcome ?? null,
+      moderationAction:
+        fields.moderationAction ?? existing.ModerationAction ?? null,
+      moderationReason:
+        fields.moderationReason ?? existing.ModerationReason ?? null,
+      confirmationEmailSentAt: fields.confirmationEmailSentAt ?? null,
+      outcomeEmailSentAt: fields.outcomeEmailSentAt ?? null,
+    }
+  );
+}
+
+export async function ensureCommunitySubmissionSource(): Promise<void> {
+  const existing = await queryOne<{ SourceId: string }>(
+    `SELECT SourceId FROM Sources WHERE SourceId = @id`,
+    { id: "src-community-user-submissions" }
+  );
+  if (existing) return;
+  await execute(
+    `INSERT INTO Sources (SourceId, SourceType, SourceName, SourceUrl, IsActive)
+     VALUES (@sourceId, @sourceType, @sourceName, @sourceUrl, 1)`,
+    {
+      sourceId: "src-community-user-submissions",
+      sourceType: "community",
+      sourceName: "Community user submissions",
+      sourceUrl: "https://problems4us.com/submit",
+    }
+  );
+}
+
+export async function insertPainPointMention(input: {
+  MentionId: string;
+  PainPointId: string;
+  RawPostId: string;
+  ExtractedText: string;
+  SentimentScore: number;
+  SeverityScore: number;
+}): Promise<void> {
+  await execute(
+    `INSERT INTO PainPointMentions
+       (MentionId, PainPointId, RawPostId, ExtractedText, SentimentScore, SeverityScore)
+     VALUES
+       (@mentionId, @painPointId, @rawPostId, @extractedText, @sentiment, @severity)`,
+    {
+      mentionId: input.MentionId,
+      painPointId: input.PainPointId,
+      rawPostId: input.RawPostId,
+      extractedText: input.ExtractedText,
+      sentiment: input.SentimentScore,
+      severity: input.SeverityScore,
+    }
+  );
+}
+
+export async function countMentionsForPainPoint(
+  painPointId: string
+): Promise<number> {
+  const row = await queryOne<{ total: number }>(
+    `SELECT COUNT(*) AS total FROM PainPointMentions WHERE PainPointId = @id`,
+    { id: painPointId }
+  );
+  return Number(row?.total ?? 0);
+}
+
+/**
+ * Merge corroborating community evidence into an existing pain point.
+ * Bumps frequency (capped), refreshes LastSeenAt, optionally lifts severity.
+ */
+export async function updatePainPointAfterCommunityEvidence(input: {
+  painPointId: string;
+  frequencyBump: number;
+  lastSeenAt: string;
+  severityHint?: number;
+}): Promise<void> {
+  const existing = await queryOne<{
+    FrequencyScore: number;
+    SeverityScore: number;
+    WillingnessToPayScore: number;
+    MarketSizeScore: number;
+    TrendScore: number;
+  }>(
+    `SELECT FrequencyScore, SeverityScore, WillingnessToPayScore, MarketSizeScore, TrendScore
+     FROM PainPoints WHERE PainPointId = @id`,
+    { id: input.painPointId }
+  );
+  if (!existing) return;
+
+  const frequency = Math.min(
+    100,
+    Number(existing.FrequencyScore) + input.frequencyBump
+  );
+  const severity = Math.max(
+    Number(existing.SeverityScore),
+    input.severityHint ?? Number(existing.SeverityScore)
+  );
+  const opportunity = calculateOpportunityScore({
+    FrequencyScore: frequency,
+    SeverityScore: severity,
+    WillingnessToPayScore: Number(existing.WillingnessToPayScore),
+    MarketSizeScore: Number(existing.MarketSizeScore),
+    TrendScore: Number(existing.TrendScore),
+  });
+
+  await execute(
+    `UPDATE PainPoints SET
+       FrequencyScore = @frequency,
+       SeverityScore = @severity,
+       OpportunityScore = @opportunity,
+       LastSeenAt = @lastSeen
+     WHERE PainPointId = @id`,
+    {
+      id: input.painPointId,
+      frequency,
+      severity,
+      opportunity,
+      lastSeen: input.lastSeenAt,
+    }
+  );
 }
 
 let waitlistTablesReady: Promise<void> | null = null;

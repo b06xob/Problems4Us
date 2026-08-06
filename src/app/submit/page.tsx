@@ -5,12 +5,12 @@ import { ProblemSubmissionForm } from "@/components/submit/ProblemSubmissionForm
 export const metadata: Metadata = {
   title: "Submit a Problem",
   description:
-    "Share a problem you need solved. Help builders and entrepreneurs discover real opportunities.",
+    "Share a problem you need solved. We check, score, and notify you when it is live.",
   alternates: { canonical: "/submit" },
   openGraph: {
     title: "Submit a Problem — Problems4Us",
     description:
-      "Share a problem you need solved. Help builders and entrepreneurs discover real opportunities.",
+      "Share a problem you need solved. We check, score, and notify you when it is live.",
     url: "https://problems4us.com/submit",
   },
 };
@@ -27,8 +27,8 @@ export default function SubmitPage() {
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-text-secondary">
           Have a pain point that no product addresses well? Tell us about it.
-          Your submission helps entrepreneurs and builders find real problems
-          worth solving.
+          We check every submission, score the ones that pass, and — if you leave
+          an email — tell you when it is live.
         </p>
       </div>
 
