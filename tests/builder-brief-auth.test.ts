@@ -37,7 +37,11 @@ describe("resolveBuilderBriefCaller (security review 2026-08-05)", () => {
   it("uses session email and ignores matching claim", () => {
     const result = resolveBuilderBriefCaller({
       request: fakeRequest(),
-      sessionUser: { userId: "u1", email: "Pilot@Example.com" },
+      sessionUser: {
+        userId: "u1",
+        email: "Pilot@Example.com",
+        emailVerified: true,
+      },
       claimedEmail: "pilot@example.com",
     });
     expect(result).toEqual({
@@ -47,10 +51,28 @@ describe("resolveBuilderBriefCaller (security review 2026-08-05)", () => {
     });
   });
 
+  it("rejects unverified session for Builder (problems4us-22b)", () => {
+    const result = resolveBuilderBriefCaller({
+      request: fakeRequest(),
+      sessionUser: {
+        userId: "u1",
+        email: "pilot@example.com",
+        emailVerified: false,
+      },
+      claimedEmail: "",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(403);
+  });
+
   it("rejects session when claimed email mismatches", () => {
     const result = resolveBuilderBriefCaller({
       request: fakeRequest(),
-      sessionUser: { userId: "u1", email: "pilot@example.com" },
+      sessionUser: {
+        userId: "u1",
+        email: "pilot@example.com",
+        emailVerified: true,
+      },
       claimedEmail: "other@example.com",
     });
     expect(result.ok).toBe(false);

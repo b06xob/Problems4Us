@@ -1,92 +1,1593 @@
-{
-  "product": "Problems4Us",
-  "updatedUtc": "2026-08-05T11:10:00Z",
-  "correlationId": "cos-security-review-20260805",
-  "tasks": [
+[
     {
-      "id": "sec-kv-appsettings",
-      "title": "Convert plaintext App Service secrets to Key Vault references",
-      "severity": "HIGH",
-      "status": "open",
-      "findingIds": ["SEC-01", "SEC-20"],
-      "notes": "Requires Founder sign-off. Do not rotate in-band without cutover plan."
+        "step_id": "problems4us-01",
+        "title": "Production cutover live (Azure App Service + SQL + secrets)",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-07-25",
+        "status": "done",
+        "depends_on": [],
+        "success_criteria": "https://problems4us.com health returns status=healthy and database=connected; App Service secrets for SQL and ADMIN_API_KEY set; not mock-only for data path.",
+        "evidence": "Problems4US/docs/m1-2-prod-check-20260718.json (health 200, database connected, AZURE_SQL_CONNECTION_STRING set); https://problems4us.com/api/health",
+        "roadmap_month": 1,
+        "roadmap_milestone": "M1.1",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z"
     },
     {
-      "id": "sec-next16-cve",
-      "title": "Plan Next.js 16 upgrade to clear nested postcss/sharp highs",
-      "severity": "HIGH",
-      "status": "open",
-      "findingIds": ["SEC-14"],
-      "notes": "npm audit fix --force pulls next@16 (breaking)."
+        "step_id": "problems4us-02",
+        "title": "Replace mock AI path with Azure OpenAI on production",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-05",
+        "status": "done",
+        "depends_on": [
+            "problems4us-01"
+        ],
+        "success_criteria": "AI_PROVIDER=azure-openai on App Service; cluster/score/suggest use Azure OpenAI on production; health exposes ai provider=azure-openai; at least one real ingestÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢score path verified.",
+        "evidence": "CLOSED 2026-07-29 (cos-continuous-work-standing-order-20260729): Direct OpenAI path accepted (Azure OpenAI resource not required). AI_PROVIDER=openai on problems4us-linux; health aiProvider=openai; admin POST /api/ai/analyze HTTP 200 provider=openai with real pain points. Evidence: Problems4US/docs/problems4us-02-closeout-20260729.json; problems4us-02-directpath-20260729.json; problems4us-02-openai-retry-20260729.json.",
+        "roadmap_month": 1,
+        "roadmap_milestone": "M1.2",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "blocker_note": ""
     },
     {
-      "id": "sec-admin-key-split",
-      "title": "Split ADMIN_API_KEY blast radius (ingest vs entitlements vs reset-issue)",
-      "severity": "HIGH",
-      "status": "open",
-      "findingIds": ["SEC-19"],
-      "notes": "After KV; rotation needs Founder."
+        "step_id": "problems4us-03",
+        "title": "Admin ingest reliability + ops runbook",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-07-28",
+        "status": "done",
+        "depends_on": [
+            "problems4us-01"
+        ],
+        "success_criteria": "ADMIN_API_KEY-gated sources/ingest APIs work in prod; ops runbook covers dry-run, caps, auth failure modes; smoke ingest documented.",
+        "evidence": "Problems4US/docs/ops-runbook-admin-ingest.md; ADMIN_API_KEY set on App Service per m1-2-prod-check-20260718.json",
+        "roadmap_month": 1,
+        "roadmap_milestone": "M1.3",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z"
     },
     {
-      "id": "sec-session-secret",
-      "title": "Add dedicated SESSION_SECRET (KV) separate from ADMIN_API_KEY",
-      "severity": "LOW",
-      "status": "open",
-      "findingIds": ["SEC-03"],
-      "notes": "Will invalidate sessions/reset tokens on cutover — schedule maintenance."
+        "step_id": "problems4us-04",
+        "title": "Landing ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ waitlist ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ early-access pricing instrumented",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-08",
+        "status": "done",
+        "depends_on": [
+            "problems4us-01"
+        ],
+        "success_criteria": "Pricing page live; waitlist POST creates records; conversion events summary readable via admin API; first monetization surface ready for paying pilot or LOI.",
+        "evidence": "Problems4US/docs/m1-2-prod-check-20260718.json (pricing 200, waitlist POST 201); Problems4US/docs/m1-5-security-baseline.md funnel ops section",
+        "roadmap_month": 1,
+        "roadmap_milestone": "M1.4",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z"
     },
     {
-      "id": "sec-billing-forward-hmac",
-      "title": "Add timestamped HMAC body signing for billing-forward",
-      "severity": "MEDIUM",
-      "status": "open",
-      "findingIds": ["SEC-13"]
+        "step_id": "problems4us-05",
+        "title": "Security baseline: secrets out of repo, admin routes locked",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-07-28",
+        "status": "done",
+        "depends_on": [
+            "problems4us-01"
+        ],
+        "success_criteria": "No production secrets in git; admin fail-closed without ADMIN_API_KEY; admin routes locked; conversion POST strips PII keys; public submissions hide emails.",
+        "evidence": "Problems4US/docs/m1-5-security-baseline.md; tests/admin-auth.test.ts",
+        "roadmap_month": 1,
+        "roadmap_milestone": "M1.5",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z"
     },
     {
-      "id": "sec-auth-failure-telemetry",
-      "title": "Emit App Insights events for auth failures and admin unlock failures",
-      "severity": "MEDIUM",
-      "status": "open",
-      "findingIds": ["SEC-17"]
+        "step_id": "problems4us-06",
+        "title": "XPS ranking/discovery contract design spike (with XPS Core)",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-16",
+        "status": "done",
+        "depends_on": [
+            "problems4us-02"
+        ],
+        "success_criteria": "Minimal reusable ranking/discovery contract (inputs, score facets, explainability payload) agreed with XPS Core via Intercom; design spike artifact filed; ready for Month-2 integration spike.",
+        "evidence": "CLOSED 2026-07-29 (cos-continuous-work-standing-order-20260729): Accepted XPS draft 1.0.0-draft. Problems4US/docs/contracts/PROBLEMS4US_XPS_RANKING_CONTRACT_ACCEPTANCE.md; problems4us_ranking_discovery_sample_v1.json; schema copy. Peer xps-core-05 already done.",
+        "roadmap_month": 1,
+        "roadmap_milestone": "M1-xps-collab",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z"
     },
     {
-      "id": "sec-admin-key-storage",
-      "title": "Harden /admin key handling beyond sessionStorage",
-      "severity": "LOW",
-      "status": "open",
-      "findingIds": ["SEC-06"]
+        "step_id": "problems4us-07",
+        "title": "Month-1 done-when: prod + real AI score path + waitlist/pricing + secrets clean",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-16",
+        "status": "done",
+        "depends_on": [
+            "problems4us-01",
+            "problems4us-02",
+            "problems4us-03",
+            "problems4us-04",
+            "problems4us-05"
+        ],
+        "success_criteria": "Prod URL live; health green; at least one real ingest+score path (Azure OpenAI); waitlist/pricing instrumented; secrets out of repo. Passport can score Month-1 complete.",
+        "evidence": "CLOSED 2026-07-29 (cos-continuous-work-standing-order-20260729): Problems4US/docs/problems4us-07-month1-done-when-20260729.json. Health healthy/db connected/aiProvider=openai; real analyze path; waitlist/pricing + secrets baseline from M1.2/M1.5 evidence.",
+        "roadmap_month": 1,
+        "roadmap_milestone": "M1-done-when",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z"
     },
     {
-      "id": "sec-builder-brief-auth",
-      "title": "Require session or ADMIN_API_KEY for Builder brief export",
-      "severity": "CRITICAL",
-      "status": "done",
-      "completed_utc": "2026-08-05T11:05:00Z",
-      "findingIds": ["SEC-04"]
+        "step_id": "problems4us-08",
+        "title": "Accounts + auth and per-user saved problems/ideas",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-28",
+        "status": "done",
+        "depends_on": [
+            "problems4us-07"
+        ],
+        "success_criteria": "Auth (or managed IdP) live; users can save problems and ideas tied to their account; activation metric (saved ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥3 problems OR ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥1 idea set) measurable in DB.",
+        "evidence": "CLOSED 2026-07-29 (cos-continuous-work-standing-order-20260729): commit 4f140ec deployed (GH run 30480978314 success). Prod smoke: register 201, save idea ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ activated=true (saved_idea_gte_1), admin /api/admin/activation total=1 activated=1. Docs: ops-runbook-accounts-auth.md; problems4us-08-accounts-smoke-20260729.json.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.1",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z"
     },
     {
-      "id": "sec-forgot-enumeration",
-      "title": "Remove deliverySent/deliveryChannel from forgot-password responses",
-      "severity": "HIGH",
-      "status": "done",
-      "completed_utc": "2026-08-05T11:05:00Z",
-      "findingIds": ["SEC-05"]
+        "step_id": "problems4us-09",
+        "title": "Billing integration + plan entitlements (Stripe or equivalent)",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-09-05",
+        "status": "blocked",
+        "depends_on": [
+            "problems4us-08",
+            "problems4us-09a",
+            "problems4us-09b",
+            "problems4us-09f"
+        ],
+        "success_criteria": "ROLLUP: paid monthly tier live (Stripe via centralized billing OR Founder-approved invite-only cohort) with usage limits enforced; Xavier merchant path OR Founder-approved fallback closed via 09f; checkoutReady=true OR invite cohort entitlements active in prod.",
+        "evidence": "﻿REVALIDATED 2026-08-06T00:47:36Z (cos-hourly-pulse-20260806T004503Z): Live GET /api/health HTTP 200 (checkoutReady=False; passwordResetEmailConfigured=True; appInsightsConfigured=True; billingForwardSecretConfigured=True). Catalog 1504 ({\"github\":1,\"community\":5,\"forum\":1498}). Funnel pricing_view=4 waitlist_view=53 waitlistRecords=2 activated=1/8 invite seats=1 Stripe paid=0. Deploy v2026.08.05-004b94a. Live HN+GitHub ingest this pulse grew catalog 1487->1504. billing.breivax.com DNS UNRESOLVED; breivax-billing-test health HTTP 200 this pulse (stripeMode=test, consumersConfigured=True). Evidence: Problems4US/docs/problems4us-2045et-pulse-evidence-20260805.json",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.2",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "blocker_note": "Xavier: set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_BUILDER_MONTHLY (and publishable key) on problems4us-linux, or approve invite-only paid cohort + manual invoicing fallback.",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801"
     },
     {
-      "id": "sec-security-headers",
-      "title": "Add CSP/HSTS/nosniff/Referrer/Permissions-Policy middleware",
-      "severity": "HIGH",
-      "status": "done",
-      "completed_utc": "2026-08-05T11:05:00Z",
-      "findingIds": ["SEC-09"]
+        "step_id": "problems4us-09a",
+        "title": "Invite-only paid cohort + manual invoicing fallback (code/docs)",
+        "target_date": "2026-08-05",
+        "status": "done",
+        "depends_on": [
+            "problems4us-08"
+        ],
+        "success_criteria": "Ops grant/revoke Builder seats documented and smoke-tested; invite-only cohort runbook filed; can close -09 without Stripe if Founder approves fallback.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.2a",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-29 (cos-collapse-roadmap-months-20260729): docs/ops-runbook-invite-cohort.md; docs/problems4us-09a-invite-cohort-smoke-20260729.json. Prod smokePass=true: no-seat 403 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ grant 200 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ brief 200 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ revoke 200 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 403.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
     },
     {
-      "id": "sec-gitignore",
-      "title": "Expand .gitignore for .env and credential filenames",
-      "severity": "MEDIUM",
-      "status": "done",
-      "completed_utc": "2026-08-05T11:05:00Z",
-      "findingIds": ["SEC-02"]
+        "step_id": "problems4us-09b",
+        "title": "Wire prod Stripe secrets + checkoutReady=true smoke",
+        "target_date": "2026-09-05",
+        "status": "in_progress",
+        "depends_on": [
+            "problems4us-08"
+        ],
+        "success_criteria": "STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_BUILDER_MONTHLY (+ publishable) set on problems4us-linux; GET /api/health checkout.checkoutReady=true; test-mode session create succeeds.",
+        "blocker_note": "Consumer BREIVAX_BILLING_FORWARD_SECRET LIVE (KV ref). checkoutReady still false: need TEST Stripe session/price keys OR Founder invite-only path (09f). Do not wire isolated Stripe webhook. Central staging breivax-billing-test health HTTP 200 this pulse; billing.breivax.com DNS unresolved.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.2b",
+        "owner": "Problems4Us Agent",
+        "evidence": "﻿REVALIDATED 2026-08-06T00:47:36Z (cos-hourly-pulse-20260806T004503Z): billingForwardSecretConfigured=true; checkoutReady=false; staging health HTTP 200 (stripeMode=test, webhookSecretConfigured=True, forwardSecretConfigured=True, consumersConfigured=True); DNS unresolved. Evidence: Problems4US/docs/problems4us-2045et-pulse-evidence-20260805.json; problems4us-09b-billing-consumer-wiring-20260805.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-09c",
+        "title": "Enforce plan entitlements on Builder-gated APIs",
+        "target_date": "2026-08-12",
+        "status": "done",
+        "depends_on": [
+            "problems4us-08"
+        ],
+        "success_criteria": "Builder-gated routes return 403 without active entitlement; unit + prod smoke with pilot grant and without; usage limits for saved searches/alerts documented.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.2c",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-29 (cos-collapse-roadmap-months-20260729): docs/problems4us-09c-entitlement-enforcement-20260729.md. Builder briefs 403 without entitlement; unit tests entitlements.test.ts; prod pilot grant/without smoke via 09a evidence; usage limits documented.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-09d",
+        "title": "Stripe webhook idempotency + paid_early_access entitlement grant verify",
+        "target_date": "2026-08-18",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-09b"
+        ],
+        "success_criteria": "Webhook signature verify + stripeEventId idempotency proven; checkout.session.completed grants PlanEntitlements; replay does not double-grant; evidence JSON filed.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.2d",
+        "owner": "Problems4Us Agent",
+        "evidence": "PREP 2026-07-31 (cos-verify-mustang-login-20260731): HOLD-safe POST /api/checkout/billing-forward + stripeEventId idempotency path unit-tested; live grant/replay blocked on 09b. Evidence: Problems4US/docs/problems4us-09d-billing-forward-prep-20260731.json; tests/checkout-session.test.ts",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-09e",
+        "title": "Pricing UX: success/cancel return banners + Builder CTA flip",
+        "target_date": "2026-08-10",
+        "status": "done",
+        "depends_on": [
+            "problems4us-04"
+        ],
+        "success_criteria": "Pricing page shows waitlist CTA when checkoutReady=false and Stripe CTA when true; success/cancel return banners record funnel events; desktop+mobile smoke.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.2e",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-manual-work-wake-20260731-1725Z): Pricing waitlist CTA when checkoutReady=false; Stripe BuilderCheckoutForm when true; success/cancel return banners + funnel events. Prod smoke pricing/success/cancel HTTP 200; checkoutReady=false. Evidence: Problems4US/docs/problems4us-09e-pricing-ux-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-09f",
+        "title": "Formal Month-2 monetization path: centralized billing live OR Founder invite-only as paid production",
+        "target_date": "2026-09-05",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-09a",
+            "problems4us-09d"
+        ],
+        "success_criteria": "Either (A) billing.breivax.com/webhooks/stripe delivers to Problems4Us billing-forward and checkoutReady path verified, OR (B) Founder explicitly approves invite-only cohort + manual invoicing as the production paid path closing Month-2 monetization without standalone Stripe. Decision recorded; no invented paid seats.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.2f",
+        "source_docs": [
+            "Problems4US/docs/problems4us-20b-q4-growth-plan-20260731.md",
+            "Problems4US/docs/problems4us-20a-retrospective-20260731.md",
+            "Problems4US/docs/contracts/PROBLEMS4US_CENTRALIZED_STRIPE_WEBHOOK_CONSUMER.md",
+            "Problems4US/docs/problems4us-09d-billing-forward-prep-20260731.json",
+            "Problems4US/docs/problems4us-founder-decisions-packet-20260801.md"
+        ],
+        "evidence": "﻿REVALIDATED 2026-08-06T00:47:36Z (cos-hourly-pulse-20260806T004503Z): Live GET /api/health HTTP 200 (checkoutReady=False; passwordResetEmailConfigured=True; appInsightsConfigured=True; billingForwardSecretConfigured=True). Catalog 1504 ({\"github\":1,\"community\":5,\"forum\":1498}). Funnel pricing_view=4 waitlist_view=53 waitlistRecords=2 activated=1/8 invite seats=1 Stripe paid=0. Deploy v2026.08.05-004b94a. Live HN+GitHub ingest this pulse grew catalog 1487->1504. billing.breivax.com DNS UNRESOLVED; breivax-billing-test health HTTP 200 this pulse (stripeMode=test, consumersConfigured=True). Evidence: Problems4US/docs/problems4us-2045et-pulse-evidence-20260805.json",
+        "blocker_note": "Xavier/Passport: confirm centralized Stripe webhook delivery + BREIVAX_BILLING_FORWARD_SECRET, or formally approve invite-only as production paid path. Decision packet: Problems4US/docs/problems4us-founder-decisions-packet-20260802.md"
+    },
+    {
+        "step_id": "problems4us-10",
+        "title": "Alerts/digests on trend/score changes for watched problems",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-09-10",
+        "status": "done",
+        "depends_on": [
+            "problems4us-08"
+        ],
+        "success_criteria": "Weekly retention loop: email or in-app alert fires when a tracked problem's score/trend moves; verified for ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥1 watched problem in pilot.",
+        "evidence": "CLOSED 2026-07-29 (cos-continuous-work-standing-order-20260729): commits 35d4181/dd0a947/853897a. In-app AlertEvents on score move. Prod smoke: watch pp-1 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ admin evaluate forceDelta=10 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ emitted score_change alert; GET /api/me/alerts total=1. Evidence: docs/problems4us-10-alerts-smoke-20260729.json. Email delivery deferred.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.3",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z"
+    },
+    {
+        "step_id": "problems4us-10a",
+        "title": "Email delivery for score/trend alerts (deferred from -10)",
+        "target_date": "2026-08-20",
+        "status": "done",
+        "depends_on": [
+            "problems4us-10"
+        ],
+        "success_criteria": "Email provider wired (SendGrid/ACS/equivalent) OR explicitly deferred with Founder note; if wired, >=1 watched problem produces email on score move in pilot.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.3a",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Email delivery explicitly deferred ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no SendGrid/ACS wired; in-app AlertEvents remain. Evidence: Problems4US/docs/problems4us-10a-email-alerts-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "blocker_note": "Xavier: approve SendGrid/ACS (or equivalent) before reopening outbound email alerts."
+    },
+    {
+        "step_id": "problems4us-10b",
+        "title": "Scheduled alert evaluation job (unattended)",
+        "target_date": "2026-08-08",
+        "status": "done",
+        "depends_on": [
+            "problems4us-10"
+        ],
+        "success_criteria": "Alert evaluate runs on a schedule (Azure Function/Logic App/cron) without manual admin forceDelta; at least one unattended emit verified; runbook updated.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.3b",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-manual-work-wake-20260731-1725Z): GH Actions scheduled-alerts-evaluate.yml (cron every 6h). Unattended POST {} (no forceDelta) HTTP 200 emitted=1 score_change on pp-1 (run 30651585049). Docs: ops-runbook-alerts-evaluate.md; problems4us-10b-scheduled-alerts-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-10c",
+        "title": "User alert preferences (mute/frequency) + watch UX polish",
+        "target_date": "2026-08-18",
+        "status": "done",
+        "depends_on": [
+            "problems4us-10"
+        ],
+        "success_criteria": "Users can list watches/alerts, mute or set frequency; bad watch removes cleanly; UI smoke for register->watch->alert path.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.3c",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T174502Z): Deploy v2026.07.31-4675d04. RegisterÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢watchÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢PATCH mutedÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢DELETE unwatch prod smoke. Evidence: Problems4US/docs/problems4us-10c-alert-prefs-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-11",
+        "title": "Source expansion: GitHub Issues + Hacker News (+ forums/reviews)",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-08",
+        "status": "done",
+        "depends_on": [
+            "problems4us-03",
+            "problems4us-07",
+            "problems4us-11a",
+            "problems4us-11b",
+            "problems4us-11c",
+            "problems4us-11d",
+            "problems4us-11e",
+            "problems4us-11f"
+        ],
+        "success_criteria": "ROLLUP: three sources ingest with quality filters OR Founder-accepted GitHub+HN-only mix (11f); ToS/rate-limit docs filed; >=60% watched-source ingest->score unattended on daily runs (11e).",
+        "evidence": "CLOSED 2026-08-04T01:49:43Z (cos-hourly-pulse-20260804T014501Z): Source expansion rollup done after Reddit removal + GitHub+HN watched sources. Catalog 485 ({'community': 5, 'forum': 479, 'github': 1}); daily ingest ledger successCriteriaMet=true; live HN+GitHub ingest this pulse. Evidence: Problems4US/docs/problems4us-11-rollup-close-20260804.json; problems4us-21et-pulse-evidence-20260804.json",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.4",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "blocker_note": ""
+    },
+    {
+        "step_id": "problems4us-11a",
+        "title": "Reddit ingest quality filters + rate-limit hardening",
+        "target_date": "2026-08-02",
+        "status": "done",
+        "depends_on": [
+            "problems4us-03"
+        ],
+        "success_criteria": "Quality filters (min score/comments, keyword denylist, dedupe) documented and enforced; Reddit ToS/rate-limit mitigations in ops runbook; dry-run + live smoke evidence.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.4a",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-08-02T18:33:37Z (cos-remove-reddit-20260802): Removed per Founder directive 2026-08-02 (cos-remove-reddit-20260802). Reddit is not deferred and not restored ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â fully removed from ingest, config, public site, AEO, and docs. Evidence: Problems4US/docs/problems4us-remove-reddit-20260802.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "blocker_note": ""
+    },
+    {
+        "step_id": "problems4us-11b",
+        "title": "GitHub Issues ingest source (API + admin path)",
+        "target_date": "2026-08-05",
+        "status": "done",
+        "depends_on": [
+            "problems4us-03"
+        ],
+        "success_criteria": "Admin can configure GitHub repo/org targets; ingest fetches issues via GitHub API; pain points written; ToS/token/rate-limit notes filed; prod smoke evidence.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.4b",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-manual-work-wake-20260731-1725Z): Admin GET/POST /api/ingest/github live. Prod dry-run Azure/azure-cli ok; live smoke posts=7 raw=7 painPoints=5. Ops ToS/rate-limit notes in ops-runbook-admin-ingest.md. Evidence: docs/problems4us-11b-github-ingest-20260731.json; commits fa382c9/c159737.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-11c",
+        "title": "One reviews/forums source ingest live",
+        "target_date": "2026-08-07",
+        "status": "done",
+        "depends_on": [
+            "problems4us-03"
+        ],
+        "success_criteria": "At least one non-Reddit/non-GitHub reviews or forums source ingest path live with quality filters; ToS compliance note filed; smoke evidence.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.4c",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-manual-work-wake-20260731-1725Z): Hacker News forums ingest live via /api/ingest/hackernews. Dry-run posts=16; live posts=10 raw=10 painPoints=4. ToS notes in ops-runbook. Evidence: docs/problems4us-11c-hackernews-ingest-20260731.json; commit 1ee2591.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-11d",
+        "title": "Source ToS + rate-limit compliance pack",
+        "target_date": "2026-08-08",
+        "status": "done",
+        "depends_on": [
+            "problems4us-11a",
+            "problems4us-11b",
+            "problems4us-11c"
+        ],
+        "success_criteria": "Single docs artifact covers robots/ToS, auth model, rate limits, and escalation for Reddit + GitHub + forum/review source; Passport-readable path.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.4d",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31T23:22:51Z (cos-hourly-pulse-20260731T224503Z): Passport-readable ToS/rate-limit compliance pack covers Reddit+GitHub+HN (auth, robots/ToS posture, rate limits, escalation). Reddit live smoke remains under problems4us-11a (OAuth secrets still missing). Evidence: Problems4US/docs/problems4us-11d-source-tos-compliance-pack-20260731.md; ops-runbook-admin-ingest.md",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-11e",
+        "title": "Daily unattended ingest->score pipeline (>=60% watched sources)",
+        "target_date": "2026-08-08",
+        "status": "done",
+        "depends_on": [
+            "problems4us-11a",
+            "problems4us-11b",
+            "problems4us-02"
+        ],
+        "success_criteria": "Scheduled daily job runs ingest->score for watched sources without human poke; success rate >=60% over 3 consecutive days; failure escalates Warning+ to Passport.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.4e",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-08-02T00:50:00Z (cos-hourly-pulse-20260802T004502Z): 3 consecutive UTC days >=60% (2/3=66% GitHub+HN ok, Reddit soft_credentials). GET /api/admin/ingest-daily successCriteriaMet=true consecutiveCalendarDaysPassed=3. Day-3 receipt idr-3875bf8c97394c7a via workflow_dispatch run 30725896302. Evidence: Problems4US/docs/problems4us-11e-daily-ingest-ledger-20260802.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "blocker_note": "Reddit OAuth still unset after 3 soft_credentials days ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tracked under 11a/11f; does not reopen 11e close."
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-11f",
+        "title": "Founder decision: restore Reddit OAuth secrets OR accept GitHub+HN-only source mix",
+        "target_date": "2026-08-08",
+        "status": "done",
+        "depends_on": [
+            "problems4us-11a",
+            "problems4us-11b",
+            "problems4us-11c"
+        ],
+        "success_criteria": "Xavier sets REDDIT_CLIENT_ID + REDDIT_CLIENT_SECRET on problems4us-linux and 11a live smoke passes, OR Founder/Passport formally accepts GitHub Issues + Hacker News as the Month-2 three-source bar (Reddit deferred) and plan 11 rollup criteria are amended accordingly. Decision filed; no silent defer.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.4f",
+        "source_docs": [
+            "Problems4US/docs/problems4us-20b-q4-growth-plan-20260731.md",
+            "Problems4US/docs/problems4us-20a-retrospective-20260731.md",
+            "Problems4US/docs/problems4us-11a-blocked-reddit-secrets-20260801.json",
+            "Problems4US/docs/problems4us-founder-decisions-packet-20260801.md"
+        ],
+        "evidence": "CLOSED 2026-08-02T18:33:37Z (cos-remove-reddit-20260802): Removed per Founder directive 2026-08-02 (cos-remove-reddit-20260802). Reddit is not deferred and not restored ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â fully removed from ingest, config, public site, AEO, and docs. Evidence: Problems4US/docs/problems4us-remove-reddit-20260802.json",
+        "blocker_note": ""
+    },
+    {
+        "step_id": "problems4us-11g",
+        "title": "Remove Reddit entirely (ingest, config, site, AEO, catalog attribution)",
+        "target_date": "2026-08-02",
+        "status": "done",
+        "depends_on": [
+            "problems4us-11a",
+            "problems4us-11f"
+        ],
+        "owner": "Problems4Us Agent",
+        "success_criteria": "No Reddit ingest route/module/job; no REDDIT_* env/App Service settings; no public-site or AEO Reddit mentions; legacy catalog reddit sources re-labeled to community for public attribution; plan 11a/11f closed as Removed.",
+        "evidence": "CLOSED 2026-08-02T18:33:37Z (cos-remove-reddit-20260802): Removed per Founder directive 2026-08-02 (cos-remove-reddit-20260802). Reddit is not deferred and not restored ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â fully removed from ingest, config, public site, AEO, and docs. Evidence: Problems4US/docs/problems4us-remove-reddit-20260802.json",
+        "blocker_note": "",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.4g",
+        "source_docs": [
+            "Problems4US/docs/problems4us-remove-reddit-20260802.json"
+        ]
+    },
+    {
+        "step_id": "problems4us-12",
+        "title": "Funnel KPI dashboard (visits ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ activated ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ paid) for Passport/ops",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-28",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-04",
+            "problems4us-08",
+            "problems4us-12a",
+            "problems4us-12b",
+            "problems4us-12c"
+        ],
+        "success_criteria": "ROLLUP: Passport can read visits -> activated -> paid funnel KPIs without chasing Audi; dashboard or Intercom artifact path documented.",
+        "evidence": "REVALIDATED 2026-08-02T17:49:06.438Z (cos-hourly-pulse-20260802T174502Z): 12a/12b done; 12c in_progress with live funnel rollup; blocked on 09 for formal close. Interim path: Problems4US/docs/problems4us-12c-funnel-rollup-20260802.json; ops-runbook-funnel-kpi.md",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.5",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-12a",
+        "title": "Visits -> waitlist conversion KPI slice (admin/ops)",
+        "target_date": "2026-08-08",
+        "status": "done",
+        "depends_on": [
+            "problems4us-04"
+        ],
+        "success_criteria": "Admin/ops path returns visit and waitlist conversion counts (or documented proxy); Intercom sample snapshot published once.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.5a",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-manual-work-wake-20260731-1725Z): Admin GET /api/events?summary=1&hours=168 (pricing_view=4, waitlist_view=34) + GET /api/waitlist?countOnly=1 (total=1). Intercom Progress snapshot published. Evidence: Problems4US/docs/problems4us-12a-visits-waitlist-kpi-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-12b",
+        "title": "Activated accounts KPI slice (saved>=3 or idea>=1)",
+        "target_date": "2026-08-12",
+        "status": "done",
+        "depends_on": [
+            "problems4us-08"
+        ],
+        "success_criteria": "Admin /api/admin/activation (or successor) readable by ops; activated definition matches -08 success criteria; Passport can read without chasing Audi.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.5b",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-manual-work-wake-20260731-1725Z): GET /api/admin/activation returns totalAccounts=4 activatedAccounts=1 with rule saved_problems>=3 OR saved_ideas>=1. Evidence: docs/problems4us-12b-activation-kpi-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-12c",
+        "title": "Paid seats KPI slice + funnel dashboard rollup",
+        "target_date": "2026-08-28",
+        "status": "in_progress",
+        "depends_on": [
+            "problems4us-09",
+            "problems4us-12a",
+            "problems4us-12b"
+        ],
+        "success_criteria": "Paid seat counts join visits/activated into one Passport-readable dashboard or weekly Intercom artifact; path documented.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2.5c",
+        "owner": "Problems4Us Agent",
+        "evidence": "﻿REVALIDATED 2026-08-06T00:47:36Z (cos-hourly-pulse-20260806T004503Z): Live funnel pricing_view=4 waitlist_view=53 waitlistRecords=2 activated=1/8 invite seats=1 Stripe paid=0 checkoutReady=false. Catalog 1504. Deploy v2026.08.05-004b94a. Evidence: Problems4US/docs/problems4us-12c-funnel-rollup-20260805.json Formal close waits on problems4us-09.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-13",
+        "title": "XPS ranking integration spike #1 against Month-1 contract",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-01",
+        "status": "done",
+        "depends_on": [
+            "problems4us-06",
+            "problems4us-13a",
+            "problems4us-13b"
+        ],
+        "success_criteria": "ROLLUP: XPS ranking/discovery integration spike closed with XPS Core ack OR blocked with clear humanActionRequired; Intercom artifact filed.",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T174502Z): XPS Core TaskCompleted 2026-07-29T19:54:42Z explicitly Passport-scorable ack for problems4us-13/13b; live GET /api/ranking/discovery still 1.0.0-draft. Evidence: Problems4US/docs/problems4us-13-xps-ack-close-20260731.json; Intercom event 20260729T195442Z__XPS__XPS-Core-Agent__TaskCompleted__cos-collapse-roadmap-months-20260729.json.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2-xps-collab",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-13a",
+        "title": "Document live /api/ranking/discovery contract mapping receipt",
+        "target_date": "2026-07-30",
+        "status": "done",
+        "depends_on": [
+            "problems4us-06"
+        ],
+        "success_criteria": "Receipt JSON/MD maps local scores to XPS contract facets; sample payload matches schema 1.0.0-draft; evidence path on Intercom.",
+        "evidence": "CLOSED 2026-07-29 (cos-collapse-roadmap-months-20260729): docs/contracts/problems4us-13a-ranking-mapping-receipt-20260729.json. Live GET /api/ranking/discovery matches XPS contract 1.0.0-draft; P4UÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢XPS facet mapping documented; schema fields verified against live sample.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2-xps-a",
+        "owner": "Problems4Us Agent",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-13b",
+        "title": "Obtain XPS Core Intercom acknowledgment to close spike",
+        "target_date": "2026-08-01",
+        "status": "done",
+        "depends_on": [
+            "problems4us-13a"
+        ],
+        "success_criteria": "XPS Core publishes ack Progress/Completed referencing problems4us-13 OR escalate Warning with humanActionRequired by 2026-08-01 18:00 ET.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2-xps-b",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T174502Z): Located XPS Core Intercom ack (TaskCompleted xps-core-13) referencing problems4us-13/13b + live contractVersion 1.0.0-draft recheck. Evidence: Problems4US/docs/problems4us-13-xps-ack-close-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-13c",
+        "title": "Pin contractVersion + regression test for ranking map",
+        "target_date": "2026-08-04",
+        "status": "done",
+        "depends_on": [
+            "problems4us-13a"
+        ],
+        "success_criteria": "Jest covers xps-ranking-map; contractVersion pinned; breaking field change fails CI; evidence in test output.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2-xps-c",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-manual-work-wake-20260731-1725Z): XPS_RANKING_CONTRACT_VERSION pinned 1.0.0-draft; discovery route uses pin; Jest pins version + facet key breaking-field guard (5/5). Evidence: Problems4US/docs/problems4us-13c-ranking-regression-20260731.json; commit 7fe4ee3.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-14",
+        "title": "Month-2 done-when: paid tier + alerts + activation/pay seats gate",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-09-16",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-09",
+            "problems4us-10",
+            "problems4us-12",
+            "problems4us-14a",
+            "problems4us-14b",
+            "problems4us-14c",
+            "problems4us-14d"
+        ],
+        "success_criteria": "ROLLUP: Stripe/fallback live; >=1 paid tier enforced; alerts sending; funnel dashboard readable; >=10 activated accounts (14c) OR >=3 paying/invite seats (14d); first external pilot path (14b) closed or escalated.",
+        "evidence": "",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2-done-when",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801"
+    },
+    {
+        "step_id": "problems4us-14a",
+        "title": "Activation/pay seats gate measurement (>=10 activated OR >=3 paid)",
+        "target_date": "2026-09-14",
+        "status": "done",
+        "depends_on": [
+            "problems4us-08",
+            "problems4us-12b"
+        ],
+        "success_criteria": "Evidence snapshot shows >=10 activated accounts OR >=3 paying/invite seats; if short, Founder outreach blocker filed rather than inventing seats.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2-done-a",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Activation gate measured short (activatedAccounts=1/5; checkoutReady=false). Founder outreach required rather than inventing seats. Evidence: Problems4US/docs/problems4us-14a-activation-gate-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "blocker_note": "Xavier: need outreach or invite seats to reach >=10 activated OR >=3 paying/invite seats for Month-2 done-when."
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "evidence": "﻿REVALIDATED 2026-08-06T00:47:36Z (cos-hourly-pulse-20260806T004503Z): Live GET /api/health HTTP 200 (checkoutReady=False; passwordResetEmailConfigured=True; appInsightsConfigured=True; billingForwardSecretConfigured=True). Catalog 1504 ({\"github\":1,\"community\":5,\"forum\":1498}). Funnel pricing_view=4 waitlist_view=53 waitlistRecords=2 activated=1/8 invite seats=1 Stripe paid=0. Deploy v2026.08.05-004b94a. Live HN+GitHub ingest this pulse grew catalog 1487->1504. billing.breivax.com DNS UNRESOLVED; breivax-billing-test health HTTP 200 this pulse (stripeMode=test, consumersConfigured=True). Evidence: Problems4US/docs/problems4us-2045et-pulse-evidence-20260805.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-14b",
+        "title": "Founder-led outreach to first external activated pilot (non-smoke)",
+        "target_date": "2026-08-20",
+        "status": "blocked",
+        "depends_on": [
+            "problems4us-14a",
+            "problems4us-18a",
+            "problems4us-18b"
+        ],
+        "success_criteria": "At least one external (non-engineer-smoke) account reaches activation (saved>=3 problems OR >=1 idea) after Founder outreach using offer/demo pack; evidence snapshot filed. If blocked on Founder time, escalate humanActionRequired rather than inventing seats.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2-done-b",
+        "source_docs": [
+            "Problems4US/docs/problems4us-20b-q4-growth-plan-20260731.md",
+            "Problems4US/docs/problems4us-20a-retrospective-20260731.md",
+            "Problems4US/docs/problems4us-14a-activation-gate-20260731.json"
+        ],
+        "blocker_note": "Xavier: run pilot outreach using Problems4US/docs/problems4us-14b-outreach-handoff-20260801.md (offer + demo script + narratives ready)."
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "evidence": "",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-14c",
+        "title": "Hit Q4 activation target: >=10 activated accounts",
+        "target_date": "2026-09-14",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-14b",
+            "problems4us-12b"
+        ],
+        "success_criteria": "GET /api/admin/activation shows activatedAccounts>=10 with definition saved_problems>=3 OR saved_ideas>=1; evidence JSON filed. Shortfall escalates to Passport with humanActionRequired (no invented accounts).",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2-done-c",
+        "source_docs": [
+            "Problems4US/docs/problems4us-20b-q4-growth-plan-20260731.md"
+        ]
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "evidence": "",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-14d",
+        "title": "Hit Q4 seat target: >=3 paying or invite Builder seats",
+        "target_date": "2026-09-14",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-09a",
+            "problems4us-14b"
+        ],
+        "success_criteria": "Ops evidence shows >=3 active Builder seats (Stripe paid OR Founder-approved invite cohort); funnel KPI reflects seats. Shortfall escalates rather than inventing seats.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "M2-done-d",
+        "source_docs": [
+            "Problems4US/docs/problems4us-20b-q4-growth-plan-20260731.md",
+            "Problems4US/docs/ops-runbook-invite-cohort.md"
+        ]
+    },
+    {
+        "step_id": "problems4us-15",
+        "title": "Exportable opportunity briefs + share links",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-09-22",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-14",
+            "problems4us-15a",
+            "problems4us-15b",
+            "problems4us-15c"
+        ],
+        "success_criteria": "ROLLUP: users can export idea/opportunity briefs as PDF or Markdown; share links work; verified on >=1 real scored opportunity.",
+        "evidence": "",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.1",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-15a",
+        "title": "Markdown opportunity brief export (authenticated)",
+        "target_date": "2026-08-25",
+        "status": "done",
+        "depends_on": [
+            "problems4us-08"
+        ],
+        "success_criteria": "Authenticated user can download/view Markdown brief for >=1 real scored opportunity; Builder gate respected if required.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.1a",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T174502Z): Builder GET /api/builder/briefs markdown for pp-1 HTTP 200 (markdownLen=1557, ideaCount=2); 403 without seat. Evidence: Problems4US/docs/problems4us-15a-markdown-brief-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-15b",
+        "title": "PDF opportunity brief export",
+        "target_date": "2026-09-10",
+        "status": "done",
+        "depends_on": [
+            "problems4us-15a"
+        ],
+        "success_criteria": "PDF export generates readable brief for >=1 scored opportunity in prod or staging; file size/latency acceptable for pilot.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.1b",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Builder GET /api/builder/briefs?format=pdf returns application/pdf via pure-TS writer. Evidence: Problems4US/docs/problems4us-15b-pdf-brief-20260731.json; tests/opportunity-brief-pdf.test.ts",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-15c",
+        "title": "Share-link brief hardening (expiry, revoke, PII strip)",
+        "target_date": "2026-08-20",
+        "status": "done",
+        "depends_on": [
+            "problems4us-05"
+        ],
+        "success_criteria": "Existing /share/briefs path has token expiry/revoke controls; emails/PII stripped; consultant smoke without login; security note updated.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.1c",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T174502Z): Deploy v2026.07.31-4675d04. Share before revoke 200; admin revoke 200; after revoke 403 share link revoked; PII strip + security baseline. Evidence: Problems4US/docs/problems4us-15c-share-revoke-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-16",
+        "title": "Score explainability UI (frequency/severity/willingness/trend/market)",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-22",
+        "status": "in_progress",
+        "depends_on": [
+            "problems4us-02",
+            "problems4us-16a",
+            "problems4us-16b",
+            "problems4us-16c",
+            "problems4us-16d"
+        ],
+        "success_criteria": "ROLLUP: UI shows score facet weights; explainability live in prod; pilot usefulness harness exists (16c) and first 20-item batch executed or escalated (16d).",
+        "evidence": "﻿ROLLUP wait: 16a/16b/16c remain done; 16d blocked on external pilots (14b). REVALIDATED 2026-08-06T00:47:36Z (cos-hourly-pulse-20260806T004503Z): health healthy db connected aiProvider=openai checkoutReady=false; catalog 1504; funnel pricing_view=4 waitlist_view=53 activated=1/8; ranking contractVersion=1.0.0-draft; detail API pp-1 OpportunityScore=84 facets live. Deploy v2026.08.05-004b94a. Evidence: Problems4US/docs/problems4us-2045et-pulse-evidence-20260805.json",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.2",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801"
+    },
+    {
+        "step_id": "problems4us-16a",
+        "title": "Score facet weights UI scaffold on problem detail",
+        "target_date": "2026-08-12",
+        "status": "done",
+        "depends_on": [
+            "problems4us-02"
+        ],
+        "success_criteria": "Problem detail shows frequency/severity/willingness/trend/market facets with weights or bars from live scores; desktop+mobile smoke.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.2a",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): ScoreFacetBreakdown on problem detail with weights+contribution pts. Evidence: Problems4US/docs/problems4us-16a-score-facets-20260731.json; tests/score-facet-ui.test.ts",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-16b",
+        "title": "Explainability copy + facet tooltips aligned to XPS contract",
+        "target_date": "2026-08-18",
+        "status": "done",
+        "depends_on": [
+            "problems4us-16a",
+            "problems4us-06"
+        ],
+        "success_criteria": "Tooltips/descriptions match ranking contract facet names; no orphan facet labels; screenshot or smoke evidence.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.2b",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): XPS-aligned facet tooltips on ScoreFacetBreakdown (relevance/quality/novelty). Evidence: Problems4US/docs/problems4us-16b-tooltips-20260731.json; tests/score-facet-ui.test.ts",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-16c",
+        "title": "Pilot usefulness review harness (20-item monthly path)",
+        "target_date": "2026-08-22",
+        "status": "done",
+        "depends_on": [
+            "problems4us-16a"
+        ],
+        "success_criteria": "Harness/process to rate 20 scored opportunities for usefulness exists (admin form or spreadsheet workflow); first pilot batch scheduled or blocked on pilots.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.2c",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Pilot usefulness harness + spreadsheet workflow filed; first batch scheduled/blocked on pilots (activation short). Evidence: Problems4US/docs/problems4us-16c-pilot-usefulness-harness-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "evidence": "",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-16d",
+        "title": "Execute first 20-item pilot usefulness batch and score results",
+        "target_date": "2026-09-05",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-16c",
+            "problems4us-14b"
+        ],
+        "success_criteria": "20 scored opportunities rated via harness; mean usefulness >=3.0 OR >=3 items with roadmap_impact would_reorder/would_build; results filed. Blocked on pilots escalates, does not invent ratings.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.2d",
+        "source_docs": [
+            "Problems4US/docs/problems4us-20b-q4-growth-plan-20260731.md",
+            "Problems4US/docs/problems4us-16c-pilot-usefulness-harness-20260731.md"
+        ]
+    },
+    {
+        "step_id": "problems4us-17",
+        "title": "Reliability bar: scoring/API tests + deploy smoke",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-15",
+        "status": "done",
+        "depends_on": [
+            "problems4us-07",
+            "problems4us-17a",
+            "problems4us-17b",
+            "problems4us-17c",
+            "problems4us-17d"
+        ],
+        "success_criteria": "ROLLUP: automated tests cover scoring + critical APIs; deploy pipeline smoke green; uptime tracking path documented for >=99% monthly target.",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): ROLLUP ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 17a/17b/17c/17d done (scoring tests, API contracts, deploy smoke, hourly uptime probe). Evidence: Problems4US/docs/problems4us-17c-deploy-smoke-20260731.json; problems4us-17d-uptime-20260731.json",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.3",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-17a",
+        "title": "Expand Jest coverage for scoring + AI analyze edge cases",
+        "target_date": "2026-08-05",
+        "status": "done",
+        "depends_on": [
+            "problems4us-07"
+        ],
+        "success_criteria": "scoring.test.ts + ai-analyze tests cover empty/malformed/provider-fail paths; npm test green locally.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.3a",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T174502Z): scoring clamp edge cases + AI analyze malformed/empty paths; npm test 51 passed in related suites. Evidence: Problems4US/docs/problems4us-17a-scoring-edge-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-17b",
+        "title": "Critical API contract tests (auth, checkout status, health, ranking)",
+        "target_date": "2026-08-08",
+        "status": "done",
+        "depends_on": [
+            "problems4us-07"
+        ],
+        "success_criteria": "Jest/API tests assert fail-closed admin, auth session, checkout status booleans, ranking schema shape; CI green on main.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.3b",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T174502Z): tests/critical-api-contracts.test.ts 6/6 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â admin fail-closed, auth session, checkoutReady booleans, ranking schema. Evidence: Problems4US/docs/problems4us-17b-api-contracts-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-17c",
+        "title": "Deploy pipeline smoke gate (post-deploy health + key routes)",
+        "target_date": "2026-08-12",
+        "status": "done",
+        "depends_on": [
+            "problems4us-17b"
+        ],
+        "success_criteria": "GitHub Actions (or equivalent) post-deploy smoke hits /api/health + one public + one admin-fail path; red smoke blocks silent ship narrative.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.3c",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): deploy.yml post-deploy smoke health+pricing+admin-fail. Evidence: Problems4US/docs/problems4us-17c-deploy-smoke-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-17d",
+        "title": "Uptime / health monitor path for 99% monthly target",
+        "target_date": "2026-08-15",
+        "status": "done",
+        "depends_on": [
+            "problems4us-01"
+        ],
+        "success_criteria": "External or scheduled health probe logs availability; monthly uptime compute method documented; Warning on multi-hour downtime.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.3d",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): hourly health-uptime-probe.yml + ops-runbook-uptime-health.md. Evidence: Problems4US/docs/problems4us-17d-uptime-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-18",
+        "title": "Partner/pilot outreach pack (Xavier closes)",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-09-28",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-15",
+            "problems4us-16",
+            "problems4us-18a",
+            "problems4us-18b",
+            "problems4us-18c",
+            "problems4us-18d",
+            "problems4us-18e"
+        ],
+        "success_criteria": "ROLLUP: 1-page offer, demo script, and 5 case-style narratives drafted; pack handed to Xavier (18d); 1-3 external Builder pilots granted after approval (18e); Xavier closes outreach.",
+        "evidence": "",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.4",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801"
+    },
+    {
+        "step_id": "problems4us-18a",
+        "title": "Draft 1-page partner/pilot offer",
+        "target_date": "2026-09-18",
+        "status": "done",
+        "depends_on": [
+            "problems4us-15a"
+        ],
+        "success_criteria": "One-page Markdown/PDF offer with pricing, value prop, ask; filed under Problems4US/docs for Passport.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.4a",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): docs/problems4us-18a-partner-pilot-offer-20260731.md filed for Passport.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-18b",
+        "title": "Write demo script (ingest -> score -> brief)",
+        "target_date": "2026-09-20",
+        "status": "done",
+        "depends_on": [
+            "problems4us-16a"
+        ],
+        "success_criteria": "Timed demo script Xavier can run in <10 minutes covering ingest, score explainability, brief export/share.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.4b",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Timed <10min demo script ingestÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢scoreÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢brief filed. Evidence: Problems4US/docs/problems4us-18b-demo-script-20260731.md",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-18c",
+        "title": "Five case-style problem->idea narratives from real ingested data",
+        "target_date": "2026-09-25",
+        "status": "done",
+        "depends_on": [
+            "problems4us-11",
+            "problems4us-02"
+        ],
+        "success_criteria": "Five narratives cite real pain-point IDs/sources (anonymized if needed); filed with offer pack.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.4c",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-08-04T01:49:43Z (cos-hourly-pulse-20260804T014501Z): Five live narratives filed after 11 close. Evidence: Problems4US/docs/problems4us-18c-case-narratives-20260804.md; problems4us-18c-case-narratives-20260804.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "evidence": "﻿UPDATED 2026-08-06T00:47:36Z (cos-hourly-pulse-20260806T004503Z): Outreach pack bundled (18a+18b+18c) and handed to Passport/Xavier. Awaiting Xavier confirm first contacts scheduled or named reopen date. Catalog now 1504 after live HN+GitHub ingest. Evidence: Problems4US/docs/problems4us-18d-outreach-pack-handoff-20260804.md",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-18d",
+        "title": "Hand complete outreach pack to Xavier and confirm first partner contacts scheduled",
+        "target_date": "2026-09-28",
+        "status": "in_progress",
+        "depends_on": [
+            "problems4us-18a",
+            "problems4us-18b",
+            "problems4us-18c"
+        ],
+        "success_criteria": "Offer + demo script + five narratives bundled; Passport Progress lists pack path; Xavier confirms at least first outreach contacts scheduled or explicitly deferred with named reopen date.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.4d",
+        "source_docs": [
+            "Problems4US/docs/problems4us-20b-q4-growth-plan-20260731.md",
+            "Problems4US/docs/problems4us-18a-partner-pilot-offer-20260731.md",
+            "Problems4US/docs/problems4us-18b-demo-script-20260731.md",
+            "Problems4US/docs/problems4us-18c-case-narratives-prep-20260801.md"
+        ],
+        "blocker_note": "Xavier: confirm first outreach contacts scheduled or name reopen date. Pack: Problems4US/docs/problems4us-18d-outreach-pack-handoff-20260804.md"
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "evidence": "",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-18e",
+        "title": "Grant 1-3 external Builder pilot seats after Founder approval and verify activation",
+        "target_date": "2026-09-10",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-09a",
+            "problems4us-18d"
+        ],
+        "success_criteria": "After Founder names pilots, admin grant produces 1-3 external Builder seats; each pilot can open a brief; activation metric updates; wipe/hygiene path remains available (25).",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.4e",
+        "source_docs": [
+            "Problems4US/docs/problems4us-20a-retrospective-20260731.md",
+            "Problems4US/docs/ops-runbook-invite-cohort.md"
+        ],
+        "blocker_note": "Xavier: approve 1-3 named Builder pilot partners."
+    },
+    {
+        "step_id": "problems4us-19",
+        "title": "MRR/seat revenue proof in target band (or documented LOIs)",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-10-16",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-14",
+            "problems4us-18",
+            "problems4us-19a",
+            "problems4us-19b",
+            "problems4us-19c"
+        ],
+        "success_criteria": "ROLLUP: MRR $500-$2,000 OR >=10 paying seats / annual prepay equivalent OR documented LOIs; AI cost ceiling monitored monthly (19c) at <=35% of MRR (or <=$15/activated user/mo while MRR <$500).",
+        "evidence": "",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3-revenue",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801"
+    },
+    {
+        "step_id": "problems4us-19a",
+        "title": "AI cost vs ARPU unit-economics tracker",
+        "target_date": "2026-09-05",
+        "status": "done",
+        "depends_on": [
+            "problems4us-02"
+        ],
+        "success_criteria": "Monthly AI spend estimate + activated users + ARPU/MRR fields tracked in a Passport-readable artifact; flag if AI cost >35% MRR or >$15/activated user while MRR <$500.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3-rev-a",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Passport-readable unit-economics tracker filed (MRR \\, activated=1, AI caps live). Evidence: Problems4US/docs/problems4us-19a-unit-economics-20260731.md",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-19b",
+        "title": "MRR/seats/LOI evidence pack",
+        "target_date": "2026-10-10",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-09",
+            "problems4us-18"
+        ],
+        "success_criteria": "Evidence shows MRR band OR paying seats OR LOIs; no invented revenue; gaps escalate to Xavier as humanActionRequired.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3-rev-b",
+        "owner": "Problems4Us Agent",
+        "evidence": "",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-08-01T08:56:14Z (cos-hourly-pulse-20260801T084502Z): Live GET /api/admin/ai-cost-ceiling HTTP 200 status=invoice_pending on v2026.08.01-4054e1e (unauth 401); unit tests 6/6; Warning+ on first breach of 35% MRR or $15/activated while MRR<$500; analyze caps (27) remain. Evidence: Problems4US/docs/problems4us-19c-ai-cost-ceiling-20260801.json; GH run 30692599040; docs/ops-runbook-ai-budget.md",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-19c",
+        "title": "Monthly AI cost ceiling monitor (<=35% MRR or <=$15/activated while MRR<$500)",
+        "target_date": "2026-10-10",
+        "status": "done",
+        "depends_on": [
+            "problems4us-19a",
+            "problems4us-27"
+        ],
+        "success_criteria": "Monthly Passport-readable check updates AI spend vs MRR/activated; first invoice breach of either Q4 ceiling flags Warning+ to Passport/Xavier; controls remain on analyze budgets (27).",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3-rev-c",
+        "source_docs": [
+            "Problems4US/docs/problems4us-20b-q4-growth-plan-20260731.md",
+            "Problems4US/docs/problems4us-19a-unit-economics-20260731.md",
+            "Problems4US/docs/ops-runbook-ai-budget.md"
+        ]
+    },
+    {
+        "step_id": "problems4us-20",
+        "title": "Roadmap retrospective + Q4 plan submitted to Passport",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-10-16",
+        "status": "not_started",
+        "depends_on": [
+            "problems4us-17",
+            "problems4us-19",
+            "problems4us-20a",
+            "problems4us-20b"
+        ],
+        "success_criteria": "ROLLUP: retrospective + Q4 plan submitted via Intercom to Passport; unit economics known enough for Q4 growth targets; company contribution narrative explicit; Q4 target work migrated into flat backlog steps (09f/11f/14b-d/16d/18d-e/19c) so no orphaned roadmap remains outside plan.json.",
+        "evidence": "",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.5",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801"
+    },
+    {
+        "step_id": "problems4us-20a",
+        "title": "Month 1-3 retrospective draft (wins, misses, risks)",
+        "target_date": "2026-10-08",
+        "status": "done",
+        "depends_on": [
+            "problems4us-07"
+        ],
+        "success_criteria": "Retrospective draft covers Month-1 early close, Stripe gate, source expansion, and XPS collab; submitted to Passport via Intercom.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.5a",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Month 1-3 retrospective draft (wins/misses/risks) filed for Passport. Evidence: Problems4US/docs/problems4us-20a-retrospective-20260731.md MIGRATED 2026-08-01T05:04:32Z (cos-roadmap-migrate-complete-20260801): Retrospective next-30 recommendations moved into plan steps 14b,11f,16d,22a,30a,31a. Side doc retained as evidence only.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801"
+    },
+    {
+        "step_id": "problems4us-20b",
+        "title": "Q4 growth plan with unit-economics targets",
+        "target_date": "2026-10-14",
+        "status": "done",
+        "depends_on": [
+            "problems4us-19a",
+            "problems4us-20a"
+        ],
+        "success_criteria": "Q4 plan names growth targets, AI cost ceiling, and company contribution narrative; Passport-readable.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "M3.5b",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Q4 growth plan with unit-economics targets filed. Evidence: Problems4US/docs/problems4us-20b-q4-growth-plan-20260731.md MIGRATED 2026-08-01T05:04:32Z (cos-roadmap-migrate-complete-20260801): Q4 targets/sequencing moved into plan steps 09f,11f,14b,14c,14d,16d,18d,18e,19c (flat backlog). Side doc retained as evidence only.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801"
+    },
+    {
+        "step_id": "problems4us-21",
+        "title": "Formal close: Azure OpenAI create vs direct OpenAI standard",
+        "target_date": "2026-07-30",
+        "status": "done",
+        "depends_on": [
+            "problems4us-02"
+        ],
+        "success_criteria": "Founder/Passport records Option A (decline/defer direct OpenAI) or B (approve Azure create). Default if missed: A. Does not reopen -02/-07.",
+        "blocker_note": "",
+        "roadmap_month": 1,
+        "roadmap_milestone": "debt-ai-provider",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-29 (cos-collapse-roadmap-months-20260729): docs/problems4us-21-azure-openai-formal-close-20260729.json. Decline/defer Azure OpenAI create; production standard AI_PROVIDER=openai. Does not reopen -02/-07.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-22",
+        "title": "Auth hardening: password reset + session expiry/rotation",
+        "target_date": "2026-08-14",
+        "status": "done",
+        "depends_on": [
+            "problems4us-08"
+        ],
+        "success_criteria": "Password reset flow or explicit deferred note with risk; session cookies have expiry + rotation policy documented; unit/smoke for logout clears session.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-auth",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Session TTL 30d + rotate-on-login + logout revoke; password reset deferred with risk. Unit tests SESSION_POLICY + cookie clear. Evidence: Problems4US/docs/problems4us-22-auth-hardening-20260731.json; docs/ops-runbook-session-auth.md",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-08-05T11:23:14Z (cos-hourly-pulse-20260805T104508Z): SMTP self-serve password reset live on v2026.08.05-004b94a; health passwordResetEmailConfigured=true; registerÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢forgot(generic/enum-safe)ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢admin-issueÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢resetÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢login smoke HTTP 201/200/200/200/200. Evidence: Problems4US/docs/problems4us-22a-password-reset-close-20260805.json; problems4us-0645et-pulse-evidence-20260805.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-22a",
+        "title": "Ship self-service password-reset flow (deferred from auth hardening)",
+        "target_date": "2026-08-28",
+        "status": "done",
+        "depends_on": [
+            "problems4us-22"
+        ],
+        "success_criteria": "Users can request and complete password reset without admin intervention; tokens expire; unit + prod smoke; session-auth runbook updated. Risk of deferred reset closed.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-auth-reset",
+        "source_docs": [
+            "Problems4US/docs/problems4us-20a-retrospective-20260731.md",
+            "Problems4US/docs/problems4us-22-auth-hardening-20260731.json",
+            "Problems4US/docs/ops-runbook-session-auth.md"
+        ],
+        "completed_utc": "2026-08-05T11:23:14Z"
+    },
+    {
+        "step_id": "problems4us-22b",
+        "title": "Email validation on customer registration (format + ownership proof)",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-12",
+        "status": "in_progress",
+        "depends_on": [
+            "problems4us-22a",
+            "problems4us-08"
+        ],
+        "success_criteria": "Server-side RFC-ish format; verification link ownership proof; single-use expiring tokens shared with 22a; no enumeration; rate limits IP+email; disposable domain policy recorded; resend path; bounce/hard-failure ops visibility; prod e2e evidence (unverified->email->verify->verified, replay reject, enum-safe, rate-limit).",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-auth-email-verify",
+        "source": "Founder directive 2026-08-05 via CoS; correlation cos-email-validation-registration-20260805",
+        "correlation_id": "cos-email-validation-registration-20260805",
+        "steps": [
+            {
+                "id": "22b-1",
+                "title": "Add plan task + shared auth-email-token mechanism",
+                "status": "in_progress",
+                "depends_on": []
+            },
+            {
+                "id": "22b-2",
+                "title": "Schema: EmailVerifiedAt + EmailVerificationTokens + MailDeliveryFailures; grandfather existing",
+                "status": "pending",
+                "depends_on": [
+                    "22b-1"
+                ]
+            },
+            {
+                "id": "22b-3",
+                "title": "Register/verify/resend APIs + disposable policy + rate limits + no enumeration",
+                "status": "pending",
+                "depends_on": [
+                    "22b-2"
+                ]
+            },
+            {
+                "id": "22b-4",
+                "title": "Gate password reset + Builder on verified; UI check-email/verify/resend",
+                "status": "pending",
+                "depends_on": [
+                    "22b-3"
+                ]
+            },
+            {
+                "id": "22b-5",
+                "title": "Unit tests + ops runbook + deploy + prod e2e evidence",
+                "status": "pending",
+                "depends_on": [
+                    "22b-4"
+                ]
+            }
+        ],
+        "unverified_policy": {
+            "may": [
+                "sign_in",
+                "browse_public",
+                "save_problems_ideas",
+                "watches_alerts"
+            ],
+            "may_not": [
+                "password_reset",
+                "builder_briefs",
+                "paid_entitlement_claim"
+            ]
+        },
+        "disposable_policy": "block",
+        "token_ttl_hours": 24,
+        "evidence": "",
+        "blocker_note": ""
+    },
+    {
+        "step_id": "problems4us-23",
+        "title": "Rate-limit / abuse controls on public waitlist + auth + checkout",
+        "target_date": "2026-08-16",
+        "status": "done",
+        "depends_on": [
+            "problems4us-05"
+        ],
+        "success_criteria": "Public POST endpoints have rate limits or WAF note; abuse test shows 429/block without breaking legit smoke; security baseline updated.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-abuse",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): public rate limits on waitlist/auth/checkout; 429 path; security baseline updated. Evidence: Problems4US/docs/problems4us-23-rate-limit-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-24",
+        "title": "Remove or gate remaining mock-data paths in production UI",
+        "target_date": "2026-08-10",
+        "status": "done",
+        "depends_on": [
+            "problems4us-01",
+            "problems4us-02"
+        ],
+        "success_criteria": "Production problems/ideas/dashboard reads SQL/AI-backed data only (or explicit empty states); mock-data.ts not silently served as prod truth; evidence smoke.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-mock",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T174502Z): No app imports of mock-data; /api/problems returns SQL-backed pp-1. Evidence: Problems4US/docs/problems4us-24-mock-gated-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-25",
+        "title": "Admin cohort hygiene: wipe leftover pilot seats safely",
+        "target_date": "2026-08-06",
+        "status": "done",
+        "depends_on": [
+            "problems4us-09a"
+        ],
+        "success_criteria": "Runbook command path wipes pilotGrant seats without touching paid Stripe seats; dry-run mode; documented in ops-runbook.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-pilot-hygiene",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T174502Z): revoke_all_pilots dryRun HTTP 200; invite runbook hygiene section. Evidence: Problems4US/docs/problems4us-25-pilot-wipe-20260731.json; docs/ops-runbook-invite-cohort.md",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-26",
+        "title": "Waitlist -> account upgrade path (claim email / migrate)",
+        "target_date": "2026-08-22",
+        "status": "done",
+        "depends_on": [
+            "problems4us-04",
+            "problems4us-08"
+        ],
+        "success_criteria": "Waitlist user can create account linking same email without losing history; conversion event recorded; smoke evidence.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-waitlist-upgrade",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Register claims same-email waitlist (ClaimedAt/ClaimedUserId) + waitlist_account_upgrade event; history preserved. Unit decideWaitlistClaim. Evidence: Problems4US/docs/problems4us-26-waitlist-upgrade-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-27",
+        "title": "OpenAI cost caps / token budget guards on analyze paths",
+        "target_date": "2026-08-11",
+        "status": "done",
+        "depends_on": [
+            "problems4us-02"
+        ],
+        "success_criteria": "Per-request and daily caps documented and enforced (or fail soft); runaway ingest cannot burn unbounded API cost; ops note filed.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-ai-caps",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): AI analyze per-request+daily token budget; 429 fail-soft. Evidence: Problems4US/docs/problems4us-27-ai-budget-20260731.json; docs/ops-runbook-ai-budget.md",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-28",
+        "title": "SQL schema migration discipline + backup restore drill note",
+        "target_date": "2026-08-19",
+        "status": "done",
+        "depends_on": [
+            "problems4us-01"
+        ],
+        "success_criteria": "Migrations for users/alerts/entitlements documented; Azure SQL backup restore drill note exists (or explicit Founder defer); no silent schema drift.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-sql",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): ensure*Tables migration discipline + Azure SQL backup restore drill note (documented, live restore not executed). Evidence: Problems4US/docs/problems4us-28-sql-migration-20260731.json; docs/ops-runbook-sql-migrations.md",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-29",
+        "title": "Public status/version badge parity (repo vs live)",
+        "target_date": "2026-08-03",
+        "status": "done",
+        "depends_on": [
+            "problems4us-01"
+        ],
+        "success_criteria": "/api/version (or equivalent) matches deployed commit/site_version; deploy evidence includes version; gap escalates if stale >48h.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-version",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-manual-work-wake-20260731-1725Z): GET /api/version returned v2026.07.31-7fe4ee3 matching deployed commit 7fe4ee3; footer data-site-version present. Evidence: Problems4US/docs/problems4us-29-version-parity-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-30",
+        "title": "Observability: structured error logging + admin triage cheatsheet",
+        "target_date": "2026-08-21",
+        "status": "done",
+        "depends_on": [
+            "problems4us-17c"
+        ],
+        "success_criteria": "Key API failures emit actionable logs/App Insights notes; admin triage cheatsheet covers 401/503/AI-fail/ingest-fail; filed in docs.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "debt-observability",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Admin triage cheatsheet 401/503/AI/ingest + observability notes; App Insights recommended next. Evidence: Problems4US/docs/problems4us-30-observability-20260731.json; docs/ops-runbook-admin-triage.md",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-08-05T10:44:30Z (cos-drive-completions-20260805): Created problems4us-appinsights; APPLICATIONINSIGHTS_CONNECTION_STRING on problems4us-linux; GET /api/health appInsightsConfigured=true; track smoke itemsAccepted=1. Evidence: Problems4US/docs/problems4us-30a-appinsights-close-20260805.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-30a",
+        "title": "Wire Azure Application Insights (connection string + server instrumentation + custom events)",
+        "target_date": "2026-08-21",
+        "status": "done",
+        "depends_on": [
+            "problems4us-30"
+        ],
+        "success_criteria": "APPLICATIONINSIGHTS_CONNECTION_STRING set on problems4us-linux; Next.js server emits traces/exceptions; custom events include ingest_complete, ai_budget_denied, builder_brief_export, alert_emitted; ops can query failures without chasing Audi consoles.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "debt-appinsights",
+        "source_docs": [
+            "Problems4US/docs/problems4us-20a-retrospective-20260731.md",
+            "Problems4US/docs/problems4us-30-observability-20260731.json",
+            "Problems4US/docs/ops-runbook-admin-triage.md"
+        ],
+        "completed_utc": "2026-08-05T10:44:30Z"
+    },
+    {
+        "step_id": "problems4us-31",
+        "title": "Mobile UX pass: auth, save, alerts, pricing",
+        "target_date": "2026-08-24",
+        "status": "done",
+        "depends_on": [
+            "problems4us-08",
+            "problems4us-10"
+        ],
+        "success_criteria": "Mobile viewport smoke shows usable register/login/save/watch/alerts/pricing; critical tap targets not clipped; notes filed.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "debt-mobile",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T184503Z): Static mobile UX review of auth/save/alerts/pricing surfaces; gaps filed (API-only auth UI). Evidence: Problems4US/docs/problems4us-31-mobile-ux-20260731.md",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-08-01T05:56:32Z (cos-hourly-pulse-20260801T054503Z): Login/register/alerts UI + navbar session + problem save/watch live on v2026.08.01-848a93d. Prod smoke register 201, save/watch 201, alerts 200. Evidence: Problems4US/docs/problems4us-31a-account-ui-20260801.json; problems4us-31a-22a-smoke-20260801.json; GH run 30686606749.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729",
+        "migrate_source": "cos-roadmap-migrate-complete-20260801",
+        "step_id": "problems4us-31a",
+        "title": "Ship account UI: login/register/save/watch/alerts pages (mobile+desktop)",
+        "target_date": "2026-08-30",
+        "status": "done",
+        "depends_on": [
+            "problems4us-31",
+            "problems4us-08",
+            "problems4us-10"
+        ],
+        "success_criteria": "Public login/register pages exist; problem detail has save+watch controls; alerts inbox page lists GET /api/me/alerts; navbar shows session state; mobile viewport smoke usable without curl.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "debt-mobile-auth-ui",
+        "source_docs": [
+            "Problems4US/docs/problems4us-31-mobile-ux-20260731.md",
+            "Problems4US/docs/problems4us-20a-retrospective-20260731.md"
+        ]
+    },
+    {
+        "step_id": "problems4us-32",
+        "title": "Content moderation / toxic ingest filter before score publish",
+        "target_date": "2026-08-26",
+        "status": "done",
+        "depends_on": [
+            "problems4us-11a"
+        ],
+        "success_criteria": "Ingest path drops or quarantine clearly toxic/PII-heavy posts before public problem list; policy note filed; sample evidence.",
+        "roadmap_month": 3,
+        "roadmap_milestone": "debt-moderation",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31T23:27:36Z (cos-hourly-pulse-20260731T224503Z): Toxic/PII filter live on prod v2026.07.31-6864848. HN dry-run moderation droppedPii=1 (in=6 out=5). Policy note + unit tests. Evidence: Problems4US/docs/problems4us-32-content-moderation-20260731.json; https://github.com/b06xob/Problems4Us/actions/runs/30672733211",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-33",
+        "title": "Builder brief API + entitlement gate end-to-end polish",
+        "target_date": "2026-08-15",
+        "status": "done",
+        "depends_on": [
+            "problems4us-09c"
+        ],
+        "success_criteria": "GET /api/builder/briefs returns 403 without seat and 200 with pilot/paid seat; brief content non-empty for known problemId; evidence JSON.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-builder-briefs",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-hourly-pulse-20260731T174502Z): Builder briefs 403 without seat / 200 with pilot for pp-1 non-empty markdown. Evidence: Problems4US/docs/problems4us-33-builder-brief-20260731.json",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-34",
+        "title": "Intercom standing cadence: Progress on open plan steps weekly",
+        "target_date": "2026-08-05",
+        "status": "done",
+        "depends_on": [],
+        "success_criteria": "Weekly Progress to Passport lists open step_ids, blockers, and next 3 actions; related_task set; first cycle completed after this expand.",
+        "roadmap_month": 2,
+        "roadmap_milestone": "debt-intercom-cadence",
+        "owner": "Problems4Us Agent",
+        "evidence": "CLOSED 2026-07-31 (cos-manual-work-wake-20260731-1725Z): Weekly/continuous Progress published listing open steps (11a blocked Reddit secrets, 11b in progress, 13b XPS ack, 09b Stripe hold) + next actions; correlation cos-manual-work-wake-20260731-1725Z; related_task problems4us-11a.",
+        "source_roadmap": "cos-roadmap-v2-20260717T022102Z",
+        "expand_source": "cos-expand-task-backlog-20260729"
+    },
+    {
+        "step_id": "problems4us-35",
+        "title": "Wire problems4us.com to Google Analytics 4 (G-2KR0ZZPNBC)",
+        "owner": "Problems4Us Agent",
+        "target_date": "2026-08-02",
+        "status": "done",
+        "depends_on": [],
+        "success_criteria": "gtag.js snippet (G-2KR0ZZPNBC) present in <head> on all public problems4us.com pages, live on production; any CSP checked and updated to allow googletagmanager.com/google-analytics.com if present; verified live via page source + response headers, not just deploy log.",
+        "evidence": "CLOSED 2026-08-01 (Chief of Staff verification): curl https://problems4us.com/ confirmed gtag.js G-2KR0ZZPNBC present in live page source.",
+        "source": "Founder directive via Chief of Staff 2026-08-01, dispatched inbox/problems4us/message-p4u-ga4-20260801.json, correlationId cos-directive-20260801-ga4-problems4us. Same GA account as breivax.com/xpsview.org (Breivax Technologies, 62547512); CSP-blocking lesson from breivax-vp-38 applies."
     }
-  ]
-}
+]

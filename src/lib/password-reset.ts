@@ -1,4 +1,8 @@
-import { createHash, randomBytes, timingSafeEqual } from "crypto";
+import {
+  authEmailTokensEqual,
+  hashAuthEmailToken,
+  mintAuthEmailToken,
+} from "./auth-email-token";
 import { getSmtpConfig, sendSmtpPlainText } from "./smtp-mail";
 
 /** Password reset token TTL (problems4us-22a). */
@@ -9,38 +13,23 @@ export const PASSWORD_RESET_POLICY = {
   /** Hash only stored; raw token shown once at issue/email time. */
   storeRawToken: false,
   minPasswordLength: 8,
+  /** Shares mint/hash with email verification (auth-email-token). */
+  sharedTokenMechanism: "auth-email-token" as const,
 } as const;
 
-function getResetPepper(): string {
-  return (
-    process.env.SESSION_SECRET?.trim() ||
-    process.env.ADMIN_API_KEY?.trim() ||
-    "problems4us-reset-dev-pepper"
-  );
-}
-
 export function mintPasswordResetToken(): string {
-  return randomBytes(32).toString("base64url");
+  return mintAuthEmailToken();
 }
 
 export function hashPasswordResetToken(token: string): string {
-  return createHash("sha256")
-    .update(`${getResetPepper()}:pwdreset:${token}`)
-    .digest("hex");
+  return hashAuthEmailToken("pwdreset", token);
 }
 
 export function passwordResetTokensEqual(
   rawToken: string,
   expectedHash: string
 ): boolean {
-  try {
-    const a = Buffer.from(hashPasswordResetToken(rawToken), "hex");
-    const b = Buffer.from(expectedHash, "hex");
-    if (a.length !== b.length) return false;
-    return timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
+  return authEmailTokensEqual("pwdreset", rawToken, expectedHash);
 }
 
 export function buildPasswordResetUrl(

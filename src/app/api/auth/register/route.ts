@@ -3,7 +3,14 @@ import {
   attachSessionCookie,
   isValidPassword,
 } from "@/lib/user-auth";
-import { getActivationForUserDb, registerUserDb } from "@/lib/user-db";
+import {
+  createEmailVerificationTokenDb,
+  findUserByEmailDb,
+  getActivationForUserDb,
+  hasRecentHardMailFailureDb,
+  recordMailDeliveryFailureDb,
+  registerUserDb,
+} from "@/lib/user-db";
 import { isValidEmail, normalizeEmail } from "@/lib/waitlist";
 import { claimWaitlistOnAccountCreateDb } from "@/lib/db-service";
 import {
@@ -11,7 +18,24 @@ import {
   extractClientIp,
   PUBLIC_RATE_LIMITS,
 } from "@/lib/public-rate-limit";
+import { isDisposableEmailDomain } from "@/lib/disposable-email";
+import {
+  buildEmailVerifyUrl,
+  deliverEmailVerificationEmail,
+  GENERIC_REGISTER,
+} from "@/lib/email-verification";
+import { authResponsePad, resolvePublicOrigin } from "@/lib/auth-request";
 
+/**
+ * POST /api/auth/register
+ * Creates an UNVERIFIED account and sends ownership-proof email.
+ * No email enumeration: existing addresses get the same generic 200 body
+ * (no session cookie) as a successful create path's public message —
+ * successful creates also return user payload + session for UX, but
+ * EMAIL_TAKEN returns the same message without revealing existence.
+ *
+ * Format/disposable failures remain 400 (not account oracles).
+ */
 export async function POST(request: NextRequest) {
   try {
     const limited = decideRateLimit(
@@ -41,11 +65,27 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (isDisposableEmailDomain(email)) {
+      return NextResponse.json(
+        {
+          error:
+            "Disposable email addresses are not allowed. Use a durable inbox.",
+        },
+        { status: 400 }
+      );
+    }
     if (!isValidPassword(password)) {
       return NextResponse.json(
         { error: "Password must be 8–200 characters" },
         { status: 400 }
       );
+    }
+
+    const existing = await findUserByEmailDb(email);
+    if (existing) {
+      // No enumeration: same generic message; optional resend only via /resend-verification.
+      await authResponsePad();
+      return NextResponse.json(GENERIC_REGISTER, { status: 200 });
     }
 
     const { user, sessionToken } = await registerUserDb(email, password);
@@ -66,12 +106,52 @@ export async function POST(request: NextRequest) {
       console.error("Waitlist claim on register failed:", claimError);
     }
 
+    // Send verification email (ownership proof). Skip forever-retry on hard bounce.
+    const hardBlocked = await hasRecentHardMailFailureDb(
+      user.Email,
+      "emailverify"
+    );
+    if (!hardBlocked) {
+      try {
+        const issued = await createEmailVerificationTokenDb(user.Email);
+        if (issued) {
+          const origin = resolvePublicOrigin(request);
+          const verifyUrl = buildEmailVerifyUrl(origin, issued.rawToken);
+          const delivery = await deliverEmailVerificationEmail({
+            toEmail: issued.email,
+            verifyUrl,
+          });
+          if (!delivery.sent) {
+            console.error(
+              "Register verification delivery failed:",
+              delivery.reason
+            );
+            await recordMailDeliveryFailureDb({
+              email: issued.email,
+              purpose: "emailverify",
+              reason: delivery.reason,
+              hardFailure: Boolean(delivery.hardFailure),
+            });
+          }
+        }
+      } catch (mailErr) {
+        console.error("Register verification send error:", mailErr);
+      }
+    }
+
+    await authResponsePad();
     const response = NextResponse.json(
       {
         ok: true,
-        user: { userId: user.UserId, email: user.Email },
+        message: GENERIC_REGISTER.message,
+        user: {
+          userId: user.UserId,
+          email: user.Email,
+          emailVerified: false,
+        },
         activation,
         waitlistClaim,
+        emailVerificationRequired: true,
       },
       { status: 201 }
     );
@@ -79,10 +159,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     if (message === "EMAIL_TAKEN") {
-      return NextResponse.json(
-        { error: "An account with that email already exists" },
-        { status: 409 }
-      );
+      await authResponsePad();
+      return NextResponse.json(GENERIC_REGISTER, { status: 200 });
     }
     if (message === "INVALID_EMAIL") {
       return NextResponse.json(

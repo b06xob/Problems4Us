@@ -51,6 +51,16 @@ export function resolveBuilderBriefCaller(input: {
     };
   }
 
+  // problems4us-22b: unverified accounts may not consume paid/email-keyed seats.
+  if (!input.sessionUser.emailVerified) {
+    return {
+      ok: false,
+      status: 403,
+      error:
+        "Verify your email before using Builder briefs. Check your inbox or resend verification.",
+    };
+  }
+
   const sessionEmail = normalizeEntitlementEmail(input.sessionUser.email);
   if (!isEntitlementEmail(sessionEmail)) {
     return {

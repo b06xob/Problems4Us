@@ -52,7 +52,11 @@ export async function POST(request: NextRequest) {
     const activation = await getActivationForUserDb(result.user.UserId);
     const response = NextResponse.json({
       ok: true,
-      user: { userId: result.user.UserId, email: result.user.Email },
+      user: {
+        userId: result.user.UserId,
+        email: result.user.Email,
+        emailVerified: Boolean(result.user.EmailVerifiedAt),
+      },
       activation,
     });
     return attachSessionCookie(response, result.sessionToken);

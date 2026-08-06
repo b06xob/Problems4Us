@@ -24,6 +24,20 @@ export const PUBLIC_RATE_LIMITS: Record<string, RateLimitPolicy> = {
   "auth-login": { scope: "auth-login", max: 30, windowMs: 60_000 },
   "auth-forgot": { scope: "auth-forgot", max: 10, windowMs: 60_000 },
   "auth-reset": { scope: "auth-reset", max: 15, windowMs: 60_000 },
+  /** Email verification confirm attempts (token POST). */
+  "auth-verify": { scope: "auth-verify", max: 20, windowMs: 60_000 },
+  /** Resend verification — per IP. */
+  "auth-verify-resend-ip": {
+    scope: "auth-verify-resend-ip",
+    max: 10,
+    windowMs: 60 * 60_000,
+  },
+  /** Resend verification — per email address. */
+  "auth-verify-resend-email": {
+    scope: "auth-verify-resend-email",
+    max: 3,
+    windowMs: 60 * 60_000,
+  },
   "checkout-session": { scope: "checkout-session", max: 15, windowMs: 60_000 },
 };
 
@@ -39,6 +53,10 @@ export function extractClientIp(headers: Headers): string {
   return "unknown";
 }
 
+/**
+ * Rate-limit by an arbitrary key (IP or normalized email).
+ * Prefer extractClientIp for IP; pass normalizeEmail(email) for address caps.
+ */
 export function decideRateLimit(
   policy: RateLimitPolicy,
   ip: string,

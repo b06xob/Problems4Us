@@ -24,12 +24,25 @@ function RegisterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        emailVerificationRequired?: boolean;
+        user?: { userId?: string };
+      };
       if (!res.ok) {
         setError(json.error || "Could not create account.");
         return;
       }
-      router.push(nextPath.startsWith("/") ? nextPath : "/problems");
+      // New account (201) → check-email; existing address (200 generic) → same UX copy.
+      if (res.status === 201 || json.emailVerificationRequired) {
+        router.push(
+          `/check-email?email=${encodeURIComponent(email)}&next=${encodeURIComponent(nextPath)}`
+        );
+      } else {
+        router.push(
+          `/check-email?email=${encodeURIComponent(email)}&next=${encodeURIComponent(nextPath)}`
+        );
+      }
       router.refresh();
     } catch {
       setError("Could not create account. Try again.");

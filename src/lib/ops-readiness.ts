@@ -10,6 +10,7 @@ import { getStripeCheckoutPublicStatus } from "./stripe-checkout";
 export type OpsReadiness = {
   asOfUtc: string;
   passwordResetEmailConfigured: boolean;
+  emailVerificationConfigured: boolean;
   appInsightsConfigured: boolean;
   billingForwardSecretConfigured: boolean;
   checkout: ReturnType<typeof getStripeCheckoutPublicStatus>;
@@ -40,6 +41,7 @@ export function isBillingForwardSecretConfigured(): boolean {
 export function getPublicOpsFlags() {
   return {
     passwordResetEmailConfigured: isPasswordResetEmailConfigured(),
+    emailVerificationConfigured: isPasswordResetEmailConfigured(),
     appInsightsConfigured: isAppInsightsConfigured(),
     billingForwardSecretConfigured: isBillingForwardSecretConfigured(),
   };

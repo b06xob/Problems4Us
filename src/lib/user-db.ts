@@ -13,6 +13,11 @@ import {
   mintPasswordResetToken,
   PASSWORD_RESET_TTL_MINUTES,
 } from "./password-reset";
+import {
+  EMAIL_VERIFY_TTL_MINUTES,
+  hashEmailVerifyToken,
+  mintEmailVerifyToken,
+} from "./email-verification";
 import { computeActivation, type ActivationStatus } from "./user-accounts";
 import { isValidEmail, normalizeEmail } from "./waitlist";
 
@@ -20,6 +25,7 @@ export type UserAccountRecord = {
   UserId: string;
   Email: string;
   CreatedAt: string;
+  EmailVerifiedAt: string | null;
 };
 
 export type SavedProblemRecord = {
@@ -115,6 +121,49 @@ export async function ensureUserTables(): Promise<void> {
           CREATE INDEX IX_PasswordResetTokens_ExpiresAt ON dbo.PasswordResetTokens(ExpiresAt);
         END
       `);
+      // problems4us-22b: EmailVerifiedAt + verification tokens + mail failure log
+      await execute(`
+        IF COL_LENGTH(N'dbo.UserAccounts', N'EmailVerifiedAt') IS NULL
+        BEGIN
+          ALTER TABLE dbo.UserAccounts ADD EmailVerifiedAt DATETIME2 NULL;
+          -- Grandfather pre-22b accounts so password reset / entitlements keep working.
+          UPDATE dbo.UserAccounts
+          SET EmailVerifiedAt = CreatedAt
+          WHERE EmailVerifiedAt IS NULL;
+        END
+      `);
+      await execute(`
+        IF OBJECT_ID(N'dbo.EmailVerificationTokens', N'U') IS NULL
+        BEGIN
+          CREATE TABLE dbo.EmailVerificationTokens (
+            VerifyId      NVARCHAR(50)  NOT NULL PRIMARY KEY,
+            UserId        NVARCHAR(50)  NOT NULL,
+            TokenHash     NVARCHAR(64)  NOT NULL,
+            ExpiresAt     DATETIME2     NOT NULL,
+            UsedAt        DATETIME2     NULL,
+            CreatedAt     DATETIME2     NOT NULL CONSTRAINT DF_EmailVerificationTokens_CreatedAt DEFAULT (GETUTCDATE())
+          );
+          CREATE UNIQUE INDEX UX_EmailVerificationTokens_TokenHash
+            ON dbo.EmailVerificationTokens(TokenHash);
+          CREATE INDEX IX_EmailVerificationTokens_UserId ON dbo.EmailVerificationTokens(UserId);
+          CREATE INDEX IX_EmailVerificationTokens_ExpiresAt ON dbo.EmailVerificationTokens(ExpiresAt);
+        END
+      `);
+      await execute(`
+        IF OBJECT_ID(N'dbo.MailDeliveryFailures', N'U') IS NULL
+        BEGIN
+          CREATE TABLE dbo.MailDeliveryFailures (
+            FailureId     NVARCHAR(50)  NOT NULL PRIMARY KEY,
+            Email         NVARCHAR(200) NOT NULL,
+            Purpose       NVARCHAR(40)  NOT NULL,
+            Reason        NVARCHAR(400) NOT NULL,
+            HardFailure   BIT           NOT NULL CONSTRAINT DF_MailDeliveryFailures_Hard DEFAULT (0),
+            CreatedAt     DATETIME2     NOT NULL CONSTRAINT DF_MailDeliveryFailures_CreatedAt DEFAULT (GETUTCDATE())
+          );
+          CREATE INDEX IX_MailDeliveryFailures_Email ON dbo.MailDeliveryFailures(Email);
+          CREATE INDEX IX_MailDeliveryFailures_CreatedAt ON dbo.MailDeliveryFailures(CreatedAt);
+        END
+      `);
     })().catch((err) => {
       userTablesReady = null;
       throw err;
@@ -126,6 +175,36 @@ export async function ensureUserTables(): Promise<void> {
 function iso(value: Date | string): string {
   if (typeof value === "string") return new Date(value).toISOString();
   return value.toISOString();
+}
+
+export async function findUserByEmailDb(
+  emailRaw: string
+): Promise<{
+  userId: string;
+  email: string;
+  emailVerified: boolean;
+  createdAt: string;
+} | null> {
+  await ensureUserTables();
+  const email = normalizeEmail(emailRaw);
+  if (!isValidEmail(email)) return null;
+  const row = await queryOne<{
+    UserId: string;
+    Email: string;
+    EmailVerifiedAt: Date | string | null;
+    CreatedAt: Date | string;
+  }>(
+    `SELECT TOP 1 UserId, Email, EmailVerifiedAt, CreatedAt
+     FROM UserAccounts WHERE Email = @email`,
+    { email }
+  );
+  if (!row) return null;
+  return {
+    userId: row.UserId,
+    email: row.Email,
+    emailVerified: Boolean(row.EmailVerifiedAt),
+    createdAt: iso(row.CreatedAt),
+  };
 }
 
 export async function registerUserDb(
@@ -142,24 +221,32 @@ export async function registerUserDb(
     UserId: string;
     Email: string;
     CreatedAt: Date | string;
-  }>(`SELECT TOP 1 UserId, Email, CreatedAt FROM UserAccounts WHERE Email = @email`, {
-    email,
-  });
+    EmailVerifiedAt: Date | string | null;
+  }>(
+    `SELECT TOP 1 UserId, Email, CreatedAt, EmailVerifiedAt FROM UserAccounts WHERE Email = @email`,
+    { email }
+  );
   if (existing) {
     throw new Error("EMAIL_TAKEN");
   }
 
   const userId = `usr_${randomUUID().replace(/-/g, "").slice(0, 24)}`;
   const { salt, hash } = hashPassword(password);
+  // New registrations start UNVERIFIED (EmailVerifiedAt NULL).
   await execute(
-    `INSERT INTO UserAccounts (UserId, Email, PasswordSalt, PasswordHash, CreatedAt, UpdatedAt)
-     VALUES (@userId, @email, @salt, @hash, GETUTCDATE(), GETUTCDATE())`,
+    `INSERT INTO UserAccounts (UserId, Email, PasswordSalt, PasswordHash, CreatedAt, UpdatedAt, EmailVerifiedAt)
+     VALUES (@userId, @email, @salt, @hash, GETUTCDATE(), GETUTCDATE(), NULL)`,
     { userId, email, salt, hash }
   );
 
   const sessionToken = await createSessionForUser(userId, { rotate: false });
   return {
-    user: { UserId: userId, Email: email, CreatedAt: new Date().toISOString() },
+    user: {
+      UserId: userId,
+      Email: email,
+      CreatedAt: new Date().toISOString(),
+      EmailVerifiedAt: null,
+    },
     sessionToken,
     created: true,
   };
@@ -177,8 +264,9 @@ export async function loginUserDb(
     PasswordSalt: string;
     PasswordHash: string;
     CreatedAt: Date | string;
+    EmailVerifiedAt: Date | string | null;
   }>(
-    `SELECT TOP 1 UserId, Email, PasswordSalt, PasswordHash, CreatedAt
+    `SELECT TOP 1 UserId, Email, PasswordSalt, PasswordHash, CreatedAt, EmailVerifiedAt
      FROM UserAccounts WHERE Email = @email`,
     { email }
   );
@@ -192,6 +280,7 @@ export async function loginUserDb(
       UserId: row.UserId,
       Email: row.Email,
       CreatedAt: iso(row.CreatedAt),
+      EmailVerifiedAt: row.EmailVerifiedAt ? iso(row.EmailVerifiedAt) : null,
     },
     sessionToken,
   };
@@ -223,15 +312,23 @@ export async function resolveSessionUser(
   if (!token) return null;
   await ensureUserTables();
   const tokenHash = hashSessionToken(token);
-  const row = await queryOne<{ UserId: string; Email: string }>(
-    `SELECT TOP 1 u.UserId, u.Email
+  const row = await queryOne<{
+    UserId: string;
+    Email: string;
+    EmailVerifiedAt: Date | string | null;
+  }>(
+    `SELECT TOP 1 u.UserId, u.Email, u.EmailVerifiedAt
      FROM UserSessions s
      INNER JOIN UserAccounts u ON u.UserId = s.UserId
      WHERE s.TokenHash = @tokenHash AND s.ExpiresAt > GETUTCDATE()`,
     { tokenHash }
   );
   if (!row) return null;
-  return { userId: row.UserId, email: row.Email };
+  return {
+    userId: row.UserId,
+    email: row.Email,
+    emailVerified: Boolean(row.EmailVerifiedAt),
+  };
 }
 
 export async function revokeSessionDb(token: string): Promise<void> {
@@ -437,8 +534,9 @@ export async function listSavedIdeasDb(
 }
 
 /**
- * Create a one-time password reset token for an email (if account exists).
- * Returns null when email is unknown (caller should still return a generic 200).
+ * Create a one-time password reset token for an email (if account exists AND verified).
+ * Returns null when email is unknown or unverified (caller should still return a generic 200).
+ * problems4us-22b: reset must not assume ownership of an unverified address.
  */
 export async function createPasswordResetTokenDb(
   emailRaw: string
@@ -447,11 +545,15 @@ export async function createPasswordResetTokenDb(
   const email = normalizeEmail(emailRaw);
   if (!isValidEmail(email)) return null;
 
-  const user = await queryOne<{ UserId: string; Email: string }>(
-    `SELECT TOP 1 UserId, Email FROM UserAccounts WHERE Email = @email`,
+  const user = await queryOne<{
+    UserId: string;
+    Email: string;
+    EmailVerifiedAt: Date | string | null;
+  }>(
+    `SELECT TOP 1 UserId, Email, EmailVerifiedAt FROM UserAccounts WHERE Email = @email`,
     { email }
   );
-  if (!user) return null;
+  if (!user || !user.EmailVerifiedAt) return null;
 
   // Invalidate prior unused tokens for this user.
   await execute(
@@ -518,10 +620,181 @@ export async function consumePasswordResetTokenDb(
     `UPDATE PasswordResetTokens SET UsedAt = GETUTCDATE() WHERE ResetId = @resetId`,
     { resetId: row.ResetId }
   );
+  // Invalidate outstanding email-verify tokens on password change (22b).
+  await execute(
+    `UPDATE EmailVerificationTokens SET UsedAt = GETUTCDATE()
+     WHERE UserId = @userId AND UsedAt IS NULL`,
+    { userId: row.UserId }
+  );
   // Force re-login: drop all sessions for this user.
   await execute(`DELETE FROM UserSessions WHERE UserId = @userId`, {
     userId: row.UserId,
   });
 
   return { ok: true, userId: row.UserId, email: row.Email };
+}
+
+/**
+ * Issue a one-time email verification token for a user (or by email).
+ * Invalidates prior unused verify tokens for that user.
+ */
+export async function createEmailVerificationTokenDb(
+  emailRaw: string
+): Promise<{ userId: string; email: string; rawToken: string } | null> {
+  await ensureUserTables();
+  const email = normalizeEmail(emailRaw);
+  if (!isValidEmail(email)) return null;
+
+  const user = await queryOne<{
+    UserId: string;
+    Email: string;
+    EmailVerifiedAt: Date | string | null;
+  }>(
+    `SELECT TOP 1 UserId, Email, EmailVerifiedAt FROM UserAccounts WHERE Email = @email`,
+    { email }
+  );
+  if (!user) return null;
+  if (user.EmailVerifiedAt) return null; // already verified — caller returns generic
+
+  await execute(
+    `UPDATE EmailVerificationTokens SET UsedAt = GETUTCDATE()
+     WHERE UserId = @userId AND UsedAt IS NULL`,
+    { userId: user.UserId }
+  );
+  await execute(
+    `DELETE FROM EmailVerificationTokens WHERE ExpiresAt <= GETUTCDATE() OR UsedAt IS NOT NULL`
+  );
+
+  const rawToken = mintEmailVerifyToken();
+  const tokenHash = hashEmailVerifyToken(rawToken);
+  const verifyId = `ev_${randomUUID().replace(/-/g, "").slice(0, 24)}`;
+  await execute(
+    `INSERT INTO EmailVerificationTokens (VerifyId, UserId, TokenHash, ExpiresAt, UsedAt, CreatedAt)
+     VALUES (@verifyId, @userId, @tokenHash, DATEADD(minute, @ttl, GETUTCDATE()), NULL, GETUTCDATE())`,
+    {
+      verifyId,
+      userId: user.UserId,
+      tokenHash,
+      ttl: EMAIL_VERIFY_TTL_MINUTES,
+    }
+  );
+
+  return { userId: user.UserId, email: user.Email, rawToken };
+}
+
+/**
+ * Consume a valid unused verification token; set EmailVerifiedAt.
+ */
+export async function consumeEmailVerificationTokenDb(
+  rawToken: string
+): Promise<{ ok: true; userId: string; email: string } | { ok: false; reason: string }> {
+  await ensureUserTables();
+  const tokenHash = hashEmailVerifyToken(rawToken);
+  const row = await queryOne<{
+    VerifyId: string;
+    UserId: string;
+    Email: string;
+  }>(
+    `SELECT TOP 1 t.VerifyId, t.UserId, u.Email
+     FROM EmailVerificationTokens t
+     INNER JOIN UserAccounts u ON u.UserId = t.UserId
+     WHERE t.TokenHash = @tokenHash
+       AND t.UsedAt IS NULL
+       AND t.ExpiresAt > GETUTCDATE()`,
+    { tokenHash }
+  );
+  if (!row) {
+    return { ok: false, reason: "INVALID_OR_EXPIRED" };
+  }
+
+  await execute(
+    `UPDATE UserAccounts
+     SET EmailVerifiedAt = GETUTCDATE(), UpdatedAt = GETUTCDATE()
+     WHERE UserId = @userId`,
+    { userId: row.UserId }
+  );
+  await execute(
+    `UPDATE EmailVerificationTokens SET UsedAt = GETUTCDATE() WHERE VerifyId = @verifyId`,
+    { verifyId: row.VerifyId }
+  );
+  // Single-use: burn any other outstanding tokens for this user.
+  await execute(
+    `UPDATE EmailVerificationTokens SET UsedAt = GETUTCDATE()
+     WHERE UserId = @userId AND UsedAt IS NULL`,
+    { userId: row.UserId }
+  );
+
+  return { ok: true, userId: row.UserId, email: row.Email };
+}
+
+export async function recordMailDeliveryFailureDb(input: {
+  email: string;
+  purpose: string;
+  reason: string;
+  hardFailure: boolean;
+}): Promise<void> {
+  await ensureUserTables();
+  const failureId = `mdf_${randomUUID().replace(/-/g, "").slice(0, 24)}`;
+  await execute(
+    `INSERT INTO MailDeliveryFailures (FailureId, Email, Purpose, Reason, HardFailure, CreatedAt)
+     VALUES (@failureId, @email, @purpose, @reason, @hard, GETUTCDATE())`,
+    {
+      failureId,
+      email: normalizeEmail(input.email).slice(0, 200),
+      purpose: input.purpose.slice(0, 40),
+      reason: input.reason.slice(0, 400),
+      hard: input.hardFailure ? 1 : 0,
+    }
+  );
+}
+
+/** True when a hard failure was recorded for this email+purpose in the last N days. */
+export async function hasRecentHardMailFailureDb(
+  emailRaw: string,
+  purpose: string,
+  withinDays = 30
+): Promise<boolean> {
+  await ensureUserTables();
+  const email = normalizeEmail(emailRaw);
+  const row = await queryOne<{ cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM MailDeliveryFailures
+     WHERE Email = @email AND Purpose = @purpose AND HardFailure = 1
+       AND CreatedAt > DATEADD(day, -@days, GETUTCDATE())`,
+    { email, purpose, days: withinDays }
+  );
+  return (row?.cnt ?? 0) > 0;
+}
+
+export async function listMailDeliveryFailuresDb(limit = 50): Promise<
+  Array<{
+    failureId: string;
+    email: string;
+    purpose: string;
+    reason: string;
+    hardFailure: boolean;
+    createdAt: string;
+  }>
+> {
+  await ensureUserTables();
+  const rows = await query<{
+    FailureId: string;
+    Email: string;
+    Purpose: string;
+    Reason: string;
+    HardFailure: boolean | number;
+    CreatedAt: Date | string;
+  }>(
+    `SELECT TOP (@limit) FailureId, Email, Purpose, Reason, HardFailure, CreatedAt
+     FROM MailDeliveryFailures
+     ORDER BY CreatedAt DESC`,
+    { limit }
+  );
+  return rows.map((r) => ({
+    failureId: r.FailureId,
+    email: r.Email,
+    purpose: r.Purpose,
+    reason: r.Reason,
+    hardFailure: Boolean(r.HardFailure),
+    createdAt: iso(r.CreatedAt),
+  }));
 }

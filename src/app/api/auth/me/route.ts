@@ -13,7 +13,11 @@ export async function GET(request: NextRequest) {
     const activation = await getActivationForUserDb(user.userId);
     return NextResponse.json({
       ok: true,
-      user: { userId: user.userId, email: user.email },
+      user: {
+        userId: user.userId,
+        email: user.email,
+        emailVerified: user.emailVerified,
+      },
       activation,
     });
   } catch (error) {

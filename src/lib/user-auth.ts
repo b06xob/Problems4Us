@@ -8,6 +8,7 @@ const SCRYPT_KEYLEN = 64;
 export type SessionUser = {
   userId: string;
   email: string;
+  emailVerified: boolean;
 };
 
 function getSessionPepper(): string {
@@ -124,8 +125,14 @@ export const SESSION_POLICY = {
   /**
    * Password reset: token APIs + pages + self-serve email (SendGrid or SMTP).
    * Ops can also issue a one-time token via POST /api/admin/password-reset/issue.
+   * Requires EmailVerifiedAt (problems4us-22b) — reset not issued for unverified.
    */
   passwordResetStatus: "self_serve_email_live" as const,
+  /**
+   * Email verification: proof of ownership at registration (problems4us-22b).
+   * Shares auth-email-token mint/hash with password reset.
+   */
+  emailVerificationStatus: "self_serve_email_live" as const,
 };
 
 export function unauthorizedJson(message = "Unauthorized"): NextResponse {
