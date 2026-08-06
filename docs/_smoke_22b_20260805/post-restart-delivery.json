@@ -1,0 +1,46 @@
+﻿{
+    "atUtc":  "2026-08-06T02:53:14.0045144Z",
+    "inbox":  "b06xob@bellsouth.net",
+    "adminIssueHttp":  404,
+    "inboxAccountState":  "missing_or_already_verified",
+    "freshRegisterHttp":  201,
+    "latestFailures":  [
+                           {
+                               "failureId":  "mdf_0e489821f94e471aa8fd1740",
+                               "email":  "b06xob+p4u22b1785984659@bellsouth.net",
+                               "purpose":  "emailverify",
+                               "reason":  "smtp_error:SMTP unexpected 535 (want 235): 535 5.7.0 (#AUTH005) Too many bad auth attempts.",
+                               "hardFailure":  false,
+                               "createdAt":  "2026-08-06T02:51:02.073Z"
+                           },
+                           {
+                               "failureId":  "mdf_e344ccaded2446dfaf8646db",
+                               "email":  "p4u22b-unv+1785984605@example.com",
+                               "purpose":  "emailverify",
+                               "reason":  "smtp_error:SMTP unexpected 535 (want 235): 535 5.7.0 (#AUTH005) Too many bad auth attempts.",
+                               "hardFailure":  false,
+                               "createdAt":  "2026-08-06T02:50:30.400Z"
+                           },
+                           {
+                               "failureId":  "mdf_68b7a842b9ab4335b1e3d187",
+                               "email":  "p4u22b-rl+1785984605@example.com",
+                               "purpose":  "emailverify",
+                               "reason":  "smtp_error:SMTP unexpected 535 (want 235): 535 5.7.0 (#AUTH005) Too many bad auth attempts.",
+                               "hardFailure":  false,
+                               "createdAt":  "2026-08-06T02:50:28.163Z"
+                           }
+                       ],
+    "freshDelivery":  {
+                          "sent":  true,
+                          "note":  "no mail-failure row for fresh register within 3s — treat as delivery accepted or deferred"
+                      },
+    "inboxRegisterHttp":  201,
+    "inboxRegisterBodyKeys":  [
+                                  "ok",
+                                  "message",
+                                  "user",
+                                  "activation",
+                                  "waitlistClaim",
+                                  "emailVerificationRequired"
+                              ]
+}

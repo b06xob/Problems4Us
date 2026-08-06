@@ -1288,7 +1288,7 @@
                 "title": "Add plan task + shared auth-email-token mechanism",
                 "status": "done",
                 "depends_on": [],
-                "completed_utc": "2026-08-06T02:50:23Z"
+                "completed_utc": "2026-08-06T02:55:09Z"
             },
             {
                 "id": "22b-2",
@@ -1297,7 +1297,7 @@
                 "depends_on": [
                     "22b-1"
                 ],
-                "completed_utc": "2026-08-06T02:50:23Z"
+                "completed_utc": "2026-08-06T02:55:09Z"
             },
             {
                 "id": "22b-3",
@@ -1306,7 +1306,7 @@
                 "depends_on": [
                     "22b-2"
                 ],
-                "completed_utc": "2026-08-06T02:50:23Z"
+                "completed_utc": "2026-08-06T02:55:09Z"
             },
             {
                 "id": "22b-4",
@@ -1315,7 +1315,7 @@
                 "depends_on": [
                     "22b-3"
                 ],
-                "completed_utc": "2026-08-06T02:50:23Z"
+                "completed_utc": "2026-08-06T02:55:09Z"
             },
             {
                 "id": "22b-5",
@@ -1324,7 +1324,7 @@
                 "depends_on": [
                     "22b-4"
                 ],
-                "completed_utc": "2026-08-06T02:50:23Z"
+                "completed_utc": "2026-08-06T02:55:09Z"
             }
         ],
         "unverified_policy": {
@@ -1342,9 +1342,9 @@
         },
         "disposable_policy": "block",
         "token_ttl_hours": 24,
-        "evidence": "CLOSED 2026-08-06T02:50:23Z (cos-email-validation-registration-20260805): Email ownership verification live on v2026.08.06-4381bea; register 201 unverified; verify 200; replay 400; enum-safe resend; rate-limit 429; disposable 400; password-reset+Builder gated. Evidence: Problems4US/docs/problems4us-22b-email-verification-20260805.json; docs/_smoke_22b_20260805/summary.json; GH runs 31066179954/31066481589.",
+        "evidence": "CLOSED 2026-08-06T02:55:09Z (cos-email-validation-registration-20260805): Email ownership verification live on v2026.08.06-4381bea; ops.emailVerificationConfigured=true; shared auth-email-token with 22a; register creates unverified; disposable blocked; resend enum-safe; rate-limit 429 on resend; single-use token (replay 400); password-reset gated until verified; mail-failures ops API; prod e2e + real-inbox register SMTP no-failure. Evidence: Problems4US/docs/problems4us-22b-email-validation-close-20260805.json; docs/_smoke_22b_20260805/e2e.json; docs/ops-runbook-session-auth.md",
         "blocker_note": "",
-        "completed_utc": "2026-08-06T02:50:23Z"
+        "completed_utc": "2026-08-06T02:55:09Z"
     },
     {
         "step_id": "problems4us-23",

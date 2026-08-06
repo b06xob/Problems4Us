@@ -1,0 +1,15 @@
+﻿{
+    "correlationId":  "cos-email-validation-registration-20260805",
+    "atUtc":  "2026-08-06T02:53:55.1315832Z",
+    "inbox":  "b06xob@bellsouth.net",
+    "registerHttp":  201,
+    "emailVerificationRequired":  true,
+    "mailFailuresForInboxAfterRegister":  0,
+    "smtpProbeDirect":  "smtp_send_accepted (docs/_smoke_22b_20260805/smtp-probe-after-lockout.json)",
+    "note":  "App Service register produced no MailDeliveryFailures row for inbox; same SMTP path as 02:27 KV real-send. Admin issue used to consume token for single-use proof (inbox click not automated).",
+    "adminIssueHttp":  200,
+    "hasToken":  true,
+    "verifyOk":  true,
+    "emailVerified":  true,
+    "replayHttp":  400
+}

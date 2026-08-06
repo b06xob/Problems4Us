@@ -1,0 +1,9 @@
+{
+  "host": "smtp.mail.att.net",
+  "port": 587,
+  "user": "b06xob@bellsouth.net",
+  "to": "b06xob@bellsouth.net",
+  "subject": "[Problems4Us] 22b verify-mail probe cos-email-validation-registration-20260805 025210",
+  "sentAtUtc": "2026-08-06T02:52:11.273218+00:00",
+  "result": "smtp_send_accepted"
+}

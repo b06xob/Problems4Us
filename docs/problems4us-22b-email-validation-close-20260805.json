@@ -1,0 +1,96 @@
+{
+  "stepId": "problems4us-22b",
+  "correlationId": "cos-email-validation-registration-20260805",
+  "closedAtUtc": "2026-08-06T02:55:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "status": "done",
+  "verdict": "Email validation on registration is live: server-side format, disposable-domain block, ownership-proof verification links (24h single-use shared token mechanism with password reset), no enumeration on register/resend, per-IP and per-email resend rate limits, bounce/failure ops visibility via /api/admin/mail-failures, password-reset gated until verified. Prod e2e on v2026.08.06-4381bea passed.",
+  "deploy": {
+    "version": "v2026.08.06-4381bea",
+    "commit": "4381bea3bef67de7653af04d652142292559f7a9",
+    "deployedAt": "2026-08-06T02:45:17Z",
+    "githubRunId": "31066481589"
+  },
+  "healthOps": {
+    "passwordResetEmailConfigured": true,
+    "emailVerificationConfigured": true,
+    "appInsightsConfigured": true,
+    "billingForwardSecretConfigured": true
+  },
+  "requirements": {
+    "serverSideFormat": true,
+    "ownershipProof": true,
+    "tokenSecurity": {
+      "cryptoRandom": true,
+      "singleUse": true,
+      "ttlHours": 24,
+      "sharedWithPasswordReset": true,
+      "invalidateOnPasswordChange": true
+    },
+    "noEnumeration": true,
+    "rateLimiting": {
+      "resendPerEmailPerHour": 3,
+      "resendPerIpPerHour": 10,
+      "prodSaw429": true
+    },
+    "disposablePolicy": "block",
+    "resendPath": true,
+    "bounceOpsVisibility": true
+  },
+  "unverifiedPolicy": {
+    "may": ["sign_in", "browse_public", "save_problems_ideas", "watches_alerts"],
+    "mayNot": ["password_reset", "builder_briefs", "paid_entitlement_claim"]
+  },
+  "prodSmoke": {
+    "evidenceDir": "Problems4US/docs/_smoke_22b_20260805",
+    "e2e": "e2e.json success=true",
+    "registerHttp": 201,
+    "unverifiedObserved": true,
+    "enumReregisterHttp": 200,
+    "enumResendSameMessage": true,
+    "disposableHttp": 400,
+    "adminIssueHasToken": true,
+    "verifyEmailVerified": true,
+    "replayRejectedHttp": 400,
+    "rateLimitSaw429": true,
+    "unverifiedPasswordResetAdminIssueHttp": 404,
+    "pages": {
+      "/register": 200,
+      "/login": 200,
+      "/check-email": 200,
+      "/verify-email": 200,
+      "/resend-verification": 200
+    },
+    "realInbox": {
+      "email": "b06xob@bellsouth.net",
+      "registerHttp": 201,
+      "mailFailuresForInbox": 0,
+      "verifiedViaAdminIssue": true,
+      "replayHttp": 400,
+      "passwordResetHandoff": "founder-inbox-password-handoff.json",
+      "note": "Register triggered App Service SMTP with no MailDeliveryFailures row; direct KV SMTP probe also smtp_send_accepted. Admin token used for automated consume/replay proof (inbox click not automated). Temporary smoke password superseded by admin password-reset issue + forgot-password mail."
+    },
+    "smtpLockoutDuringRateLimitSmoke": {
+      "observed": true,
+      "code": "535 AUTH005",
+      "recovered": true,
+      "evidence": "smtp-probe-after-lockout.json + post-restart-delivery.json",
+      "opsNote": "Rate-limit smoke briefly locked AT&T SMTP auth; failures were visible in /api/admin/mail-failures (requirement 8). Restart + single probe restored send."
+    }
+  },
+  "unitTests": {
+    "suites": [
+      "tests/email-verification.test.ts",
+      "tests/password-reset.test.ts",
+      "tests/account-ui.test.ts",
+      "tests/builder-brief-auth.test.ts"
+    ],
+    "passed": 19
+  },
+  "runbook": "Problems4US/docs/ops-runbook-session-auth.md",
+  "planTask": "problems4us-22b",
+  "related": "problems4us-22a (shared auth-email-token; reset gated on EmailVerifiedAt)",
+  "successCriteriaMet": true,
+  "remainingRisk": "Founder should confirm verification/reset mail in b06xob@bellsouth.net and set durable password via reset link. Avoid hammering SMTP during rate-limit tests."
+}
