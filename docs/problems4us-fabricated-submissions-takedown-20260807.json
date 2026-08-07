@@ -1,0 +1,113 @@
+{
+  "evidenceId": "problems4us-fabricated-submissions-takedown-20260807",
+  "correlationId": "cos-fabricated-submissions-20260807",
+  "product": "Problems4Us",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "completedAtUtc": "2026-08-07T02:20:30Z",
+  "founderQuestion": "Are the 6 entries real?",
+  "answer": "At most one is genuine (Erlinda Franklin). Five were test probes or fabricated personas. A sixth E2E probe from the verified-email work was also public and was unpublished.",
+  "actions": {
+    "unpublishedFromPublicSubmissions": {
+      "count": 6,
+      "ids": [
+        "sub-1786060494375-0eqmvj",
+        "sub-1786060515810-utxl2i",
+        "sub-1786068825362-z1qa9m",
+        "sub-seed-1",
+        "sub-seed-2",
+        "sub-seed-3"
+      ],
+      "note": "Alex/Jordan/Sam (sub-seed-*) were already pending after email-backfill unpublishedNoEmail=3; re-labelled as fabricated_persona. Three Probe rows moved accepted→pending as test_fixture."
+    },
+    "genuineKept": {
+      "count": 1,
+      "id": "sub-1786033545921-da4wso",
+      "submitterName": "Erlinda Franklin",
+      "submitterEmail": "erlindafranklin01@gmail.com",
+      "emailAttached": true,
+      "emailVerifiedAt": null,
+      "verificationGraceEndsAt": "2026-08-14T02:13:58.302Z",
+      "linkedPainPointId": "pp-sub-msi6bqbn-c9l1iv",
+      "moderationAction": "genuine_candidate",
+      "assessment": "Reads as genuine first-person customer submission with a real email address. EmailVerifiedAt still null — within 7-day grace under cos-submission-verified-email-20260807. Ops mint of verify token available via admin verify-issue (token redacted in audit folder)."
+    },
+    "pp1MergeReversed": {
+      "confirmed": true,
+      "submissionId": "sub-1786060515810-utxl2i",
+      "before": {
+        "frequencyScore": 83,
+        "opportunityScore": 86,
+        "mentionCount": 2,
+        "mergeMentionId": "men-sub-sub-1786060515810-utxl2i"
+      },
+      "after": {
+        "frequencyScore": 78,
+        "opportunityScore": 85,
+        "mentionCount": 1,
+        "remainingMentionId": "m-1",
+        "pipelineOutcomeOnProbe": "reversed_test_fixture",
+        "linkedPainPointId": null
+      },
+      "steps": [
+        "Deleted PainPointMentions men-sub-sub-1786060515810-utxl2i",
+        "Deleted RawPosts raw-sub-sub-1786060515810-utxl2i",
+        "FrequencyScore -5 (reverse community evidence bump)",
+        "OpportunityScore recomputed with canonical weights → 85"
+      ]
+    },
+    "catalogRetirements": {
+      "resolvedAndPrefixed": [
+        "pp-sub-msi6b2n7-wgto6r",
+        "pp-sub-msib9nbd-sg7b2e",
+        "pp-sub-msi6bwaz-1tux3s",
+        "pp-sub-msi6bxii-xkviyr",
+        "pp-sub-msi6bv5c-gl7lvi"
+      ],
+      "keptActive": ["pp-sub-msi6bqbn-c9l1iv"],
+      "titlePrefix": "REMOVED-NOT-REAL:"
+    }
+  },
+  "audit": {
+    "userSubmissionsTotal": 9,
+    "acceptedPublic": 1,
+    "testFixturesRetainedPending": [
+      "sub-1786060494375-0eqmvj",
+      "sub-1786060515810-utxl2i",
+      "sub-1786068825362-z1qa9m"
+    ],
+    "fabricatedPersonasPending": ["sub-seed-1", "sub-seed-2", "sub-seed-3"],
+    "otherNonPublic": [
+      { "id": "sub-1786060523496-orbhlr", "status": "reviewing", "action": "drop_pii" },
+      { "id": "sub-1786060523401-unnj0t", "status": "declined", "action": "drop_toxic" }
+    ],
+    "activeCommunityPainPointsFromSubmissions": 1,
+    "probeOrFabricatedMentionsRemaining": 0,
+    "fabricatedOrProbeStillPresentedAsReal": 0
+  },
+  "countsForCos": {
+    "entriesRemovedFromPublicSubmissions": 6,
+    "genuinePublicRemaining": 1,
+    "pp1MergeReversed": true
+  },
+  "liveVerification": {
+    "GET /api/submissions public total": 1,
+    "onlySubmitter": "Erlinda Franklin",
+    "pp-1 FrequencyScore": 78,
+    "pp-1 OpportunityScore": 85,
+    "pp-1 mentionCount": 1,
+    "active catalog total": 1914
+  },
+  "codeFollowUp": {
+    "file": "src/app/problems/page.tsx",
+    "change": "Default browse to status=active so resolved/test retirements never appear as live traction in /problems UI",
+    "deployRequired": true
+  },
+  "standingRuleAck": "Never seed fabricated users/submissions/reviews/activity into production surfaces. Honest zero > fabricated traction.",
+  "remainingRisk": [
+    "Erlinda EmailVerifiedAt is still null — public until grace expiry unless she verifies or ops takes down.",
+    "Unfiltered GET /api/problems (no status) can still return resolved rows by search; UI default fixed pending deploy; titles prefixed REMOVED-NOT-REAL.",
+    "Detail URLs for retired pp-sub-* still HTTP 200 with Status=resolved."
+  ],
+  "rawAuditFolder": "Problems4US/docs/_fabricated_audit_20260807"
+}

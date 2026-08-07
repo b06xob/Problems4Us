@@ -76,7 +76,8 @@ export default function ProblemsPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [minScore, setMinScore] = useState(0);
   const [trendFilter, setTrendFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  // Default active-only so resolved/test/fabricated retirements never browse as live traction.
+  const [statusFilter, setStatusFilter] = useState("active");
   const [sortKey, setSortKey] = useState<SortKey>("OpportunityScore");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
@@ -84,7 +85,7 @@ export default function ProblemsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/problems?limit=100");
+        const res = await fetch("/api/problems?limit=100&status=active");
         const json = await res.json();
         setPainPoints(json.data ?? []);
       } catch {
