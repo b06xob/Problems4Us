@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  countActivePaidBuilderEntitlementsDb,
+  getPlanEntitlementByEmailDb,
   insertPaidEarlyAccessEventDb,
   upsertPaidBuilderEntitlementDb,
 } from "@/lib/db-service";
+import {
+  decideFoundingCohortCap,
+  FOUNDING_COHORT_CAP,
+} from "@/lib/founding-cohort";
+import { hasActiveBuilderAccess } from "@/lib/entitlements";
 import {
   billingForwardNotConfiguredMessage,
   extractPaidEarlyAccessFromForwardPayload,
@@ -93,8 +100,37 @@ export async function POST(request: NextRequest) {
     | { granted: false; reason: string }
     | null = null;
   try {
+    const email = paid.email || "";
+    let allowExisting = false;
+    if (email) {
+      const existing = await getPlanEntitlementByEmailDb(email);
+      allowExisting = hasActiveBuilderAccess(existing);
+    }
+    if (!allowExisting) {
+      const activePaidSeats = await countActivePaidBuilderEntitlementsDb();
+      const cap = decideFoundingCohortCap({ activePaidSeats });
+      if (!cap.ok) {
+        entitlement = {
+          granted: false,
+          reason: `${cap.reason} (foundingCap=${FOUNDING_COHORT_CAP})`,
+        };
+        return NextResponse.json({
+          received: true,
+          gate: "G7-forward",
+          configured: true,
+          handled: true,
+          duplicate: !created,
+          event: "paid_early_access",
+          sessionId: paid.sessionId,
+          entitlement,
+          foundingCap: FOUNDING_COHORT_CAP,
+          activePaidSeats: cap.activePaidSeats,
+        });
+      }
+    }
+
     const grant = await upsertPaidBuilderEntitlementDb({
-      email: paid.email || "",
+      email,
       sessionId: paid.sessionId,
       stripeEventId: paid.eventId || "",
       paymentStatus: paid.paymentStatus,

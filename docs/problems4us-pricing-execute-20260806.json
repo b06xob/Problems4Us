@@ -1,0 +1,164 @@
+{
+  "asOfUtc": "2026-08-07T00:27:00Z",
+  "correlationId": "cos-pricing-approved-execute-20260806",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "product": "Problems4Us",
+  "status": "Waiting",
+  "governingDoc": "governance/charters/Breivax Pricing Strategy.md",
+  "inboxMessage": "Intercom/queues/Audi/message-19901d8d5879.json",
+  "relatedMessageId": "message-542a205ac59a",
+  "from": "Breivax.com VP (direct hand-off)",
+  "wakeAck": {
+    "prompt": "prompt-problems4us-11aceddf",
+    "messageId": "message-19901d8d5879",
+    "processedAtUtc": "2026-08-07T00:27:00Z",
+    "liveCheckoutStatusProbe": {
+      "url": "https://problems4us.com/api/checkout/status",
+      "http": 200,
+      "body": {
+        "gate": "G7",
+        "sessionConfigured": false,
+        "webhookConfigured": false,
+        "checkoutReady": false
+      }
+    }
+  },
+  "completed": {
+    "foundingCopy": {
+      "publicPrice": "$29/month",
+      "tierName": "Builder (founding)",
+      "capPublished": 25,
+      "priceLockCopy": "locked for life",
+      "didNotPublish49": true,
+      "didNotMentionSubmitterIntros": true,
+      "liveCheckoutNotOpened": true,
+      "note": "Public copy mentions $29; checkout CTA stays gated behind checkoutReady (false until secrets). Did not open live checkout.",
+      "files": [
+        "src/app/pricing/page.tsx",
+        "src/app/pricing/PricingPageClient.tsx",
+        "src/lib/founding-cohort.ts",
+        "src/components/layout/Footer.tsx"
+      ]
+    },
+    "foundingCapEnforced": {
+      "cap": 25,
+      "helpers": "src/lib/founding-cohort.ts",
+      "checkoutSessionGate": "src/app/api/checkout/session/route.ts → 409 when full",
+      "billingForwardGate": "src/app/api/checkout/billing-forward/route.ts (new seats only)",
+      "seatCounter": "countActivePaidBuilderEntitlementsDb (excludes admin_pilot:)"
+    },
+    "checkoutMetadataContract": {
+      "verified": true,
+      "sessionMetadata": {
+        "product": "Problems4Us",
+        "tier": "builder",
+        "founding_cohort": "true",
+        "price_lock": "permanent",
+        "founding_monthly_usd": "29"
+      },
+      "subscriptionMetadata": {
+        "product": "Problems4Us",
+        "tier": "builder",
+        "founding_cohort": "true",
+        "price_lock": "permanent"
+      },
+      "source": "src/lib/stripe-checkout.ts createBuilderCheckoutSession"
+    },
+    "priceLockMechanism": {
+      "stripeLevel": true,
+      "mechanism": "Founding subscribers remain on STRIPE_PRICE_BUILDER_MONTHLY ($29 Price object). Standard $49 later = new Price id; do not mutate or migrate founding subscriptions.",
+      "honestLimitation": "Lock is real only while founding customers stay on the founding price_ id. App cannot force Stripe to ignore a later Price mutation — ops must never change that Price amount."
+    },
+    "checkoutReadyLogic": {
+      "change": "checkoutReady = sessionConfigured && (webhookConfigured OR billingForwardConfigured)",
+      "preferredPath": "BREIVAX_BILLING_FORWARD_SECRET / centralized billing.breivax.com → /api/checkout/billing-forward",
+      "isolatedWebhook": "not required; not wired"
+    },
+    "centralBillingAck": {
+      "vpReported": "Staging health ok; PROBLEMS4US_FORWARD_URL=https://problems4us.com/api/checkout/billing-forward; unit tests 13/13 pass including product=Problems4Us route",
+      "webhookRouteConfirmed": true,
+      "confirmedAtUtc": "2026-08-07T00:22:57Z",
+      "evidencePath": "Breivax.com/docs/evidence/stripe-p4u-builder-founding-price-probe-20260806.json",
+      "note": "Do NOT set isolated STRIPE_WEBHOOK_SECRET for receive — use billing-forward."
+    },
+    "testsRevalidated": {
+      "asOfUtc": "2026-08-07T00:17:00Z",
+      "suites": [
+        "founding-cohort",
+        "checkout-session",
+        "critical-api-contracts",
+        "funnel-kpi",
+        "ops-readiness"
+      ],
+      "passed": 39,
+      "failed": 0
+    },
+    "vpHandoffIngested": {
+      "asOfUtc": "2026-08-07T00:25:00Z",
+      "messageId": "message-19901d8d5879",
+      "priceId": null,
+      "stripeTestProductCreate": "BLOCKED",
+      "reason": "BoydAKV Stripe-RK-Test 403 on products/prices; no sk_test_ in BoydAKV or breivax-kv-eastus; sk_live_ not used for TEST"
+    },
+    "priceIdArrivalRunbook": {
+      "ready": true,
+      "steps": [
+        "Receive price_ id from Breivax.com VP on this correlation (after Founder expands RK or pastes Dashboard price_)",
+        "Set STRIPE_PRICE_BUILDER_MONTHLY=price_... on problems4us-linux (App Setting)",
+        "Set STRIPE_SECRET_KEY=sk_test_... (TEST only — never sk_live_ for founding create)",
+        "Confirm BREIVAX_BILLING_FORWARD_SECRET already present (probed true)",
+        "Leave STRIPE_WEBHOOK_SECRET unset (central billing-forward path)",
+        "Verify GET /api/checkout/status → checkoutReady:true",
+        "Run one real TEST checkout; confirm billing-forward grants entitlement",
+        "Only then clear DNS cutover gate for billing.breivax.com"
+      ]
+    }
+  },
+  "vpLatestEvidence": {
+    "asOfUtc": "2026-08-07T00:22:57Z",
+    "messageId": "message-19901d8d5879",
+    "evidencePath": "Breivax.com/docs/evidence/stripe-p4u-builder-founding-price-probe-20260806.json",
+    "priceObjectCreated": false,
+    "priceId": null,
+    "webhookRouteConfirmed": true,
+    "problems4usForwardUrl": "https://problems4us.com/api/checkout/billing-forward",
+    "stripeRkTest": {
+      "keyPrefix": "rk_test_51TQ",
+      "probedAtUtc": "2026-08-07T00:21:18Z",
+      "products": "403",
+      "prices": "403",
+      "webhook_endpoints": "200",
+      "POST_products": "403"
+    },
+    "noSkTestInKeyVaults": ["BoydAKV", "breivax-kv-eastus"],
+    "stripeSecretKeyLiveOnly": true,
+    "willNotUseLiveKeyForTestCreate": true,
+    "willNotCopySkLiveToProblems4UsLinux": true
+  },
+  "azureAppSettingsProbe": {
+    "app": "problems4us-linux",
+    "resourceGroup": "rg-problems4us",
+    "asOfUtc": "2026-08-07T00:24:50Z",
+    "BREIVAX_BILLING_FORWARD_SECRET": true,
+    "STRIPE_SECRET_KEY": false,
+    "STRIPE_PRICE_BUILDER_MONTHLY": false,
+    "STRIPE_WEBHOOK_SECRET": false
+  },
+  "checkoutReady": false,
+  "realTestTransaction": {
+    "completed": false,
+    "blocker": "Stripe TEST Price not created (RK 403). Cannot set STRIPE_PRICE_BUILDER_MONTHLY or run E2E until Founder expands Stripe-RK-Test write perms OR pastes Dashboard-created price_ id AND provides sk_test_ for problems4us-linux STRIPE_SECRET_KEY."
+  },
+  "remaining": [
+    "HUMAN GATE: Founder expand Stripe-RK-Test product/price/checkout write OR paste Dashboard $29/mo founding price_ id + provide sk_test_ for problems4us-linux",
+    "After key expand: notify Breivax.com VP on this correlation — VP API-creates and returns price_ id",
+    "Set STRIPE_PRICE_BUILDER_MONTHLY + STRIPE_SECRET_KEY (TEST) on problems4us-linux",
+    "Execute real TEST-mode checkout end-to-end; capture receipt + entitlement evidence",
+    "Only then signal DNS cutover gate clear for billing.breivax.com"
+  ],
+  "humanActionRequired": {
+    "owner": "Xavier Boyd",
+    "action": "Expand Stripe-RK-Test (Products/Prices/Checkout Sessions write) OR create Product 'Problems4Us Builder (founding)' + monthly Price 2900 cents in Dashboard TEST and paste price_ id, AND place sk_test_ (or checkout-capable RK) for problems4us-linux STRIPE_SECRET_KEY. After key expand, notify Breivax.com VP on cos-pricing-approved-execute-20260806."
+  }
+}

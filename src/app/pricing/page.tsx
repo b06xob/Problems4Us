@@ -1,24 +1,24 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import PricingPageClient from "./PricingPageClient";
 
 export const metadata: Metadata = {
-  title: "Early Access Pricing",
+  title: "Builder Founding Pricing",
   description:
-    "Join the Problems4Us waitlist and request Builder early-access seats for AI opportunity discovery.",
+    "Problems4Us free tier plus Builder founding at $29/month — first 25 customers, rate locked for life.",
   alternates: { canonical: "/pricing" },
   openGraph: {
-    title: "Early Access Pricing — Problems4Us",
+    title: "Builder Founding Pricing — Problems4Us",
     description:
-      "Join the Problems4Us waitlist and request Builder early-access seats for AI opportunity discovery.",
+      "Free browse and submit. Builder founding: $29/month for scores, briefs, saved problems, and alerts. Cap 25 seats, locked for life.",
     url: "https://problems4us.com/pricing",
   },
 };
 
+/**
+ * No Suspense+useSearchParams shell: that pattern CSR-bailouts and left
+ * production stuck on "Loading pricing…" when hydration lagged or failed.
+ * Checkout return banners read window.search in the client instead.
+ */
 export default function PricingPage() {
-  return (
-    <Suspense fallback={<div className="mx-auto max-w-5xl px-6 py-12">Loading pricing…</div>}>
-      <PricingPageClient />
-    </Suspense>
-  );
+  return <PricingPageClient />;
 }

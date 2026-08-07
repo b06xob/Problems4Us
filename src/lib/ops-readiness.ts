@@ -71,9 +71,9 @@ export function getOpsReadiness(): OpsReadiness {
   if (!checkout.checkoutReady) {
     openFounderGates.push({
       stepId: "problems4us-09b",
-      missing: "centralized Stripe / BREIVAX_BILLING_FORWARD_SECRET",
+      missing: "STRIPE_SECRET_KEY + STRIPE_PRICE_BUILDER_MONTHLY (billing-forward already preferred)",
       action:
-        "Complete centralized billing.breivax.com webhook path, or approve invite-only as production paid path (09f).",
+        "Wire TEST Stripe session key + $29 founding price_ id from Breivax.com VP; paid completion via billing.breivax.com → /api/checkout/billing-forward (no isolated webhook).",
     });
   }
 

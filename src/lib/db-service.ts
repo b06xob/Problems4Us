@@ -1898,6 +1898,19 @@ export async function countActivePilotBuilderEntitlementsDb(): Promise<number> {
 }
 
 /**
+ * Paid founding seats only (excludes admin_pilot:). Used for the 25-seat cohort cap.
+ */
+export async function countActivePaidBuilderEntitlementsDb(): Promise<number> {
+  await ensureWaitlistTables();
+  const row = await queryOne<{ cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM PlanEntitlements
+     WHERE Tier = N'builder' AND Status = N'active'
+       AND (StripeSessionId IS NULL OR StripeSessionId NOT LIKE N'admin_pilot:%')`
+  );
+  return row?.cnt ?? 0;
+}
+
+/**
  * Active Builder seats for admin cohort list (newest first).
  * When pilotOnly=true, only synthetic admin_pilot: sessions.
  */

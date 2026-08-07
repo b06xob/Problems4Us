@@ -2,22 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { EmailSignup } from "@/components/home/EmailSignup";
 import { BuilderCheckoutForm } from "@/components/pricing/BuilderCheckoutForm";
 import { trackConversion } from "@/lib/conversion-events";
+import { FOUNDING_PUBLIC_BLURB } from "@/lib/founding-cohort";
 
 const tiers = [
   {
     id: "explorer",
-    name: "Explorer",
+    name: "Free",
     price: "$0",
-    period: "waitlist",
-    blurb: "Browse scored problems and community submissions while we open seats.",
+    period: "forever",
+    blurb: "Browse problems, open basic detail, and submit pain points.",
     features: [
-      "Public problem explorer",
-      "Community submissions",
-      "Waitlist for AI scoring seats",
+      "Browse the problem catalog",
+      "Basic problem detail",
+      "Submit problems",
     ],
     cta: "Join free waitlist",
     source: "pricing-explorer" as const,
@@ -25,17 +25,18 @@ const tiers = [
   },
   {
     id: "builder",
-    name: "Builder Early Access",
-    price: "$49",
-    period: "/mo planned",
-    blurb: "Paid early-access pilot for builders who want AI scored opportunities and idea briefs.",
+    name: "Builder (founding)",
+    price: "$29",
+    period: "/month",
+    blurb: FOUNDING_PUBLIC_BLURB,
     features: [
-      "Priority AI cluster + score runs",
-      "Saved problem watchlist (Month 2)",
-      "Idea brief drafts for top opportunities",
-      "Founding-member pricing locked for 12 months",
+      "Full opportunity scores + explainability",
+      "Builder briefs and exports",
+      "Saved problems",
+      "Alerts",
+      "Founding rate locked for life (first 25 customers)",
     ],
-    cta: "Request Builder seat",
+    cta: "Join Builder waitlist",
     source: "pricing-builder" as const,
     highlighted: true,
   },
@@ -45,32 +46,40 @@ type CheckoutStatus = {
   checkoutReady: boolean;
   sessionConfigured: boolean;
   webhookConfigured: boolean;
+  billingForwardConfigured?: boolean;
 };
 
+type CheckoutReturn = "success" | "cancel" | null;
+
+function readCheckoutReturn(): CheckoutReturn {
+  if (typeof window === "undefined") return null;
+  const value = new URLSearchParams(window.location.search).get("checkout");
+  if (value === "success" || value === "cancel") return value;
+  return null;
+}
+
 export default function PricingPageClient() {
-  const searchParams = useSearchParams();
-  const checkoutResult = searchParams.get("checkout");
+  const [checkoutResult, setCheckoutResult] = useState<CheckoutReturn>(null);
   const [checkoutStatus, setCheckoutStatus] = useState<CheckoutStatus | null>(
     null
   );
 
   useEffect(() => {
-    trackConversion("pricing_view", { page: "early-access" });
-  }, []);
-
-  useEffect(() => {
-    if (checkoutResult === "success") {
+    trackConversion("pricing_view", { page: "founding-builder" });
+    const result = readCheckoutReturn();
+    setCheckoutResult(result);
+    if (result === "success") {
       trackConversion("checkout_return_success", {
         tier: "builder",
         page: "pricing",
       });
-    } else if (checkoutResult === "cancel") {
+    } else if (result === "cancel") {
       trackConversion("checkout_return_cancel", {
         tier: "builder",
         page: "pricing",
       });
     }
-  }, [checkoutResult]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +90,7 @@ export default function PricingPageClient() {
         const data = (await res.json()) as CheckoutStatus;
         if (!cancelled) setCheckoutStatus(data);
       } catch {
-        // Keep waitlist CTA if status probe fails.
+        // Keep waitlist CTA if status probe fails — never block the page.
       }
     })();
     return () => {
@@ -98,7 +107,8 @@ export default function PricingPageClient() {
           className="mb-8 rounded-xl border border-brand-500/30 bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:bg-brand-900/20 dark:text-brand-300"
           role="status"
         >
-          Checkout completed — thank you. We will email Builder onboarding next.
+          Checkout completed — thank you. Builder founding access activates after
+          payment confirmation.
         </p>
       ) : null}
       {checkoutResult === "cancel" ? (
@@ -106,21 +116,21 @@ export default function PricingPageClient() {
           className="mb-8 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-text-secondary"
           role="status"
         >
-          Checkout canceled. You can retry below or join the waitlist.
+          Checkout canceled. You can retry below or stay on the free tier.
         </p>
       ) : null}
 
       <div className="mb-12 text-center">
         <span className="badge bg-brand-100 text-brand-800 dark:bg-brand-900/30 dark:text-brand-400">
-          Early Access
+          Founding cohort
         </span>
         <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-          Pricing that funds real discovery
+          Simple pricing for builders
         </h1>
         <p className="mx-auto mt-3 max-w-2xl text-text-secondary">
           {builderCheckoutReady
-            ? "Builder Early Access checkout is ready. Explorer stays on the free waitlist."
-            : "Month-1 monetization surface: join the waitlist now. Builder checkout activates when Stripe keys are set (G7)."}
+            ? "Builder founding checkout is live at $29/month for the first 25 customers. Free tier stays open."
+            : "Founding Builder pricing is announced at $29/month for the first 25 seats. Checkout opens shortly — join the waitlist to be first in line. Free tier stays open now."}
         </p>
       </div>
 
@@ -161,18 +171,14 @@ export default function PricingPageClient() {
                   })
                 }
               >
-                {tier.highlighted ? "Recommended for pilots" : "Start here"}
+                {tier.highlighted ? "Founding — 25 seats" : "Start here"}
               </button>
               {tier.id === "builder" && builderCheckoutReady ? (
                 <BuilderCheckoutForm />
               ) : (
                 <EmailSignup
                   source={tier.source}
-                  ctaLabel={
-                    tier.id === "builder" && checkoutStatus
-                      ? "Join Builder waitlist"
-                      : tier.cta
-                  }
+                  ctaLabel={tier.cta}
                   onSuccess={() =>
                     trackConversion("early_access_interest", { tier: tier.id })
                   }

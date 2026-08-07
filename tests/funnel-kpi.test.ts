@@ -51,6 +51,7 @@ describe("funnel KPI rollup (problems4us-12c)", () => {
         gate: "G7",
         sessionConfigured: false,
         webhookConfigured: false,
+        billingForwardConfigured: false,
         checkoutReady: false,
       },
     });

@@ -34,7 +34,7 @@ export function Footer() {
                 { label: "Community Problems", href: "/submissions" },
                 { label: "Submit a Problem", href: "/submit" },
                 { label: "Product Ideas", href: "/ideas" },
-                { label: "Early Access Pricing", href: "/pricing" },
+                { label: "Founding Pricing", href: "/pricing" },
               ].map((item) => (
                 <li key={item.href}>
                   <a

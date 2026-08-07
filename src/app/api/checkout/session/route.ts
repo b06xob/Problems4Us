@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insertConversionEventDb } from "@/lib/db-service";
+import {
+  countActivePaidBuilderEntitlementsDb,
+  insertConversionEventDb,
+} from "@/lib/db-service";
+import {
+  decideFoundingCohortCap,
+  FOUNDING_COHORT_CAP,
+} from "@/lib/founding-cohort";
 import {
   createBuilderCheckoutSession,
   getStripeCheckoutConfig,
@@ -14,8 +21,10 @@ import {
 
 /**
  * POST /api/checkout/session
- * Month-1: fail closed (503) until checkoutReady (session + webhook secrets).
- * When ready: create Stripe Checkout Session for Builder tier and record funnel event.
+ * Fail closed until checkoutReady (session secrets + paid path:
+ * BREIVAX_BILLING_FORWARD_SECRET preferred, or STRIPE_WEBHOOK_SECRET).
+ * When ready: create Stripe Checkout Session for Builder founding tier.
+ * Enforces 25-seat founding cohort cap.
  */
 export async function POST(request: NextRequest) {
   const limited = decideRateLimit(
@@ -52,6 +61,35 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
+  let activePaidSeats = 0;
+  try {
+    activePaidSeats = await countActivePaidBuilderEntitlementsDb();
+  } catch (error) {
+    console.error("checkout/session: founding seat count failed:", error);
+    return NextResponse.json(
+      {
+        error: "Could not verify founding cohort availability",
+        gate: "G7",
+        foundingCap: FOUNDING_COHORT_CAP,
+      },
+      { status: 503 }
+    );
+  }
+
+  const cap = decideFoundingCohortCap({ activePaidSeats });
+  if (!cap.ok) {
+    return NextResponse.json(
+      {
+        error: cap.reason,
+        gate: "G7-founding",
+        foundingCap: FOUNDING_COHORT_CAP,
+        activePaidSeats: cap.activePaidSeats,
+        checkoutReady: true,
+      },
+      { status: 409 }
+    );
+  }
+
   const result = await createBuilderCheckoutSession(config, {
     tier: body.tier,
     email: body.email,
@@ -77,6 +115,8 @@ export async function POST(request: NextRequest) {
         sessionId: result.sessionId,
         tier: body.tier || "builder",
         hasEmail: Boolean(body.email?.trim()),
+        foundingCohort: true,
+        foundingRemaining: cap.remaining,
       }
     );
   } catch (error) {
@@ -91,5 +131,7 @@ export async function POST(request: NextRequest) {
     checkoutReady: true,
     sessionId: result.sessionId,
     url: result.url,
+    foundingCap: FOUNDING_COHORT_CAP,
+    foundingRemaining: cap.remaining,
   });
 }

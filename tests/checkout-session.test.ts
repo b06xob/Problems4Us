@@ -61,10 +61,12 @@ describe("Stripe checkout gate (G7 prep)", () => {
     delete process.env.STRIPE_SECRET_KEY;
     delete process.env.STRIPE_PRICE_BUILDER_MONTHLY;
     delete process.env.STRIPE_WEBHOOK_SECRET;
+    delete process.env.BREIVAX_BILLING_FORWARD_SECRET;
     expect(getStripeCheckoutPublicStatus()).toEqual({
       gate: "G7",
       sessionConfigured: false,
       webhookConfigured: false,
+      billingForwardConfigured: false,
       checkoutReady: false,
     });
 
@@ -75,27 +77,45 @@ describe("Stripe checkout gate (G7 prep)", () => {
       gate: "G7",
       sessionConfigured: true,
       webhookConfigured: true,
+      billingForwardConfigured: false,
       checkoutReady: true,
     });
   });
 
-  it("keeps checkoutReady false until webhook secret is also set", () => {
+  it("keeps checkoutReady false until webhook or billing-forward is set", () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_x";
     process.env.STRIPE_PRICE_BUILDER_MONTHLY = "price_builder";
     delete process.env.STRIPE_WEBHOOK_SECRET;
+    delete process.env.BREIVAX_BILLING_FORWARD_SECRET;
     expect(getStripeCheckoutPublicStatus()).toEqual({
       gate: "G7",
       sessionConfigured: true,
       webhookConfigured: false,
+      billingForwardConfigured: false,
       checkoutReady: false,
     });
   });
 
-  it("not-ready message names missing webhook when session secrets alone are set", () => {
+  it("treats BREIVAX_BILLING_FORWARD_SECRET as paid-path for checkoutReady", () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_x";
     process.env.STRIPE_PRICE_BUILDER_MONTHLY = "price_builder";
     delete process.env.STRIPE_WEBHOOK_SECRET;
-    expect(stripeCheckoutNotReadyMessage()).toMatch(/STRIPE_WEBHOOK_SECRET/);
+    process.env.BREIVAX_BILLING_FORWARD_SECRET = "forward_secret";
+    expect(getStripeCheckoutPublicStatus()).toEqual({
+      gate: "G7",
+      sessionConfigured: true,
+      webhookConfigured: false,
+      billingForwardConfigured: true,
+      checkoutReady: true,
+    });
+  });
+
+  it("not-ready message names missing paid path when session secrets alone are set", () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_x";
+    process.env.STRIPE_PRICE_BUILDER_MONTHLY = "price_builder";
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    delete process.env.BREIVAX_BILLING_FORWARD_SECRET;
+    expect(stripeCheckoutNotReadyMessage()).toMatch(/BREIVAX_BILLING_FORWARD_SECRET/);
     expect(stripeCheckoutNotReadyMessage()).toMatch(/not ready/);
   });
 
@@ -117,6 +137,9 @@ describe("Stripe checkout gate (G7 prep)", () => {
       const body = String(init?.body || "");
       expect(body).toContain("line_items%5B0%5D%5Bprice%5D=price_builder");
       expect(body).toContain("customer_email=pilot%40example.com");
+      expect(body).toContain("metadata%5Bproduct%5D=Problems4Us");
+      expect(body).toContain("metadata%5Bfounding_cohort%5D=true");
+      expect(body).toContain("metadata%5Bprice_lock%5D=permanent");
       return {
         ok: true,
         status: 200,

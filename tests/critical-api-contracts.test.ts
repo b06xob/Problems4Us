@@ -55,10 +55,12 @@ describe("critical API contracts (problems4us-17b)", () => {
     delete process.env.STRIPE_SECRET_KEY;
     delete process.env.STRIPE_PRICE_BUILDER_MONTHLY;
     delete process.env.STRIPE_WEBHOOK_SECRET;
+    delete process.env.BREIVAX_BILLING_FORWARD_SECRET;
     const status = getStripeCheckoutPublicStatus();
     expect(status.gate).toBe("G7");
     expect(status.sessionConfigured).toBe(false);
     expect(status.webhookConfigured).toBe(false);
+    expect(status.billingForwardConfigured).toBe(false);
     expect(status.checkoutReady).toBe(false);
   });
 

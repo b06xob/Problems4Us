@@ -82,23 +82,28 @@ export type StripeCheckoutPublicStatus = {
   gate: "G7";
   sessionConfigured: boolean;
   webhookConfigured: boolean;
+  /** Shared company forward secret (preferred path; not an isolated product webhook). */
+  billingForwardConfigured: boolean;
   checkoutReady: boolean;
 };
 
 export function getStripeCheckoutPublicStatus(): StripeCheckoutPublicStatus {
   const sessionConfigured = getStripeCheckoutConfig() !== null;
   const webhookConfigured = getStripeWebhookSecret() !== null;
-  // Ready only when session create AND webhook verify are both configured —
-  // otherwise paid_early_access would never be recorded after checkout.
+  const billingForwardConfigured = getBreivaxBillingForwardSecret() !== null;
+  // Paid completion must be recordable: either product-isolated webhook OR
+  // centralized billing.breivax.com → billing-forward consumer.
+  const paidPathConfigured = webhookConfigured || billingForwardConfigured;
   return {
     gate: "G7",
     sessionConfigured,
     webhookConfigured,
-    checkoutReady: sessionConfigured && webhookConfigured,
+    billingForwardConfigured,
+    checkoutReady: sessionConfigured && paidPathConfigured,
   };
 }
 
-/** Session create requires checkoutReady (session + webhook), not session alone. */
+/** Session create requires checkoutReady (session + paid path), not session alone. */
 export function stripeCheckoutNotReadyMessage(
   status: StripeCheckoutPublicStatus = getStripeCheckoutPublicStatus()
 ): string {
@@ -109,8 +114,10 @@ export function stripeCheckoutNotReadyMessage(
   if (!status.sessionConfigured) {
     missing.push("STRIPE_SECRET_KEY + STRIPE_PRICE_BUILDER_MONTHLY");
   }
-  if (!status.webhookConfigured) {
-    missing.push("STRIPE_WEBHOOK_SECRET");
+  if (!status.webhookConfigured && !status.billingForwardConfigured) {
+    missing.push(
+      "BREIVAX_BILLING_FORWARD_SECRET (preferred) or STRIPE_WEBHOOK_SECRET"
+    );
   }
   return `Stripe checkout is not ready (G7). Missing: ${missing.join("; ") || "configuration"}.`;
 }
@@ -158,6 +165,14 @@ export async function createBuilderCheckoutSession(
   params.set("line_items[0][quantity]", "1");
   params.set("metadata[tier]", "builder");
   params.set("metadata[product]", "Problems4Us");
+  params.set("metadata[founding_cohort]", "true");
+  params.set("metadata[price_lock]", "permanent");
+  params.set("metadata[founding_monthly_usd]", "29");
+  // Subscription metadata persists on the Stripe Subscription (price lock audit).
+  params.set("subscription_data[metadata][product]", "Problems4Us");
+  params.set("subscription_data[metadata][tier]", "builder");
+  params.set("subscription_data[metadata][founding_cohort]", "true");
+  params.set("subscription_data[metadata][price_lock]", "permanent");
   params.set("customer_email", email);
 
   const response = await fetchImpl("https://api.stripe.com/v1/checkout/sessions", {

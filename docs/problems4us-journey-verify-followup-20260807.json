@@ -1,0 +1,87 @@
+{
+  "evidenceId": "problems4us-journey-verify-followup-20260807",
+  "correlationId": "cos-journey-verify-followup-20260807",
+  "product": "Problems4Us",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "completedAtUtc": "2026-08-07T00:38:00Z",
+  "inboxMessage": "Intercom/inbox/problems4us/message-eafdf5ddef14.json",
+  "notificationCoverage": {
+    "verdict": "CORRECT_BEHAVIOUR_for_no_email_gaps",
+    "publicAccepted": 6,
+    "adminHasEmailCheck": {
+      "method": "GET /api/submissions with x-admin-api-key; reported HasEmail boolean only (addresses not logged)",
+      "withEmail": 3,
+      "withoutEmail": 3
+    },
+    "breakdown": [
+      {
+        "id": "sub-1786060515810-utxl2i",
+        "hasEmail": true,
+        "confirmationEmailSentAt": "2026-08-06T23:55:18.604Z",
+        "outcomeEmailSentAt": "2026-08-06T23:55:23.289Z",
+        "note": "E2E merge probe — both mails stamped"
+      },
+      {
+        "id": "sub-1786060494375-0eqmvj",
+        "hasEmail": true,
+        "confirmationEmailSentAt": "2026-08-06T23:54:57.120Z",
+        "outcomeEmailSentAt": "2026-08-06T23:55:03.536Z",
+        "note": "E2E standalone probe — both mails stamped"
+      },
+      {
+        "id": "sub-1786033545921-da4wso",
+        "hasEmail": true,
+        "confirmationEmailSentAt": null,
+        "outcomeEmailSentAt": "2026-08-06T23:55:35.815Z",
+        "note": "Erlinda Franklin: submitted 2026-08-06T16:25 before confirmation-mail feature; late-accepted via journey that sends outcome only. Outcome delivered. Not a live POST defect."
+      },
+      {
+        "id": "sub-seed-1",
+        "hasEmail": false,
+        "confirmationEmailSentAt": null,
+        "outcomeEmailSentAt": null,
+        "note": "Seed SubmitterEmail=NULL — correctly no mail"
+      },
+      {
+        "id": "sub-seed-2",
+        "hasEmail": false,
+        "confirmationEmailSentAt": null,
+        "outcomeEmailSentAt": null,
+        "note": "Seed SubmitterEmail=NULL — correctly no mail"
+      },
+      {
+        "id": "sub-seed-3",
+        "hasEmail": false,
+        "confirmationEmailSentAt": null,
+        "outcomeEmailSentAt": null,
+        "note": "Seed SubmitterEmail=NULL — correctly no mail"
+      }
+    ],
+    "summaryNumbers": {
+      "confirmationStampsPublic": "2 of 6",
+      "outcomeStampsPublic": "3 of 6",
+      "explanation": "3 of 6 accepted have no email (seeds) → no stamps is correct. Of 3 with email: 2/2 confirm+outcome on live path; 1 historical late-accept has outcome only."
+    },
+    "codePath": "sendSubmissionConfirmationEmail / sendSubmissionOutcomeEmail return sent:false reason:no_email when SubmitterEmail empty"
+  },
+  "pricingPageFix": {
+    "problem": "Live /pricing SSR showed only 'Loading pricing…' via Next Suspense BAILOUT_TO_CLIENT_SIDE_RENDERING (useSearchParams). CoS also noted /api/pricing /api/plans /api/checkout/config 404s — those routes never existed; live probe uses /api/checkout/status (200, checkoutReady:false).",
+    "fix": "Removed Suspense+useSearchParams shell; SSR client page with founding $29 copy and honest 'checkout opens shortly' waitlist state. Did not publish $49.",
+    "files": [
+      "src/app/pricing/page.tsx",
+      "src/app/pricing/PricingPageClient.tsx",
+      "src/lib/founding-cohort.ts",
+      "src/components/layout/Footer.tsx",
+      "related checkout founding-cap wiring"
+    ],
+    "unitTests": {
+      "suites": [
+        "tests/founding-cohort.test.ts",
+        "tests/checkout-session.test.ts",
+        "tests/critical-api-contracts.test.ts"
+      ],
+      "passed": 33
+    }
+  }
+}

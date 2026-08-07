@@ -4,7 +4,7 @@ import { useState } from "react";
 import { trackConversion } from "@/lib/conversion-events";
 
 /**
- * Starts Stripe Checkout Session for Builder Early Access when G7 secrets are set.
+ * Starts Stripe Checkout Session for Builder founding when G7 secrets are set.
  */
 export function BuilderCheckoutForm() {
   const [email, setEmail] = useState("");
@@ -68,7 +68,7 @@ export function BuilderCheckoutForm() {
         autoComplete="email"
       />
       <button type="submit" className="btn-primary whitespace-nowrap" disabled={pending}>
-        {pending ? "Starting…" : "Start Builder checkout"}
+        {pending ? "Starting…" : "Start founding checkout"}
       </button>
       {error ? (
         <p className="w-full text-sm text-red-600 dark:text-red-400 sm:basis-full">{error}</p>
