@@ -3,6 +3,7 @@ import {
   countActivePaidBuilderEntitlementsDb,
   getPlanEntitlementByEmailDb,
   insertPaidEarlyAccessEventDb,
+  toPlanEntitlement,
   upsertPaidBuilderEntitlementDb,
 } from "@/lib/db-service";
 import {
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
     let allowExisting = false;
     if (email) {
       const existing = await getPlanEntitlementByEmailDb(email);
-      allowExisting = hasActiveBuilderAccess(existing);
+      allowExisting = hasActiveBuilderAccess(toPlanEntitlement(existing));
     }
     if (!allowExisting) {
       const activePaidSeats = await countActivePaidBuilderEntitlementsDb();
