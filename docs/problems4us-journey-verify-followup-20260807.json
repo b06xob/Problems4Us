@@ -4,7 +4,30 @@
   "product": "Problems4Us",
   "agent": "Problems4Us Agent",
   "host": "Audi",
-  "completedAtUtc": "2026-08-07T00:38:00Z",
+  "completedAtUtc": "2026-08-07T00:45:00Z",
+  "deploy": {
+    "version": "v2026.08.07-9122a6a",
+    "commit": "9122a6ac04ec96287052d54c9eb3e2e93c16af60",
+    "githubActionsRun": "https://github.com/b06xob/Problems4Us/actions/runs/31135459560",
+    "priorFailedBuild": "https://github.com/b06xob/Problems4Us/actions/runs/31135335482",
+    "priorFailCause": "billing-forward PlanEntitlementRecord type mismatch — fixed in 9122a6a via toPlanEntitlement",
+    "deployedAtUtc": "2026-08-07T00:41:00Z"
+  },
+  "liveVerifyAfterDeploy": {
+    "pricingHtml": {
+      "loadingPricingCount": 0,
+      "bailoutToCsrCount": 0,
+      "simplePricingCount": 1,
+      "dollar29Count": 6,
+      "dollar49Count": 0,
+      "honestCopyPresent": "Founding Builder pricing is announced at $29/month for the first 25 seats. Checkout opens shortly"
+    },
+    "checkoutStatus": {
+      "sessionConfigured": false,
+      "billingForwardConfigured": true,
+      "checkoutReady": false
+    }
+  },
   "inboxMessage": "Intercom/inbox/problems4us/message-eafdf5ddef14.json",
   "notificationCoverage": {
     "verdict": "CORRECT_BEHAVIOUR_for_no_email_gaps",
