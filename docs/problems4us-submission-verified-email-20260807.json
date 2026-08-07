@@ -1,0 +1,57 @@
+﻿{
+    "evidenceId":  "problems4us-submission-verified-email-20260807",
+    "correlationId":  "cos-submission-verified-email-20260807",
+    "completed_utc":  "2026-08-07T02:14:06Z",
+    "deploy":  {
+                   "version":  "v2026.08.07-d67e696",
+                   "commit":  "d67e6963132cc607743b137ecf474f10b70d6bb8",
+                   "deployedAt":  "2026-08-07T02:08:44Z"
+               },
+    "githubActionsRun":  "https://github.com/b06xob/Problems4Us/actions/runs/31140272241",
+    "commit":  "d67e696",
+    "noEmailReject":  {
+                          "status":  400,
+                          "note":  "email required"
+                      },
+    "submitUnverified":  {
+                             "confirmationEmailSent":  true,
+                             "pipelineNull":  true,
+                             "inPublicCatalog":  false,
+                             "awaitingEmailVerification":  true,
+                             "submissionId":  "sub-1786068825362-z1qa9m",
+                             "storedStatus":  "pending"
+                         },
+    "adminAcceptBlocked":  {
+                               "expected":  409
+                           },
+    "verifyPath":  {
+                       "ok":  true,
+                       "painPointId":  "pp-sub-msib9nbd-sg7b2e",
+                       "pipelineOutcome":  "standalone",
+                       "inPublicCatalogAfter":  true,
+                       "status":  "accepted",
+                       "published":  true
+                   },
+    "backfill":  {
+                     "ok":  true,
+                     "completed_utc":  "2026-08-07T02:14:06.653Z",
+                     "split":  {
+                                   "totalAccepted":  7,
+                                   "withEmail":  4,
+                                   "withoutEmail":  3,
+                                   "verifyEmailsSent":  3,
+                                   "unpublishedNoEmail":  3,
+                                   "unpublishedGraceExpired":  0,
+                                   "alreadyVerified":  1,
+                                   "errors":  [
+
+                                              ]
+                               },
+                     "policy":  {
+                                    "graceDays":  7,
+                                    "unpublishNoEmail":  true,
+                                    "unpublishGraceExpired":  true,
+                                    "deleteNever":  true
+                                }
+                 }
+}
