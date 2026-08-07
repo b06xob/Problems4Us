@@ -47,7 +47,8 @@ Password reset and email verification share `src/lib/auth-email-token.ts`:
 | UI | `/check-email`, `/verify-email?token=`, `/resend-verification` |
 | Ops issue | `POST /api/admin/email-verification/issue` + `ADMIN_API_KEY` |
 | Ops failures | `GET /api/admin/mail-failures` — hard/soft delivery failures |
-| Storage | `UserAccounts.EmailVerifiedAt`, `EmailVerificationTokens` (24h TTL), `MailDeliveryFailures` |
+| Record async bounce | `POST /api/admin/mail-failures` `{ email, reason?, purpose? }` — MAILER-DAEMON / ISP DSN intake; marks unverified submissions `email_hard_bounce` and stops retries 30 days |
+| Storage | `UserAccounts.EmailVerifiedAt`, `EmailVerificationTokens` (24h TTL), `MailDeliveryFailures`, `UserSubmissions.EmailHardBouncedAt` |
 
 ### Unverified account policy
 
@@ -63,18 +64,21 @@ Pre-22b accounts are grandfathered (`EmailVerifiedAt = CreatedAt` on column add)
 
 ### Email delivery
 
-Same SendGrid or company SMTP path as password reset. Health: `ops.emailVerificationConfigured` (mirrors mailer readiness). Hard SMTP failures (550/551/553/5.1.x) are logged to `MailDeliveryFailures` and suppress further verify sends for that address for 30 days.
+Same SendGrid or company SMTP path as password reset. Health: `ops.emailVerificationConfigured` (mirrors mailer readiness). Hard SMTP failures (550/551/553/5.1.x) and async MAILER-DAEMON reports are logged to `MailDeliveryFailures` and suppress further outbound mail for that address for 30 days. Submission confirm/outcome/PII mail uses the same table; bounced submitters get `EmailHardBouncedAt` and cannot publish under the verified-email rule.
+
+**Never send from the production sender to fabricated addresses** (`@example.com`, `@example.org`, `@example.net`, `*.invalid`, `p4u.verify.probe*`). Use an address you control (e.g. founder inbox) or a mail-testing sink you own. Code enforces this in `mail-recipient-policy.ts` unless `MAIL_ALLOW_NONDELIVERABLE_RECIPIENTS=1` (local mocks only).
 
 ## Smoke
 
 ```powershell
 $admin = $env:ADMIN_API_KEY
-$email = "p4u22b+$(Get-Date -UFormat %s)@example.com"
-# Register (201 + unverified)
+# Use a real mailbox you control — NEVER @example.com against production SMTP
+$email = "YOUR_CONTROLLED_INBOX@example-you-own.com"
+# Register (201 + unverified) — only if you intend a real verification send
 Invoke-RestMethod -Method POST -Uri "https://problems4us.com/api/auth/register" `
   -Headers @{ "Content-Type" = "application/json" } `
   -Body (@{ email = $email; password = "SmokePass1!" } | ConvertTo-Json)
-# Ops issue token (when SMTP inbox not readable)
+# Prefer ops issue token when you do not need a live SMTP delivery
 $issue = Invoke-RestMethod -Method POST -Uri "https://problems4us.com/api/admin/email-verification/issue" `
   -Headers @{ "x-admin-api-key" = $admin; "Content-Type" = "application/json" } `
   -Body (@{ email = $email } | ConvertTo-Json)

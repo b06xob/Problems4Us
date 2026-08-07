@@ -10,6 +10,7 @@ import {
 import { createSubmissionVerifyTokenDb } from "./submission-verify-db";
 import { getAIProvider } from "./ai-service";
 import { calculateOpportunityScore } from "./scoring";
+import { asciiEmailSubject } from "./mail-encoding";
 import { sendSmtpPlainText } from "./smtp-mail";
 import {
   findBestCatalogMatch,
@@ -36,6 +37,12 @@ import {
   updatePainPointAfterCommunityEvidence,
   updateSubmissionPipelineFields,
 } from "./db-service";
+import {
+  handleOutboundMailResult,
+  isAddressMailBlocked,
+  MAIL_BOUNCE_POLICY,
+} from "./mail-bounce";
+import { isHardMailFailure } from "./email-verification";
 
 export { triageSubmissionText, type TriageDecision };
 
@@ -108,6 +115,17 @@ export async function processApprovedSubmission(
       percentileRank: null,
       matchScore: null,
       error: "Email not verified — cannot publish or score",
+    };
+  }
+  if (submission.EmailHardBouncedAt) {
+    return {
+      outcome: "skipped",
+      painPointId: submission.LinkedPainPointId ?? null,
+      opportunityScore: null,
+      similarReporterCount: null,
+      percentileRank: null,
+      matchScore: null,
+      error: "Email hard-bounced — address unusable; cannot publish",
     };
   }
 
@@ -261,13 +279,29 @@ export async function processApprovedSubmission(
 /**
  * Immediate acknowledgement email — doubles as verification when needed.
  * Always attempts send when an email is present (registered or not).
+ * Hard bounces: record, mark address unusable, stop retries (journey step 4).
  */
 export async function sendSubmissionConfirmationEmail(
   submission: UserProblemSubmission,
   opts?: { alreadyVerified?: boolean; origin?: string }
-): Promise<{ sent: boolean; reason?: string; verifyTokenMinted?: boolean }> {
+): Promise<{
+  sent: boolean;
+  reason?: string;
+  verifyTokenMinted?: boolean;
+  hardBounce?: boolean;
+  emailUnusable?: boolean;
+}> {
   const email = submission.SubmitterEmail?.trim();
   if (!email) return { sent: false, reason: "no_email" };
+
+  if (submission.EmailHardBouncedAt || (await isAddressMailBlocked(email))) {
+    return {
+      sent: false,
+      reason: "address_hard_bounced",
+      hardBounce: true,
+      emailUnusable: true,
+    };
+  }
 
   const alreadyVerified = Boolean(
     opts?.alreadyVerified || submission.EmailVerifiedAt
@@ -302,21 +336,35 @@ export async function sendSubmissionConfirmationEmail(
     });
     return { sent: true, verifyTokenMinted };
   }
+
+  const handled = await handleOutboundMailResult({
+    email,
+    purpose: MAIL_BOUNCE_POLICY.purposes.submissionverify,
+    delivery,
+    submissionId: submission.SubmissionId,
+  });
+
   return {
     sent: false,
-    reason: "reason" in delivery ? delivery.reason : "send_failed",
+    reason: handled.reason || ("reason" in delivery ? delivery.reason : "send_failed"),
     verifyTokenMinted,
+    hardBounce: handled.hardBounce,
+    emailUnusable: handled.hardBounce,
   };
 }
 
 export async function sendSubmissionOutcomeEmail(
   submission: UserProblemSubmission,
   pipeline: ScorePipelineResult
-): Promise<{ sent: boolean; reason?: string }> {
+): Promise<{ sent: boolean; reason?: string; hardBounce?: boolean }> {
   const email = submission.SubmitterEmail?.trim();
   if (!email) return { sent: false, reason: "no_email" };
   if (pipeline.outcome === "skipped" || !pipeline.painPointId) {
     return { sent: false, reason: "no_scored_outcome" };
+  }
+
+  if (submission.EmailHardBouncedAt || (await isAddressMailBlocked(email))) {
+    return { sent: false, reason: "address_hard_bounced", hardBounce: true };
   }
 
   const lines: string[] = [
@@ -331,7 +379,7 @@ export async function sendSubmissionOutcomeEmail(
       pipeline.similarReporterCount != null && pipeline.similarReporterCount > 1
         ? pipeline.similarReporterCount - 1
         : null;
-    lines.push("Your problem is live — and you are not alone.");
+    lines.push("Your problem is live - and you are not alone.");
     if (others != null && others > 0) {
       lines.push(
         `${others} other${others === 1 ? "" : "s"} reported something similar (corroborating evidence merged into the existing catalog entry).`
@@ -365,12 +413,14 @@ export async function sendSubmissionOutcomeEmail(
     "",
     `View the opportunity: ${SITE_URL}/problems/${pipeline.painPointId}`,
     "",
-    "— Problems4Us"
+    "- Problems4Us"
   );
 
   const result = await sendSmtpPlainText({
     to: email,
-    subject: `Your problem is live — ${submission.SubmissionId}`,
+    subject: asciiEmailSubject(
+      `Your problem is live - ${submission.SubmissionId}`
+    ),
     text: lines.join("\n"),
   });
 
@@ -380,26 +430,83 @@ export async function sendSubmissionOutcomeEmail(
     });
     return { sent: true };
   }
-  return { sent: false, reason: result.reason };
+
+  const delivery = {
+    channel: "none" as const,
+    sent: false as const,
+    reason: result.reason,
+    hardFailure: isHardMailFailure(result.reason),
+  };
+  const handled = await handleOutboundMailResult({
+    email,
+    purpose: MAIL_BOUNCE_POLICY.purposes.submissionoutcome,
+    delivery,
+    submissionId: submission.SubmissionId,
+  });
+  return {
+    sent: false,
+    reason: handled.reason || result.reason,
+    hardBounce: handled.hardBounce,
+  };
 }
 
 /**
  * Full path after status becomes accepted: score/merge then outcome email.
+ *
+ * Sequencing rule (founder 2026-08-07 / Erlinda defect): never send the
+ * "your problem is live" outcome email until a confirmation/ack email has
+ * been stamped. Admin late-accept and verify paths must not skip ack.
  */
 export async function runAcceptedSubmissionJourney(
   submissionId: string
 ): Promise<{
   pipeline: ScorePipelineResult;
   outcomeEmail: { sent: boolean; reason?: string };
+  confirmationEmail?: { sent: boolean; reason?: string };
 }> {
   const pipeline = await processApprovedSubmission(submissionId);
-  const submission = await getUserSubmissionById(submissionId);
+  let submission = await getUserSubmissionById(submissionId);
+  let confirmationEmail: { sent: boolean; reason?: string } | undefined;
   let outcomeEmail: { sent: boolean; reason?: string } = {
     sent: false,
     reason: "no_submission",
   };
-  if (submission && pipeline.outcome !== "skipped") {
-    outcomeEmail = await sendSubmissionOutcomeEmail(submission, pipeline);
+
+  if (!submission) {
+    return { pipeline, outcomeEmail, confirmationEmail };
   }
-  return { pipeline, outcomeEmail };
+
+  // Ensure confirmation precedes outcome for every accepted journey.
+  if (!submission.ConfirmationEmailSentAt) {
+    confirmationEmail = await sendSubmissionConfirmationEmail(submission, {
+      alreadyVerified: Boolean(submission.EmailVerifiedAt),
+    });
+    submission =
+      (await getUserSubmissionById(submissionId)) ?? submission;
+  }
+
+  if (pipeline.outcome === "skipped") {
+    return { pipeline, outcomeEmail, confirmationEmail };
+  }
+
+  if (!submission.ConfirmationEmailSentAt) {
+    outcomeEmail = {
+      sent: false,
+      reason: "confirmation_required_first",
+    };
+    return { pipeline, outcomeEmail, confirmationEmail };
+  }
+
+  // Hard temporal guard: never stamp outcome earlier than confirmation.
+  const confirmMs = Date.parse(submission.ConfirmationEmailSentAt);
+  if (Number.isFinite(confirmMs) && Date.now() < confirmMs) {
+    outcomeEmail = {
+      sent: false,
+      reason: "confirmation_timestamp_invalid",
+    };
+    return { pipeline, outcomeEmail, confirmationEmail };
+  }
+
+  outcomeEmail = await sendSubmissionOutcomeEmail(submission, pipeline);
+  return { pipeline, outcomeEmail, confirmationEmail };
 }

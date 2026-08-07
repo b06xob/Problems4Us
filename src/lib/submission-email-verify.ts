@@ -9,8 +9,10 @@ import {
   hashAuthEmailToken,
   mintAuthEmailToken,
 } from "./auth-email-token";
+import { asciiEmailSubject, MAIL_PLAIN_TEXT_TYPE } from "./mail-encoding";
 import { getSmtpConfig, sendSmtpPlainText } from "./smtp-mail";
 import { isHardMailFailure, type EmailDelivery } from "./email-verification";
+import { assertDeliverableRecipient } from "./mail-recipient-policy";
 
 /** Verification / ack link TTL — align with account email verify (24h). */
 export const SUBMISSION_VERIFY_TTL_HOURS = 24;
@@ -90,7 +92,7 @@ function ackVerifyBody(input: {
     );
   }
 
-  lines.push("— Problems4Us");
+  lines.push("- Problems4Us");
   return lines.join("\n");
 }
 
@@ -104,7 +106,19 @@ export async function deliverSubmissionAckVerifyEmail(input: {
   verifyUrl: string;
   alreadyVerified: boolean;
 }): Promise<EmailDelivery> {
-  const subject = `${ACK_SUBJECT_PREFIX} — ${input.submissionId}`;
+  const recipientGuard = assertDeliverableRecipient(input.toEmail);
+  if (!recipientGuard.ok) {
+    return {
+      channel: "none",
+      sent: false,
+      reason: recipientGuard.reason,
+      hardFailure: true,
+    };
+  }
+
+  const subject = asciiEmailSubject(
+    `${ACK_SUBJECT_PREFIX} - ${input.submissionId}`
+  );
   const text = ackVerifyBody(input);
 
   const apiKey = process.env.SENDGRID_API_KEY?.trim();
@@ -124,7 +138,7 @@ export async function deliverSubmissionAckVerifyEmail(input: {
         personalizations: [{ to: [{ email: input.toEmail }] }],
         from: { email: from, name: "Problems4Us" },
         subject,
-        content: [{ type: "text/plain", value: text }],
+        content: [{ type: MAIL_PLAIN_TEXT_TYPE, value: text }],
       }),
     });
 
@@ -175,7 +189,19 @@ export async function deliverSubmissionBackfillVerifyEmail(input: {
   verifyUrl: string;
   graceEndsAt: string;
 }): Promise<EmailDelivery> {
-  const subject = `Confirm your email to keep your problem live — ${input.submissionId}`;
+  const recipientGuard = assertDeliverableRecipient(input.toEmail);
+  if (!recipientGuard.ok) {
+    return {
+      channel: "none",
+      sent: false,
+      reason: recipientGuard.reason,
+      hardFailure: true,
+    };
+  }
+
+  const subject = asciiEmailSubject(
+    `Confirm your email to keep your problem live - ${input.submissionId}`
+  );
   const text = [
     "Problems4Us now requires a verified email for published community problems.",
     "",
@@ -186,9 +212,9 @@ export async function deliverSubmissionBackfillVerifyEmail(input: {
     input.verifyUrl,
     "",
     `If we do not hear from you by ${input.graceEndsAt} (UTC), we will`,
-    "unpublish the problem (status reverts out of accepted — nothing is deleted).",
+    "unpublish the problem (status reverts out of accepted - nothing is deleted).",
     "",
-    "— Problems4Us",
+    "- Problems4Us",
   ].join("\n");
 
   const apiKey = process.env.SENDGRID_API_KEY?.trim();
@@ -208,7 +234,7 @@ export async function deliverSubmissionBackfillVerifyEmail(input: {
         personalizations: [{ to: [{ email: input.toEmail }] }],
         from: { email: from, name: "Problems4Us" },
         subject,
-        content: [{ type: "text/plain", value: text }],
+        content: [{ type: MAIL_PLAIN_TEXT_TYPE, value: text }],
       }),
     });
     if (!res.ok) {

@@ -19,6 +19,8 @@ import {
 } from "./submission-email-verify";
 import type { UserProblemSubmission } from "./types";
 import { normalizeEmail } from "./waitlist";
+import { isAddressMailBlocked } from "./mail-bounce";
+import { isNondeliverableRecipient } from "./mail-recipient-policy";
 
 export async function createSubmissionVerifyTokenDb(
   submissionId: string
@@ -26,6 +28,7 @@ export async function createSubmissionVerifyTokenDb(
   await ensureUserSubmissionColumns();
   const submission = await getUserSubmissionById(submissionId);
   if (!submission?.SubmitterEmail?.trim()) return null;
+  if (submission.EmailHardBouncedAt) return null;
 
   await execute(
     `UPDATE SubmissionEmailVerificationTokens SET UsedAt = GETUTCDATE()
@@ -140,7 +143,8 @@ export async function runAcceptedSubmissionEmailBackfill(opts: {
            SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt,
            ModerationAction, ModerationReason, LinkedPainPointId, PipelineOutcome,
            ConfirmationEmailSentAt, OutcomeEmailSentAt,
-           EmailVerifiedAt, SubmitterUserId, VerificationGraceEndsAt
+           EmailVerifiedAt, SubmitterUserId, VerificationGraceEndsAt,
+           EmailHardBouncedAt
     FROM UserSubmissions
     WHERE Status = N'accepted'
     ORDER BY CreatedAt ASC
@@ -189,6 +193,48 @@ export async function runAcceptedSubmissionEmailBackfill(opts: {
     }
 
     split.withEmail += 1;
+
+    if (raw.EmailHardBouncedAt || isNondeliverableRecipient(email)) {
+      try {
+        await updateSubmissionStatusDb(raw.SubmissionId, "pending", {
+          moderationReason:
+            "Unpublished: submitter email hard-bounced or nondeliverable. Stopped retries.",
+          moderationAction: "email_hard_bounce",
+        });
+        await updateSubmissionPipelineFields(raw.SubmissionId, {
+          verificationGraceEndsAt: null,
+          emailHardBouncedAt: raw.EmailHardBouncedAt || new Date().toISOString(),
+          pipelineOutcome: "email_bounced",
+        });
+      } catch (err) {
+        split.errors.push({
+          submissionId: raw.SubmissionId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+      continue;
+    }
+
+    if (await isAddressMailBlocked(email)) {
+      try {
+        await updateSubmissionStatusDb(raw.SubmissionId, "pending", {
+          moderationReason:
+            "Unpublished: submitter email previously hard-bounced. Stopped retries.",
+          moderationAction: "email_hard_bounce",
+        });
+        await updateSubmissionPipelineFields(raw.SubmissionId, {
+          verificationGraceEndsAt: null,
+          emailHardBouncedAt: new Date().toISOString(),
+          pipelineOutcome: "email_bounced",
+        });
+      } catch (err) {
+        split.errors.push({
+          submissionId: raw.SubmissionId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+      continue;
+    }
 
     const graceEnds = raw.VerificationGraceEndsAt
       ? new Date(raw.VerificationGraceEndsAt)

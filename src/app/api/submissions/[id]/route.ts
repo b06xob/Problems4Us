@@ -59,6 +59,28 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
+    if (body.status === "accepted" && existing.EmailHardBouncedAt) {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot accept: submitter email hard-bounced and is unusable. Require a deliverable verified address.",
+          code: "EMAIL_HARD_BOUNCED",
+        },
+        { status: 409 }
+      );
+    }
+
+    if (body.status === "accepted" && existing.PiiChoiceStatus === "awaiting") {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot accept: submitter has not chosen original vs privacy rewrite yet.",
+          code: "PII_CHOICE_REQUIRED",
+        },
+        { status: 409 }
+      );
+    }
+
     const updated = await updateSubmissionStatusDb(id, body.status, {
       moderationReason:
         body.reason?.trim() ||

@@ -7,7 +7,7 @@ import {
   createEmailVerificationTokenDb,
   findUserByEmailDb,
   getActivationForUserDb,
-  hasRecentHardMailFailureDb,
+  hasRecentHardMailFailureForEmailDb,
   recordMailDeliveryFailureDb,
   registerUserDb,
 } from "@/lib/user-db";
@@ -107,10 +107,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send verification email (ownership proof). Skip forever-retry on hard bounce.
-    const hardBlocked = await hasRecentHardMailFailureDb(
-      user.Email,
-      "emailverify"
-    );
+    const hardBlocked = await hasRecentHardMailFailureForEmailDb(user.Email);
     if (!hardBlocked) {
       try {
         const issued = await createEmailVerificationTokenDb(user.Email);

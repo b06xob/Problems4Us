@@ -772,6 +772,22 @@ export async function hasRecentHardMailFailureDb(
   return (row?.cnt ?? 0) > 0;
 }
 
+/** True when any hard failure exists for this email (any purpose) in the last N days. */
+export async function hasRecentHardMailFailureForEmailDb(
+  emailRaw: string,
+  withinDays = 30
+): Promise<boolean> {
+  await ensureUserTables();
+  const email = normalizeEmail(emailRaw);
+  const row = await queryOne<{ cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM MailDeliveryFailures
+     WHERE Email = @email AND HardFailure = 1
+       AND CreatedAt > DATEADD(day, -@days, GETUTCDATE())`,
+    { email, days: withinDays }
+  );
+  return (row?.cnt ?? 0) > 0;
+}
+
 export async function listMailDeliveryFailuresDb(limit = 50): Promise<
   Array<{
     failureId: string;

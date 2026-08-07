@@ -193,23 +193,24 @@ export default function HomePage() {
         <div className="mx-auto max-w-5xl px-6 pb-24 pt-28 text-center sm:pt-36 lg:pt-44">
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
             <span className="bg-gradient-to-r from-brand-600 via-brand-500 to-emerald-400 bg-clip-text text-transparent">
-              Find the problems
+              Real problems
             </span>{" "}
-            customers are already begging someone to solve.
+            from people who want them solved.
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-text-secondary">
-            Problems4Us scans GitHub, Hacker News, forums, reviews, and social media
-            to discover repeated customer pain points, cluster them with AI,
-            score the opportunity, and suggest product ideas.
+            Problems4Us is a public directory of genuine customer problems.
+            Solution builders come here to find real demand — then connect and
+            work off-platform. We are not a marketplace yet; the asset is
+            attributed, solvable problems from people who want a solution.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/dashboard" className="btn-primary text-base px-7 py-3">
-              Start Finding Opportunities
-            </Link>
-            <Link href="/submit" className="btn-secondary text-base px-7 py-3">
+            <Link href="/submit" className="btn-primary text-base px-7 py-3">
               Submit a Problem
+            </Link>
+            <Link href="/problems" className="btn-secondary text-base px-7 py-3">
+              Browse the Directory
             </Link>
           </div>
         </div>
@@ -386,8 +387,9 @@ export default function HomePage() {
             Have a problem that needs solving?
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-text-secondary">
-            Share your pain point with the community. Builders and entrepreneurs
-            use Problems4Us to find real problems worth building products for.
+            Share it here. Real builders browse this directory for problems worth
+            solving. We do not guarantee a solution — we put genuine demand in
+            front of people who build.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/submit" className="btn-primary text-base px-7 py-3">

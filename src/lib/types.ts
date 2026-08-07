@@ -143,6 +143,17 @@ export interface UserProblemSubmission {
   SubmitterUserId?: string | null;
   /** Legacy backfill: unpublish if still unverified after this UTC time. */
   VerificationGraceEndsAt?: string | null;
+  /** Hard bounce: address unusable; stop retries; cannot publish until fixed. */
+  EmailHardBouncedAt?: string | null;
+  /** PII review + submitter choice (founder 2026-08-07). */
+  ProposedTitle?: string | null;
+  ProposedDescription?: string | null;
+  PiiFindingsJson?: string | null;
+  /** awaiting | original | rewrite | expired | none */
+  PiiChoiceStatus?: string | null;
+  PiiChoiceAt?: string | null;
+  PiiChoiceEmailSentAt?: string | null;
+  PiiReminderSentAt?: string | null;
 }
 
 export interface CreateSubmissionInput {

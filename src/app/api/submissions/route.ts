@@ -4,6 +4,7 @@ import {
   listUserSubmissions,
   createUserSubmissionDb,
   getUserSubmissionById,
+  updateSubmissionPipelineFields,
 } from "@/lib/db-service";
 import { SUBMISSION_CATEGORIES } from "@/lib/user-submissions";
 import type {
@@ -17,6 +18,12 @@ import {
   sendSubmissionConfirmationEmail,
   runAcceptedSubmissionJourney,
 } from "@/lib/submission-pipeline";
+import { reviewSubmissionForPii } from "@/lib/submission-pii-review";
+import {
+  buildPiiChoiceUrl,
+  createPiiChoiceTokenDb,
+  deliverPiiChoiceEmail,
+} from "@/lib/submission-pii-choice";
 import {
   decideRateLimit,
   extractClientIp,
@@ -25,6 +32,12 @@ import {
 import { extractSessionToken } from "@/lib/user-auth";
 import { findUserByEmailDb, resolveSessionUser } from "@/lib/user-db";
 import { isValidEmail, normalizeEmail } from "@/lib/waitlist";
+import { isNondeliverableRecipient } from "@/lib/mail-recipient-policy";
+import {
+  handleOutboundMailResult,
+  isAddressMailBlocked,
+  MAIL_BOUNCE_POLICY,
+} from "@/lib/mail-bounce";
 
 const VALID_URGENCIES: SubmissionUrgency[] = [
   "low",
@@ -46,13 +59,22 @@ function toPublicSubmission(
 /**
  * Map triage → stored status. Clean text stays pending until email is verified,
  * unless verification is already inherited from a registered account.
+ * PII / voluntary-sensitive review holds as reviewing until submitter chooses.
  */
 function resolveInitialStatus(
   triageStatus: SubmissionStatus,
-  emailVerified: boolean
+  emailVerified: boolean,
+  piiHold: boolean
 ): { status: SubmissionStatus; reasonSuffix?: string } {
-  if (triageStatus === "declined" || triageStatus === "reviewing") {
+  if (triageStatus === "declined") {
     return { status: triageStatus };
+  }
+  if (piiHold || triageStatus === "reviewing") {
+    return {
+      status: "reviewing",
+      reasonSuffix:
+        "Held for submitter privacy choice before any public publish",
+    };
   }
   // triageStatus === "accepted" (clean)
   if (emailVerified) {
@@ -161,7 +183,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (isNondeliverableRecipient(emailRaw)) {
+      return NextResponse.json(
+        {
+          error:
+            "That email address cannot receive mail. Use an address you control — not a test/example domain.",
+          code: "NONDELIVERABLE_EMAIL",
+        },
+        { status: 400 }
+      );
+    }
+
     const email = normalizeEmail(emailRaw);
+
+    if (await isAddressMailBlocked(email)) {
+      return NextResponse.json(
+        {
+          error:
+            "That email address previously hard-bounced. We cannot verify it or publish from it. Use a different deliverable address.",
+          code: "EMAIL_HARD_BOUNCED",
+        },
+        { status: 409 }
+      );
+    }
+
     const emailLimit = decideRateLimit(
       PUBLIC_RATE_LIMITS["submissions-email"],
       email
@@ -184,8 +229,10 @@ export async function POST(request: NextRequest) {
 
     if (sessionUser) {
       submitterUserId = sessionUser.userId;
-      // Prefer session identity when logged in; still require matching email or use session email.
-      if (normalizeEmail(sessionUser.email) === email && sessionUser.emailVerified) {
+      if (
+        normalizeEmail(sessionUser.email) === email &&
+        sessionUser.emailVerified
+      ) {
         emailVerifiedAt = new Date().toISOString();
       }
     }
@@ -198,13 +245,27 @@ export async function POST(request: NextRequest) {
     }
 
     const triage = triageSubmissionText(title, description);
+    const piiReview = reviewSubmissionForPii(title, description);
+    const piiHold = triage.status !== "declined" && piiReview.needsChoice;
+
     const initial = resolveInitialStatus(
       triage.status,
-      Boolean(emailVerifiedAt)
+      Boolean(emailVerifiedAt),
+      piiHold
     );
-    const moderationReason = initial.reasonSuffix
-      ? `${triage.reason}. ${initial.reasonSuffix}`
-      : triage.reason;
+
+    let moderationAction = triage.moderationAction;
+    let moderationReason = triage.reason;
+    if (piiHold) {
+      moderationAction = piiReview.hasDirectIdentifiers
+        ? "drop_pii"
+        : "pii_choice";
+      moderationReason =
+        "Privacy review: submitter must choose original vs rewrite before publish";
+    }
+    if (initial.reasonSuffix) {
+      moderationReason = `${moderationReason}. ${initial.reasonSuffix}`;
+    }
 
     const submission = await createUserSubmissionDb({
       title,
@@ -216,7 +277,7 @@ export async function POST(request: NextRequest) {
       submitterUserId,
       emailVerifiedAt,
       status: initial.status,
-      moderationAction: triage.moderationAction,
+      moderationAction,
       moderationReason,
     });
 
@@ -224,6 +285,48 @@ export async function POST(request: NextRequest) {
       request.nextUrl.origin ||
       process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
       "https://problems4us.com";
+
+    let piiChoiceEmailSent = false;
+    let piiHardBounce = false;
+    if (piiHold) {
+      await updateSubmissionPipelineFields(submission.SubmissionId, {
+        proposedTitle: piiReview.proposedTitle,
+        proposedDescription: piiReview.proposedDescription,
+        piiFindingsJson: JSON.stringify(piiReview.findings),
+        piiChoiceStatus: "awaiting",
+      });
+
+      const minted = await createPiiChoiceTokenDb(submission.SubmissionId);
+      if (minted) {
+        const delivery = await deliverPiiChoiceEmail({
+          toEmail: email,
+          submissionId: submission.SubmissionId,
+          submitterName: body.submitterName,
+          originalTitle: title,
+          originalDescription: description,
+          proposedTitle: piiReview.proposedTitle,
+          proposedDescription: piiReview.proposedDescription,
+          findings: piiReview.findings,
+          originalUrl: buildPiiChoiceUrl(origin, minted.rawToken, "original"),
+          rewriteUrl: buildPiiChoiceUrl(origin, minted.rawToken, "rewrite"),
+          rewriteChanged: piiReview.rewriteChanged,
+        });
+        piiChoiceEmailSent = delivery.sent;
+        if (delivery.sent) {
+          await updateSubmissionPipelineFields(submission.SubmissionId, {
+            piiChoiceEmailSentAt: new Date().toISOString(),
+          });
+        } else {
+          const handled = await handleOutboundMailResult({
+            email,
+            purpose: MAIL_BOUNCE_POLICY.purposes.submissionpii,
+            delivery,
+            submissionId: submission.SubmissionId,
+          });
+          piiHardBounce = handled.hardBounce;
+        }
+      }
+    }
 
     const confirm = await sendSubmissionConfirmationEmail(submission, {
       alreadyVerified: Boolean(emailVerifiedAt),
@@ -233,7 +336,14 @@ export async function POST(request: NextRequest) {
     let pipeline: Awaited<
       ReturnType<typeof runAcceptedSubmissionJourney>
     > | null = null;
-    if (initial.status === "accepted" && emailVerifiedAt) {
+    // Never publish while PII choice is outstanding or email hard-bounced.
+    const emailUnusable = Boolean(confirm.emailUnusable || piiHardBounce);
+    if (
+      initial.status === "accepted" &&
+      emailVerifiedAt &&
+      !piiHold &&
+      !emailUnusable
+    ) {
       pipeline = await runAcceptedSubmissionJourney(submission.SubmissionId);
     }
 
@@ -249,10 +359,17 @@ export async function POST(request: NextRequest) {
           storedStatus: refreshed.Status,
           reason: moderationReason,
           emailVerified: Boolean(refreshed.EmailVerifiedAt),
+          piiChoiceRequired: piiHold,
+          emailHardBounced: Boolean(refreshed.EmailHardBouncedAt),
         },
         confirmationEmailSent: confirm.sent,
+        piiChoiceEmailSent,
         awaitingEmailVerification:
-          !refreshed.EmailVerifiedAt && refreshed.Status !== "declined",
+          !refreshed.EmailVerifiedAt &&
+          refreshed.Status !== "declined" &&
+          !refreshed.EmailHardBouncedAt,
+        emailUnusable: Boolean(refreshed.EmailHardBouncedAt) || emailUnusable,
+        awaitingPiiChoice: piiHold && !emailUnusable,
         pipeline: pipeline
           ? {
               outcome: pipeline.pipeline.outcome,

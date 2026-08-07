@@ -1,0 +1,48 @@
+{
+  "evidenceId": "problems4us-directory-model-pii-choice-20260807",
+  "correlationId": "cos-directory-model-pii-choice-20260807",
+  "product": "Problems4Us",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "completedAtUtc": "2026-08-07T11:40:00Z",
+  "founderDirection": {
+    "decision1": "Directory not marketplace — real problem supply first; no payments/escrow/take-rate",
+    "decision2": "PII review with submitter choice — hold until they pick original vs rewrite"
+  },
+  "sequencingStatus": {
+    "pricingPageSpin": {
+      "status": "CLOSED",
+      "evidence": "Live https://problems4us.com/pricing returns full founding page (Simple pricing for builders, $29, waitlist CTAs). No 'Loading pricing…'. Prior fix in journey-verify-followup evidence."
+    },
+    "fabricatedSubmissionsCleanup": {
+      "status": "CLOSED",
+      "evidence": "docs/problems4us-fabricated-submissions-takedown-20260807.json — 6 unpublished; Erlinda kept"
+    },
+    "verifiedEmailGate": {
+      "status": "LIVE_WITH_OPEN_GRACE",
+      "evidence": "docs/problems4us-submission-verified-email-20260807.json — Erlinda still EmailVerifiedAt null inside grace to 2026-08-14"
+    }
+  },
+  "shippedThisWake": [
+    "Confirmation-before-outcome email sequencing hard gate in runAcceptedSubmissionJourney",
+    "Expanded SUBMISSION_CATEGORIES with Content & Social Media, Marketing & Brand, and business buckets",
+    "Submitter-facing promise rewrite on /submit and homepage hero (directory / builders look here; no solution guarantee)",
+    "PII review module reusing problems4us-32 direct-ID detection + voluntary-sensitive flags",
+    "Hold path: awaiting PiiChoiceStatus, choice email, /choose-submission-version + POST /api/submissions/pii-choice",
+    "Verify-email and admin accept blocked while PiiChoiceStatus=awaiting",
+    "Erlinda rewrite prep for Passport (no contact/unpublish/alter)"
+  ],
+  "erlindaPrepPath": "docs/problems4us-erlinda-pii-rewrite-prep-20260807.json",
+  "categoryProposalPath": "docs/problems4us-category-taxonomy-proposal-20260807.json",
+  "notDone": [
+    "Deploy to production (code on Audi workspace; needs commit/push/Actions)",
+    "PII reminder email cron (one reminder) — schema has PiiReminderSentAt; sender job not scheduled yet",
+    "Erlinda live category backfill Other→Content & Social Media (needs Founder approval)",
+    "Payments/marketplace — explicitly out of scope per Founder"
+  ],
+  "executiveDecisionsNeeded": [
+    "Approve Erlinda category backfill after Xavier's conversation",
+    "Approve optional softer Erlinda variant if she wants faith/personal transformation removed",
+    "Approve remaining proposed categories (or hold until submissions land)"
+  ]
+}

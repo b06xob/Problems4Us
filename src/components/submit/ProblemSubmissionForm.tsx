@@ -43,6 +43,7 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
   const [pipelineLive, setPipelineLive] = useState(false);
   const [awaitingEmailVerification, setAwaitingEmailVerification] =
     useState(false);
+  const [awaitingPiiChoice, setAwaitingPiiChoice] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -75,6 +76,7 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
       setTriageStatus(json.triage?.status ?? json.data?.Status ?? null);
       setConfirmationEmailSent(Boolean(json.confirmationEmailSent));
       setAwaitingEmailVerification(Boolean(json.awaitingEmailVerification));
+      setAwaitingPiiChoice(Boolean(json.awaitingPiiChoice));
       setPipelineLive(
         Boolean(
           json.pipeline?.painPointId &&
@@ -126,13 +128,15 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
         <p className="mt-3 text-sm text-text-secondary">
           {declined
             ? "Our automated check could not publish this submission. Keep the reference if you need to follow up."
-            : reviewing
+            : awaitingPiiChoice
+              ? "We found identifying or sensitive detail in your problem text. Check your email for your original wording side-by-side with a privacy rewrite — we publish neither until you choose. Real builders look here for problems to solve; a solution is not guaranteed."
+              : reviewing
               ? "We need a quick human review before this can go live (usually for sensitive details in the problem text). Check your email for a receipt and confirmation link."
               : awaitingEmailVerification
-                ? "Check your email for a receipt — it includes a one-click link to confirm your address. We publish only after that confirmation."
+                ? "Check your email for a receipt — it includes a one-click link to confirm your address. We publish only after that confirmation. Builders look here for real problems to solve; we do not guarantee a solution."
                 : pipelineLive
-                  ? "It passed checking and scoring. It is live on the opportunity board, typically within the hour for new submissions."
-                  : "We are checking and scoring it now. Approved problems usually go live within about an hour."}
+                  ? "It is live in the problem directory. Builders browse this catalog for real demand — a solution is not guaranteed, but your problem is visible to people who build."
+                  : "We are checking it now. Approved problems usually go live within about an hour for builders to find."}
         </p>
         {confirmationEmailSent && (
           <p className="mt-2 text-xs text-text-muted">
@@ -155,6 +159,7 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
               setTriageStatus(null);
               setConfirmationEmailSent(false);
               setAwaitingEmailVerification(false);
+              setAwaitingPiiChoice(false);
               setPipelineLive(false);
               setTitle("");
               setDescription("");

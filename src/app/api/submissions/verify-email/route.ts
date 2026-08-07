@@ -81,7 +81,10 @@ export async function POST(request: NextRequest) {
     let pipeline = null;
 
     // Promote only when moderation already said keep and we were waiting on verify.
+    // Never publish while privacy choice is still awaiting.
+    const awaitingPiiChoice = submission.PiiChoiceStatus === "awaiting";
     const canAutoAccept =
+      !awaitingPiiChoice &&
       submission.Status !== "declined" &&
       submission.Status !== "reviewing" &&
       (submission.ModerationAction === "keep" ||
@@ -103,7 +106,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (submission.Status === "accepted" && submission.EmailVerifiedAt) {
+    if (
+      submission.Status === "accepted" &&
+      submission.EmailVerifiedAt &&
+      !awaitingPiiChoice
+    ) {
       const journey = await runAcceptedSubmissionJourney(submission.SubmissionId);
       published =
         journey.pipeline.outcome === "standalone" ||
@@ -124,7 +131,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      message: published
+      message: awaitingPiiChoice
+        ? "Email verified. Choose how your problem appears publicly (check your privacy-choice email) before we publish."
+        : published
         ? "Email verified. Your problem is being published."
         : fresh.Status === "reviewing"
           ? "Email verified. Your submission is still in review."
@@ -136,6 +145,7 @@ export async function POST(request: NextRequest) {
         status: fresh.Status,
         emailVerified: Boolean(fresh.EmailVerifiedAt),
         published,
+        awaitingPiiChoice,
       },
       pipeline,
     });

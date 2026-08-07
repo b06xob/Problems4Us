@@ -3,6 +3,7 @@ import {
   hashAuthEmailToken,
   mintAuthEmailToken,
 } from "./auth-email-token";
+import { MAIL_PLAIN_TEXT_TYPE } from "./mail-encoding";
 import { getSmtpConfig, sendSmtpPlainText } from "./smtp-mail";
 
 /** Password reset token TTL (problems4us-22a). */
@@ -75,7 +76,7 @@ export async function deliverPasswordResetEmail(input: {
         personalizations: [{ to: [{ email: input.toEmail }] }],
         from: { email: from, name: "Problems4Us" },
         subject: RESET_SUBJECT,
-        content: [{ type: "text/plain", value: resetBody(input.resetUrl) }],
+        content: [{ type: MAIL_PLAIN_TEXT_TYPE, value: resetBody(input.resetUrl) }],
       }),
     });
 

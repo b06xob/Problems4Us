@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   createEmailVerificationTokenDb,
-  hasRecentHardMailFailureDb,
+  hasRecentHardMailFailureForEmailDb,
   recordMailDeliveryFailureDb,
 } from "@/lib/user-db";
 import { isValidEmail, normalizeEmail } from "@/lib/waitlist";
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const hardBlocked = await hasRecentHardMailFailureDb(email, "emailverify");
+    const hardBlocked = await hasRecentHardMailFailureForEmailDb(email);
     if (!hardBlocked) {
       const issued = await createEmailVerificationTokenDb(email);
       if (issued) {

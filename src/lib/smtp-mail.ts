@@ -5,6 +5,8 @@
 
 import net from "net";
 import tls from "tls";
+import { encodeEmailSubjectHeader, MAIL_PLAIN_TEXT_TYPE } from "./mail-encoding";
+import { assertDeliverableRecipient } from "./mail-recipient-policy";
 
 export type SmtpConfig = {
   host: string;
@@ -101,6 +103,12 @@ export async function sendSmtpPlainText(input: {
   text: string;
   config?: SmtpConfig | null;
 }): Promise<{ sent: true } | { sent: false; reason: string }> {
+  const recipientGuard = assertDeliverableRecipient(input.to);
+  if (!recipientGuard.ok) {
+    console.error("SMTP send blocked (nondeliverable recipient):", input.to);
+    return { sent: false, reason: recipientGuard.reason };
+  }
+
   const config = input.config ?? getSmtpConfig();
   if (!config) {
     return { sent: false, reason: "SMTP_HOST/USER/PASSWORD not configured" };
@@ -150,9 +158,9 @@ export async function sendSmtpPlainText(input: {
     const headers = [
       `From: Problems4Us <${config.from}>`,
       `To: <${input.to}>`,
-      `Subject: ${input.subject}`,
+      `Subject: ${encodeEmailSubjectHeader(input.subject)}`,
       `MIME-Version: 1.0`,
-      `Content-Type: text/plain; charset=utf-8`,
+      `Content-Type: ${MAIL_PLAIN_TEXT_TYPE}`,
       ``,
       input.text.replace(/\r?\n/g, "\r\n"),
       `.`,

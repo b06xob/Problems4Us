@@ -1,0 +1,39 @@
+{
+  "correlationId": "cos-email-encoding-20260807",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "completedUtc": "2026-08-07T11:58:00Z",
+  "defect": "Submission email subjects rendered as mojibake because raw U+2014 em dash was placed in Subject headers without RFC 2047 encoding.",
+  "standardAdopted": "ASCII subjects (typography folded); RFC 2047 B-encode residual non-ASCII headers; bodies require explicit charset=utf-8. Documented in docs/problems4us-text-encoding-standard-20260807.md; enforced in src/lib/mail-encoding.ts.",
+  "codeChanges": [
+    "src/lib/mail-encoding.ts (new)",
+    "src/lib/smtp-mail.ts (Subject encode + shared content-type constant)",
+    "src/lib/submission-email-verify.ts (ASCII subjects, body hyphens, SendGrid charset)",
+    "src/lib/submission-pipeline.ts (outcome subject/body)",
+    "src/lib/submission-pii-choice.ts (subject/body/smart quotes)",
+    "src/lib/email-verification.ts (SendGrid charset)",
+    "src/lib/password-reset.ts (SendGrid charset)",
+    "tests/mail-encoding.test.ts (new)",
+    "docs/problems4us-text-encoding-standard-20260807.md (new)"
+  ],
+  "auditOutboundTemplates": {
+    "ackVerify": "fixed",
+    "backfillVerify": "fixed",
+    "outcomeLive": "fixed",
+    "piiChoice": "fixed",
+    "accountVerify": "already ASCII subject; charset declared",
+    "passwordReset": "already ASCII subject; charset declared"
+  },
+  "validation": {
+    "unitTests": "npm test --testPathPattern=mail-encoding|smtp-mail|mail-bounce — 14 passed",
+    "wireEvidence": "docs/_encoding_verify_20260807/wire-evidence.json",
+    "emlOpened": "docs/_encoding_verify_20260807/fixed-outcome.eml opened in default mail client; parsed subject ASCII-only with charset=utf-8",
+    "liveProductionSend": "NOT performed — local .env.local has no SMTP/SendGrid; prior probe address b06xob@bellsouth.net is the Founder inbox and is forbidden for probes (cos-notification-noise-20260807). Production App Service must be redeployed for the fix to ship."
+  },
+  "remainingRisk": [
+    "Fix is in workspace source only until deployed to App Service.",
+    "Founder should confirm one post-deploy submission email subject shows ASCII hyphen.",
+    "Internal API/error strings may still use typographic dashes; those are not email Subject headers."
+  ],
+  "noiseNoteAcknowledged": "E2E probes must not target the Founder inbox or fabricated addresses; use a controlled sink or admin issue endpoints."
+}

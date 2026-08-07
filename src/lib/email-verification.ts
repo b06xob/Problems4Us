@@ -7,7 +7,9 @@ import {
   hashAuthEmailToken,
   mintAuthEmailToken,
 } from "./auth-email-token";
+import { MAIL_PLAIN_TEXT_TYPE } from "./mail-encoding";
 import { getSmtpConfig, sendSmtpPlainText } from "./smtp-mail";
+import { assertDeliverableRecipient } from "./mail-recipient-policy";
 
 /** Verification link TTL — 24h typical. */
 export const EMAIL_VERIFY_TTL_HOURS = 24;
@@ -88,7 +90,11 @@ export function isHardMailFailure(reason: string): boolean {
     /\b5\.1\.2\b/.test(r) ||
     r.includes("user unknown") ||
     r.includes("mailbox unavailable") ||
-    r.includes("recipient rejected")
+    r.includes("recipient rejected") ||
+    r.includes("nondeliverable_recipient_blocked") ||
+    r.includes("mailer-daemon") ||
+    r.includes("permanent failure") ||
+    r.includes("address rejected")
   );
 }
 
@@ -96,6 +102,16 @@ export async function deliverEmailVerificationEmail(input: {
   toEmail: string;
   verifyUrl: string;
 }): Promise<EmailDelivery> {
+  const recipientGuard = assertDeliverableRecipient(input.toEmail);
+  if (!recipientGuard.ok) {
+    return {
+      channel: "none",
+      sent: false,
+      reason: recipientGuard.reason,
+      hardFailure: true,
+    };
+  }
+
   const apiKey = process.env.SENDGRID_API_KEY?.trim();
   const from =
     process.env.PASSWORD_RESET_FROM_EMAIL?.trim() ||
@@ -113,7 +129,7 @@ export async function deliverEmailVerificationEmail(input: {
         personalizations: [{ to: [{ email: input.toEmail }] }],
         from: { email: from, name: "Problems4Us" },
         subject: VERIFY_SUBJECT,
-        content: [{ type: "text/plain", value: verifyBody(input.verifyUrl) }],
+        content: [{ type: MAIL_PLAIN_TEXT_TYPE, value: verifyBody(input.verifyUrl) }],
       }),
     });
 

@@ -798,6 +798,38 @@ export async function ensureUserSubmissionColumns(): Promise<void> {
           col: "VerificationGraceEndsAt",
           ddl: "ALTER TABLE dbo.UserSubmissions ADD VerificationGraceEndsAt DATETIME2 NULL",
         },
+        {
+          col: "ProposedTitle",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD ProposedTitle NVARCHAR(200) NULL",
+        },
+        {
+          col: "ProposedDescription",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD ProposedDescription NVARCHAR(MAX) NULL",
+        },
+        {
+          col: "PiiFindingsJson",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD PiiFindingsJson NVARCHAR(MAX) NULL",
+        },
+        {
+          col: "PiiChoiceStatus",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD PiiChoiceStatus NVARCHAR(40) NULL",
+        },
+        {
+          col: "PiiChoiceAt",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD PiiChoiceAt DATETIME2 NULL",
+        },
+        {
+          col: "PiiChoiceEmailSentAt",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD PiiChoiceEmailSentAt DATETIME2 NULL",
+        },
+        {
+          col: "PiiReminderSentAt",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD PiiReminderSentAt DATETIME2 NULL",
+        },
+        {
+          col: "EmailHardBouncedAt",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD EmailHardBouncedAt DATETIME2 NULL",
+        },
       ];
       for (const a of alters) {
         await execute(`
@@ -854,6 +886,22 @@ function mapSubmissionRow(row: UserProblemSubmission): UserProblemSubmission {
     VerificationGraceEndsAt: row.VerificationGraceEndsAt
       ? new Date(row.VerificationGraceEndsAt).toISOString()
       : null,
+    ProposedTitle: row.ProposedTitle ?? null,
+    ProposedDescription: row.ProposedDescription ?? null,
+    PiiFindingsJson: row.PiiFindingsJson ?? null,
+    PiiChoiceStatus: row.PiiChoiceStatus ?? null,
+    PiiChoiceAt: row.PiiChoiceAt
+      ? new Date(row.PiiChoiceAt).toISOString()
+      : null,
+    PiiChoiceEmailSentAt: row.PiiChoiceEmailSentAt
+      ? new Date(row.PiiChoiceEmailSentAt).toISOString()
+      : null,
+    PiiReminderSentAt: row.PiiReminderSentAt
+      ? new Date(row.PiiReminderSentAt).toISOString()
+      : null,
+    EmailHardBouncedAt: row.EmailHardBouncedAt
+      ? new Date(row.EmailHardBouncedAt).toISOString()
+      : null,
     CreatedAt: new Date(row.CreatedAt).toISOString(),
     UpdatedAt: new Date(row.UpdatedAt).toISOString(),
   };
@@ -871,7 +919,10 @@ export async function listUserSubmissions(filters: {
            SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt,
            ModerationAction, ModerationReason, LinkedPainPointId, PipelineOutcome,
            ConfirmationEmailSentAt, OutcomeEmailSentAt,
-           EmailVerifiedAt, SubmitterUserId, VerificationGraceEndsAt
+           EmailVerifiedAt, SubmitterUserId, VerificationGraceEndsAt,
+           EmailHardBouncedAt,
+           ProposedTitle, ProposedDescription, PiiFindingsJson,
+           PiiChoiceStatus, PiiChoiceAt, PiiChoiceEmailSentAt, PiiReminderSentAt
     FROM UserSubmissions
     ORDER BY CreatedAt DESC
   `);
@@ -907,11 +958,38 @@ export async function getUserSubmissionById(
             SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt,
             ModerationAction, ModerationReason, LinkedPainPointId, PipelineOutcome,
             ConfirmationEmailSentAt, OutcomeEmailSentAt,
-            EmailVerifiedAt, SubmitterUserId, VerificationGraceEndsAt
+            EmailVerifiedAt, SubmitterUserId, VerificationGraceEndsAt,
+            EmailHardBouncedAt,
+            ProposedTitle, ProposedDescription, PiiFindingsJson,
+            PiiChoiceStatus, PiiChoiceAt, PiiChoiceEmailSentAt, PiiReminderSentAt
      FROM UserSubmissions WHERE SubmissionId = @id`,
     { id }
   );
   return row ? mapSubmissionRow(row) : undefined;
+}
+
+/** Submissions for a submitter email (bounce handling / ops). */
+export async function listUserSubmissionsByEmailDb(
+  emailRaw: string
+): Promise<UserProblemSubmission[]> {
+  await ensureUserSubmissionColumns();
+  const email = emailRaw.trim().toLowerCase();
+  if (!email) return [];
+  const rows = await query<UserProblemSubmission>(
+    `SELECT SubmissionId, Title, Description, Category, Urgency,
+            SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt,
+            ModerationAction, ModerationReason, LinkedPainPointId, PipelineOutcome,
+            ConfirmationEmailSentAt, OutcomeEmailSentAt,
+            EmailVerifiedAt, SubmitterUserId, VerificationGraceEndsAt,
+            EmailHardBouncedAt,
+            ProposedTitle, ProposedDescription, PiiFindingsJson,
+            PiiChoiceStatus, PiiChoiceAt, PiiChoiceEmailSentAt, PiiReminderSentAt
+     FROM UserSubmissions
+     WHERE LOWER(LTRIM(RTRIM(SubmitterEmail))) = @email
+     ORDER BY CreatedAt DESC`,
+    { email }
+  );
+  return rows.map(mapSubmissionRow);
 }
 
 export async function createUserSubmissionDb(
@@ -1084,6 +1162,17 @@ export async function updateSubmissionPipelineFields(
     /** Pass null to clear grace; omit to leave unchanged; string to set. */
     verificationGraceEndsAt?: string | null;
     status?: SubmissionStatus;
+    title?: string;
+    description?: string;
+    proposedTitle?: string | null;
+    proposedDescription?: string | null;
+    piiFindingsJson?: string | null;
+    piiChoiceStatus?: string | null;
+    piiChoiceAt?: string | null;
+    piiChoiceEmailSentAt?: string | null;
+    piiReminderSentAt?: string | null;
+    /** ISO timestamp when hard bounce was recorded for this submitter. */
+    emailHardBouncedAt?: string | null;
   }
 ): Promise<void> {
   await ensureUserSubmissionColumns();
@@ -1098,6 +1187,8 @@ export async function updateSubmissionPipelineFields(
   await execute(
     `UPDATE UserSubmissions SET
        Status = @status,
+       Title = @title,
+       Description = @description,
        LinkedPainPointId = @linkedPainPointId,
        PipelineOutcome = @pipelineOutcome,
        ModerationAction = @moderationAction,
@@ -1111,11 +1202,21 @@ export async function updateSubmissionPipelineFields(
          WHEN @setGrace = 1 THEN @verificationGraceEndsAt
          ELSE VerificationGraceEndsAt
        END,
+       ProposedTitle = COALESCE(@proposedTitle, ProposedTitle),
+       ProposedDescription = COALESCE(@proposedDescription, ProposedDescription),
+       PiiFindingsJson = COALESCE(@piiFindingsJson, PiiFindingsJson),
+       PiiChoiceStatus = COALESCE(@piiChoiceStatus, PiiChoiceStatus),
+       PiiChoiceAt = COALESCE(@piiChoiceAt, PiiChoiceAt),
+       PiiChoiceEmailSentAt = COALESCE(@piiChoiceEmailSentAt, PiiChoiceEmailSentAt),
+       PiiReminderSentAt = COALESCE(@piiReminderSentAt, PiiReminderSentAt),
+       EmailHardBouncedAt = COALESCE(@emailHardBouncedAt, EmailHardBouncedAt),
        UpdatedAt = GETUTCDATE()
      WHERE SubmissionId = @id`,
     {
       id,
       status: fields.status ?? existing.Status,
+      title: fields.title ?? existing.Title,
+      description: fields.description ?? existing.Description,
       linkedPainPointId:
         fields.linkedPainPointId !== undefined
           ? fields.linkedPainPointId
@@ -1135,6 +1236,14 @@ export async function updateSubmissionPipelineFields(
       verificationGraceEndsAt: setGrace ? fields.verificationGraceEndsAt : null,
       clearGrace: clearGrace ? 1 : 0,
       setGrace: setGrace ? 1 : 0,
+      proposedTitle: fields.proposedTitle ?? null,
+      proposedDescription: fields.proposedDescription ?? null,
+      piiFindingsJson: fields.piiFindingsJson ?? null,
+      piiChoiceStatus: fields.piiChoiceStatus ?? null,
+      piiChoiceAt: fields.piiChoiceAt ?? null,
+      piiChoiceEmailSentAt: fields.piiChoiceEmailSentAt ?? null,
+      piiReminderSentAt: fields.piiReminderSentAt ?? null,
+      emailHardBouncedAt: fields.emailHardBouncedAt ?? null,
     }
   );
 }

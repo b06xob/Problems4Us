@@ -1,0 +1,61 @@
+{
+  "evidenceId": "problems4us-erlinda-pii-rewrite-prep-20260807",
+  "correlationId": "cos-directory-model-pii-choice-20260807",
+  "product": "Problems4Us",
+  "agent": "Problems4Us Agent",
+  "host": "Audi",
+  "preparedAtUtc": "2026-08-07T11:35:00Z",
+  "submissionId": "sub-1786033545921-da4wso",
+  "linkedPainPointId": "pp-sub-msi6bqbn-c9l1iv",
+  "submitterName": "Erlinda Franklin",
+  "submitterEmail": "erlindafranklin01@gmail.com",
+  "currentCategory": "Other",
+  "recommendedCategory": "Content & Social Media",
+  "status": "accepted (live) — DO NOT unpublish, alter, or email unilaterally; Xavier owns contact",
+  "emailSequencingDefect": {
+    "outcomeEmailSentAt": "2026-08-06T23:55:35.815Z",
+    "confirmationEmailSentAt": "2026-08-07T02:13:58.302Z",
+    "rootCause": "Submitted before confirmation-mail feature; late-accepted journey sent outcome only; confirmation backfilled later during verified-email work.",
+    "fixShippedInThisWake": "runAcceptedSubmissionJourney now refuses outcome until ConfirmationEmailSentAt is set; sends confirmation first if missing."
+  },
+  "bucketAnalysis": {
+    "a_directIdentifiers": {
+      "found": false,
+      "note": "Body has no email, phone, street address, employer name, account numbers, or personal profile links. Contact email is the separate SubmitterEmail field."
+    },
+    "b_substantiveContext_KEEP": [
+      "More than 40 years of corporate and technology leadership experience",
+      "Building next chapter as comedian, keynote speaker, emcee, storyteller, content creator",
+      "Primary audience: women over 40 who are rebuilding / reinventing",
+      "Goal: paid opportunities (comedy bookings, corporate speaking, emcee, partnerships, media)",
+      "Need: repeatable social media content system (pillars, series, visual identity, platform strategy, schedule, CTAs, filming/editing/publishing/measurement)"
+    ],
+    "c_voluntarySensitive_FLAG_FOR_HER_CHOICE": [
+      {
+        "theme": "faith",
+        "excerpt": "faith, and personal transformation",
+        "rule": "Do NOT auto-remove and do NOT auto-keep on her behalf. Xavier should present this explicitly when he speaks with her."
+      },
+      {
+        "theme": "personal transformation",
+        "excerpt": "personal transformation into recognizable content",
+        "rule": "Same — informed submitter choice about her own life story."
+      }
+    ]
+  },
+  "originalTitle": "Turning My Story Into a Social Media Growth System",
+  "proposedTitle": "Turning My Story Into a Social Media Growth System",
+  "proposedDescription": "My biggest social media problem is not simply gaining followers — it is creating a clear and consistent content strategy that brings all parts of my brand together.\n\nI have more than 40 years of corporate and technology leadership experience, and I am now building my next chapter as a comedian, keynote speaker, emcee, storyteller, and content creator. My primary audience is women over 40 who are rebuilding, reinventing themselves, and learning that their next chapter can be their boldest one yet.\n\nI need help turning my real life, humor, wisdom, corporate experience, faith, and personal transformation into recognizable content that attracts the right audience and leads to paid opportunities.\n\nI am willing to invest in solving this problem:\n\nHow do I build a repeatable social media content system that clearly positions my brand, grows an engaged community, and converts that visibility into comedy bookings, corporate speaking, emcee opportunities, partnerships, media appearances, and long-term business growth — without losing my authentic voice?\n\nI do not want manufactured followers or generic viral content. I want a strategy that identifies my strongest content pillars, signature series, visual identity, platform strategy, posting schedule, calls to action, and a realistic process for filming, editing, publishing, and measuring what works.",
+  "rewriteRationale": "No direct identifiers to strip. Substantive professional background and audience definition are preserved under rule (b) — stripping them would produce a generic unsolvable problem. Faith and personal transformation remain in the proposed text under rule (c) so Xavier can offer her an optional softer variant if she prefers, without us deciding for her.",
+  "optionalSofterVariantForXavierOnly": {
+    "note": "NOT applied. Offer only if she asks to soften voluntary detail.",
+    "title": "Turning My Story Into a Social Media Growth System",
+    "description": "My biggest social media problem is not simply gaining followers — it is creating a clear and consistent content strategy that brings all parts of my brand together.\n\nI have more than 40 years of corporate and technology leadership experience, and I am now building my next chapter as a comedian, keynote speaker, emcee, storyteller, and content creator. My primary audience is women over 40 who are rebuilding, reinventing themselves, and learning that their next chapter can be their boldest one yet.\n\nI need help turning my real life, humor, wisdom, and corporate experience into recognizable content that attracts the right audience and leads to paid opportunities.\n\nI am willing to invest in solving this problem:\n\nHow do I build a repeatable social media content system that clearly positions my brand, grows an engaged community, and converts that visibility into comedy bookings, corporate speaking, emcee opportunities, partnerships, media appearances, and long-term business growth — without losing my authentic voice?\n\nI do not want manufactured followers or generic viral content. I want a strategy that identifies my strongest content pillars, signature series, visual identity, platform strategy, posting schedule, calls to action, and a realistic process for filming, editing, publishing, and measuring what works.",
+    "removedVoluntaryPhrases": ["faith", "personal transformation"]
+  },
+  "actionsTaken": [
+    "Prepared rewrite + analysis only",
+    "Did NOT unpublish, alter live record, or email Erlinda"
+  ],
+  "passportHandoff": "Xavier can present Version A (current/proposed — identical substance) vs optional softer Variant when he contacts her. Consent record should capture which she picks and when."
+}

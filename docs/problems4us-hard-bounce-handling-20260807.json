@@ -1,0 +1,72 @@
+{
+  "evidenceId": "problems4us-hard-bounce-handling-20260807",
+  "correlationId": "cos-notification-noise-20260807",
+  "wakeMessageId": "message-f1668a9d001d",
+  "completedAtUtc": "2026-08-07T11:55:00Z",
+  "host": "Audi",
+  "agent": "Problems4Us Agent",
+  "product": "Problems4Us",
+  "status": "implemented_awaiting_deploy",
+  "defect": {
+    "foundVia": "Founder inbox MAILER-DAEMON 2026-08-07 ~01:33",
+    "rootCause": "Prior Audi gate probe POSTed submitterEmail=p4u.verify.probe+…@example.com to production /api/submissions; production SMTP accepted then bounced to Founder.",
+    "transcriptRef": "agent-transcripts/fcdeca63-bc63-4b93-8693-a4daae5b93d7"
+  },
+  "whatChangedToStopFakeProbes": [
+    "src/lib/mail-recipient-policy.ts — blocks RFC reserved domains (example.com/org/net, invalid, localhost, test) and p4u.verify.probe* local-parts before any SMTP/SendGrid send",
+    "Wired into smtp-mail.ts, email-verification.ts, submission-email-verify.ts, submission-pii-choice.ts",
+    "POST /api/submissions rejects nondeliverable emails with 400 NONDELIVERABLE_EMAIL (no row create, no outbound mail)",
+    "docs/ops-runbook-session-auth.md — removed @example.com smoke recipe; explicit never-probe-prod-sender rule",
+    "Override MAIL_ALLOW_NONDELIVERABLE_RECIPIENTS=1 only for local mocks"
+  ],
+  "bounceHandlingBuilt": {
+    "detect": "isHardMailFailure + delivery.hardFailure + admin async MAILER-DAEMON intake",
+    "record": "MailDeliveryFailures (hard=1) via applyHardMailBounce / handleOutboundMailResult",
+    "markUnusable": "UserSubmissions.EmailHardBouncedAt + moderationAction email_hard_bounce + pipelineOutcome email_bounced",
+    "stopRetry": "isAddressMailBlocked (any purpose, 30 days) on confirm/outcome/PII/register/resend/backfill",
+    "opsVisibility": "GET /api/admin/mail-failures; POST /api/admin/mail-failures for async DSN",
+    "publishGate": "PATCH accept returns 409 EMAIL_HARD_BOUNCED; processApprovedSubmission skips; submit of previously bounced address returns 409"
+  },
+  "files": [
+    "src/lib/mail-recipient-policy.ts",
+    "src/lib/mail-bounce.ts",
+    "src/lib/smtp-mail.ts",
+    "src/lib/email-verification.ts",
+    "src/lib/submission-email-verify.ts",
+    "src/lib/submission-pii-choice.ts",
+    "src/lib/submission-pipeline.ts",
+    "src/lib/submission-verify-db.ts",
+    "src/lib/db-service.ts",
+    "src/lib/user-db.ts",
+    "src/lib/types.ts",
+    "src/app/api/admin/mail-failures/route.ts",
+    "src/app/api/submissions/route.ts",
+    "src/app/api/submissions/[id]/route.ts",
+    "src/app/api/auth/register/route.ts",
+    "src/app/api/auth/resend-verification/route.ts",
+    "tests/mail-bounce.test.ts",
+    "docs/ops-runbook-session-auth.md"
+  ],
+  "validation": {
+    "unitTests": {
+      "command": "npm test -- --testPathPattern=mail-bounce|email-verification|submission-journey --no-coverage",
+      "exitCode": 0,
+      "suites": [
+        "tests/mail-bounce.test.ts",
+        "tests/email-verification.test.ts",
+        "tests/submission-journey.test.ts"
+      ]
+    },
+    "prodDeploy": "NOT YET — code is local on Audi; production still lacks these gates until deploy",
+    "asyncBounceSmoke": "After deploy: POST /api/admin/mail-failures with a controlled test email + ADMIN_API_KEY; confirm MailDeliveryFailures row + EmailHardBouncedAt on matching pending submissions"
+  },
+  "knownLimitations": [
+    "Async AT&T MAILER-DAEMON notices still require ops (or Founder forward) to POST /api/admin/mail-failures — no IMAP inbox watcher in this change",
+    "Deploy required before production stops accepting @example.com probes and before submission bounce marking is live",
+    "Addresses that already bounced historically are not backfilled until an admin POST or a new send attempt fails hard"
+  ],
+  "executiveDecisionRequired": [
+    "Approve deploy of this bounce + recipient-safety change to problems4us.com",
+    "Optional: instruct ops to POST the Founder's MAILER-DAEMON bounced address after deploy so that probe row is marked email_hard_bounce"
+  ]
+}
