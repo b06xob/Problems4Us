@@ -41,6 +41,8 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
   const [triageStatus, setTriageStatus] = useState<string | null>(null);
   const [confirmationEmailSent, setConfirmationEmailSent] = useState(false);
   const [pipelineLive, setPipelineLive] = useState(false);
+  const [awaitingEmailVerification, setAwaitingEmailVerification] =
+    useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,7 +59,7 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
           category,
           urgency,
           submitterName: submitterName || undefined,
-          submitterEmail: submitterEmail || undefined,
+          submitterEmail,
         }),
       });
 
@@ -72,6 +74,7 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
       setSubmittedId(id);
       setTriageStatus(json.triage?.status ?? json.data?.Status ?? null);
       setConfirmationEmailSent(Boolean(json.confirmationEmailSent));
+      setAwaitingEmailVerification(Boolean(json.awaitingEmailVerification));
       setPipelineLive(
         Boolean(
           json.pipeline?.painPointId &&
@@ -124,14 +127,18 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
           {declined
             ? "Our automated check could not publish this submission. Keep the reference if you need to follow up."
             : reviewing
-              ? "We need a quick human review before this can go live (usually for sensitive details in the problem text). If you left an email, we will update you."
-              : pipelineLive
-                ? "It passed checking and scoring. It is live on the opportunity board, typically within the hour for new submissions."
-                : "We are checking and scoring it now. Approved problems usually go live within about an hour."}
+              ? "We need a quick human review before this can go live (usually for sensitive details in the problem text). Check your email for a receipt and confirmation link."
+              : awaitingEmailVerification
+                ? "Check your email for a receipt — it includes a one-click link to confirm your address. We publish only after that confirmation."
+                : pipelineLive
+                  ? "It passed checking and scoring. It is live on the opportunity board, typically within the hour for new submissions."
+                  : "We are checking and scoring it now. Approved problems usually go live within about an hour."}
         </p>
         {confirmationEmailSent && (
           <p className="mt-2 text-xs text-text-muted">
-            A confirmation was sent to the email you provided.
+            {awaitingEmailVerification
+              ? "A receipt with a confirmation link was sent to your email."
+              : "A confirmation was sent to the email you provided."}
           </p>
         )}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -147,6 +154,7 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
               setSubmittedId(null);
               setTriageStatus(null);
               setConfirmationEmailSent(false);
+              setAwaitingEmailVerification(false);
               setPipelineLive(false);
               setTitle("");
               setDescription("");
@@ -271,10 +279,9 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
           Where should we reach you?
         </h3>
         <p className="mt-1 text-xs text-text-muted">
-          Tell us where to reach you and we&apos;ll let you know if someone
-          builds this — and when your problem is scored and live. Email is how
-          we close the loop; without it, you only get the on-screen reference
-          number.
+          Email is required. We send a receipt right away, and we confirm the
+          address before your problem is published. No account needed — one
+          field.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
@@ -299,11 +306,12 @@ export function ProblemSubmissionForm({ onSuccess }: ProblemSubmissionFormProps)
               htmlFor="email"
               className="block text-xs font-medium text-text-secondary"
             >
-              Email (recommended)
+              Email <span className="text-red-500">*</span>
             </label>
             <input
               id="email"
               type="email"
+              required
               value={submitterEmail}
               onChange={(e) => setSubmitterEmail(e.target.value)}
               placeholder="you@company.com"

@@ -3,6 +3,11 @@
  * Reuses ingest-moderation (problems4us-32). Does not invent counts or ranks.
  */
 
+import {
+  deliverSubmissionAckVerifyEmail,
+  buildSubmissionVerifyUrl,
+} from "./submission-email-verify";
+import { createSubmissionVerifyTokenDb } from "./submission-verify-db";
 import { getAIProvider } from "./ai-service";
 import { calculateOpportunityScore } from "./scoring";
 import { sendSmtpPlainText } from "./smtp-mail";
@@ -92,6 +97,17 @@ export async function processApprovedSubmission(
       percentileRank: null,
       matchScore: null,
       error: `Status is ${submission.Status}, expected accepted`,
+    };
+  }
+  if (!submission.EmailVerifiedAt) {
+    return {
+      outcome: "skipped",
+      painPointId: submission.LinkedPainPointId ?? null,
+      opportunityScore: null,
+      similarReporterCount: null,
+      percentileRank: null,
+      matchScore: null,
+      error: "Email not verified — cannot publish or score",
     };
   }
 
@@ -242,42 +258,55 @@ export async function processApprovedSubmission(
   }
 }
 
+/**
+ * Immediate acknowledgement email — doubles as verification when needed.
+ * Always attempts send when an email is present (registered or not).
+ */
 export async function sendSubmissionConfirmationEmail(
-  submission: UserProblemSubmission
-): Promise<{ sent: boolean; reason?: string }> {
+  submission: UserProblemSubmission,
+  opts?: { alreadyVerified?: boolean; origin?: string }
+): Promise<{ sent: boolean; reason?: string; verifyTokenMinted?: boolean }> {
   const email = submission.SubmitterEmail?.trim();
   if (!email) return { sent: false, reason: "no_email" };
 
-  const result = await sendSmtpPlainText({
-    to: email,
-    subject: `We received your problem — ${submission.SubmissionId}`,
-    text: [
-      "Thanks for submitting a problem to Problems4Us.",
-      "",
-      `Reference: ${submission.SubmissionId}`,
-      `Title: ${submission.Title}`,
-      "",
-      "What happens next:",
-      "1. We check the submission (toxicity / sensitive data).",
-      "2. If it passes, we score it like other opportunities in the catalog.",
-      "3. It typically goes live within about an hour when approved.",
-      "",
-      "If you shared your email, we will message you when scoring finishes —",
-      "with real numbers only (no invented ranks).",
-      "",
-      `Browse approved community problems: ${SITE_URL}/submissions`,
-      "",
-      "— Problems4Us",
-    ].join("\n"),
+  const alreadyVerified = Boolean(
+    opts?.alreadyVerified || submission.EmailVerifiedAt
+  );
+  const origin =
+    opts?.origin?.replace(/\/$/, "") ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    SITE_URL;
+
+  let verifyUrl = `${origin}/verify-submission`;
+  let verifyTokenMinted = false;
+  if (!alreadyVerified) {
+    const minted = await createSubmissionVerifyTokenDb(submission.SubmissionId);
+    if (!minted) {
+      return { sent: false, reason: "token_mint_failed" };
+    }
+    verifyUrl = buildSubmissionVerifyUrl(origin, minted.rawToken);
+    verifyTokenMinted = true;
+  }
+
+  const delivery = await deliverSubmissionAckVerifyEmail({
+    toEmail: email,
+    submissionId: submission.SubmissionId,
+    title: submission.Title,
+    verifyUrl,
+    alreadyVerified,
   });
 
-  if (result.sent) {
+  if (delivery.sent) {
     await updateSubmissionPipelineFields(submission.SubmissionId, {
       confirmationEmailSentAt: new Date().toISOString(),
     });
-    return { sent: true };
+    return { sent: true, verifyTokenMinted };
   }
-  return { sent: false, reason: result.reason };
+  return {
+    sent: false,
+    reason: "reason" in delivery ? delivery.reason : "send_failed",
+    verifyTokenMinted,
+  };
 }
 
 export async function sendSubmissionOutcomeEmail(

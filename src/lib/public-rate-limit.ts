@@ -39,6 +39,20 @@ export const PUBLIC_RATE_LIMITS: Record<string, RateLimitPolicy> = {
     windowMs: 60 * 60_000,
   },
   "checkout-session": { scope: "checkout-session", max: 15, windowMs: 60_000 },
+  /** Community submit — per IP. */
+  "submissions-ip": { scope: "submissions-ip", max: 10, windowMs: 60 * 60_000 },
+  /** Community submit — per email address (verified identity once known). */
+  "submissions-email": {
+    scope: "submissions-email",
+    max: 5,
+    windowMs: 60 * 60_000,
+  },
+  /** Submission email verify confirm attempts. */
+  "submissions-verify": {
+    scope: "submissions-verify",
+    max: 20,
+    windowMs: 60_000,
+  },
 };
 
 function clientKey(scope: string, ip: string): string {

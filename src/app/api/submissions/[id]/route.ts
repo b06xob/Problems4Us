@@ -19,7 +19,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 /**
  * Admin approve/reject (and takedown) for community submissions.
  * PATCH body: { status: 'accepted' | 'declined' | 'reviewing' | 'pending', reason?: string }
- * Accepting runs the same score/merge/notify pipeline as auto-approve.
+ * Accepting requires EmailVerifiedAt and runs the score/merge/notify pipeline.
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const authError = requireAdminAuth(request);
@@ -45,6 +45,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json(
         { error: "Valid status is required (accepted|declined|reviewing|pending)" },
         { status: 400 }
+      );
+    }
+
+    if (body.status === "accepted" && !existing.EmailVerifiedAt) {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot accept: submitter email is not verified. Send a verification request or wait for the submitter to confirm.",
+          code: "EMAIL_NOT_VERIFIED",
+        },
+        { status: 409 }
       );
     }
 

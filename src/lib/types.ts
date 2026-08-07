@@ -137,6 +137,12 @@ export interface UserProblemSubmission {
   PipelineOutcome?: string | null;
   ConfirmationEmailSentAt?: string | null;
   OutcomeEmailSentAt?: string | null;
+  /** When submitter email ownership was proven (required before accepted). */
+  EmailVerifiedAt?: string | null;
+  /** Optional link to registered account (dashboard ownership). */
+  SubmitterUserId?: string | null;
+  /** Legacy backfill: unpublish if still unverified after this UTC time. */
+  VerificationGraceEndsAt?: string | null;
 }
 
 export interface CreateSubmissionInput {
@@ -145,7 +151,10 @@ export interface CreateSubmissionInput {
   category: string;
   urgency: SubmissionUrgency;
   submitterName?: string;
-  submitterEmail?: string;
+  /** Required for new submissions (ack + verify gate). */
+  submitterEmail: string;
+  submitterUserId?: string | null;
+  emailVerifiedAt?: string | null;
 }
 
 export interface WaitlistEntry {

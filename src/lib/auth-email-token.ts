@@ -5,7 +5,11 @@
 
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
 
-export type AuthEmailTokenPurpose = "pwdreset" | "emailverify";
+export type AuthEmailTokenPurpose =
+  | "pwdreset"
+  | "emailverify"
+  /** Submission acknowledgement / publish-gate verification (same mint/hash). */
+  | "submissionverify";
 
 function getAuthEmailPepper(): string {
   return (

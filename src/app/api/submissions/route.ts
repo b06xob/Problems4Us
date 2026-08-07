@@ -8,6 +8,7 @@ import {
 import { SUBMISSION_CATEGORIES } from "@/lib/user-submissions";
 import type {
   CreateSubmissionInput,
+  SubmissionStatus,
   SubmissionUrgency,
   UserProblemSubmission,
 } from "@/lib/types";
@@ -16,6 +17,14 @@ import {
   sendSubmissionConfirmationEmail,
   runAcceptedSubmissionJourney,
 } from "@/lib/submission-pipeline";
+import {
+  decideRateLimit,
+  extractClientIp,
+  PUBLIC_RATE_LIMITS,
+} from "@/lib/public-rate-limit";
+import { extractSessionToken } from "@/lib/user-auth";
+import { findUserByEmailDb, resolveSessionUser } from "@/lib/user-db";
+import { isValidEmail, normalizeEmail } from "@/lib/waitlist";
 
 const VALID_URGENCIES: SubmissionUrgency[] = [
   "low",
@@ -32,6 +41,27 @@ function toPublicSubmission(
   const { SubmitterEmail: _email, ...publicFields } = submission;
   void _email;
   return publicFields;
+}
+
+/**
+ * Map triage → stored status. Clean text stays pending until email is verified,
+ * unless verification is already inherited from a registered account.
+ */
+function resolveInitialStatus(
+  triageStatus: SubmissionStatus,
+  emailVerified: boolean
+): { status: SubmissionStatus; reasonSuffix?: string } {
+  if (triageStatus === "declined" || triageStatus === "reviewing") {
+    return { status: triageStatus };
+  }
+  // triageStatus === "accepted" (clean)
+  if (emailVerified) {
+    return { status: "accepted" };
+  }
+  return {
+    status: "pending",
+    reasonSuffix: "Awaiting email verification before publication",
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -65,12 +95,25 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = extractClientIp(request.headers);
+    const ipLimit = decideRateLimit(PUBLIC_RATE_LIMITS["submissions-ip"], ip);
+    if (!ipLimit.ok) {
+      return NextResponse.json(
+        { error: ipLimit.error },
+        {
+          status: 429,
+          headers: { "Retry-After": String(ipLimit.retryAfterSec) },
+        }
+      );
+    }
+
     const body = (await request.json()) as Partial<CreateSubmissionInput>;
 
     const title = body.title?.trim();
     const description = body.description?.trim();
     const category = body.category?.trim();
     const urgency = body.urgency;
+    const emailRaw = body.submitterEmail?.trim() ?? "";
 
     if (!title || title.length < 10) {
       return NextResponse.json(
@@ -108,15 +151,60 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const email = body.submitterEmail?.trim();
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!emailRaw || !isValidEmail(emailRaw)) {
       return NextResponse.json(
-        { error: "Invalid email address" },
+        {
+          error:
+            "Email is required. We send a receipt and confirm the address before your problem is published.",
+        },
         { status: 400 }
       );
     }
 
+    const email = normalizeEmail(emailRaw);
+    const emailLimit = decideRateLimit(
+      PUBLIC_RATE_LIMITS["submissions-email"],
+      email
+    );
+    if (!emailLimit.ok) {
+      return NextResponse.json(
+        { error: emailLimit.error },
+        {
+          status: 429,
+          headers: { "Retry-After": String(emailLimit.retryAfterSec) },
+        }
+      );
+    }
+
+    const sessionUser = await resolveSessionUser(extractSessionToken(request));
+    const accountByEmail = await findUserByEmailDb(email);
+
+    let submitterUserId: string | null = null;
+    let emailVerifiedAt: string | null = null;
+
+    if (sessionUser) {
+      submitterUserId = sessionUser.userId;
+      // Prefer session identity when logged in; still require matching email or use session email.
+      if (normalizeEmail(sessionUser.email) === email && sessionUser.emailVerified) {
+        emailVerifiedAt = new Date().toISOString();
+      }
+    }
+
+    if (!emailVerifiedAt && accountByEmail?.emailVerified) {
+      emailVerifiedAt = new Date().toISOString();
+      if (!submitterUserId) submitterUserId = accountByEmail.userId;
+    } else if (accountByEmail && !submitterUserId) {
+      submitterUserId = accountByEmail.userId;
+    }
+
     const triage = triageSubmissionText(title, description);
+    const initial = resolveInitialStatus(
+      triage.status,
+      Boolean(emailVerifiedAt)
+    );
+    const moderationReason = initial.reasonSuffix
+      ? `${triage.reason}. ${initial.reasonSuffix}`
+      : triage.reason;
 
     const submission = await createUserSubmissionDb({
       title,
@@ -125,21 +213,27 @@ export async function POST(request: NextRequest) {
       urgency,
       submitterName: body.submitterName,
       submitterEmail: email,
-      status: triage.status,
+      submitterUserId,
+      emailVerifiedAt,
+      status: initial.status,
       moderationAction: triage.moderationAction,
-      moderationReason: triage.reason,
+      moderationReason,
     });
 
-    let confirmationEmailSent = false;
-    if (email) {
-      const confirm = await sendSubmissionConfirmationEmail(submission);
-      confirmationEmailSent = confirm.sent;
-    }
+    const origin =
+      request.nextUrl.origin ||
+      process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+      "https://problems4us.com";
+
+    const confirm = await sendSubmissionConfirmationEmail(submission, {
+      alreadyVerified: Boolean(emailVerifiedAt),
+      origin,
+    });
 
     let pipeline: Awaited<
       ReturnType<typeof runAcceptedSubmissionJourney>
     > | null = null;
-    if (triage.status === "accepted") {
+    if (initial.status === "accepted" && emailVerifiedAt) {
       pipeline = await runAcceptedSubmissionJourney(submission.SubmissionId);
     }
 
@@ -152,9 +246,13 @@ export async function POST(request: NextRequest) {
         reference: refreshed.SubmissionId,
         triage: {
           status: triage.status,
-          reason: triage.reason,
+          storedStatus: refreshed.Status,
+          reason: moderationReason,
+          emailVerified: Boolean(refreshed.EmailVerifiedAt),
         },
-        confirmationEmailSent,
+        confirmationEmailSent: confirm.sent,
+        awaitingEmailVerification:
+          !refreshed.EmailVerifiedAt && refreshed.Status !== "declined",
         pipeline: pipeline
           ? {
               outcome: pipeline.pipeline.outcome,

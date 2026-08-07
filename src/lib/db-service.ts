@@ -786,6 +786,18 @@ export async function ensureUserSubmissionColumns(): Promise<void> {
           col: "OutcomeEmailSentAt",
           ddl: "ALTER TABLE dbo.UserSubmissions ADD OutcomeEmailSentAt DATETIME2 NULL",
         },
+        {
+          col: "EmailVerifiedAt",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD EmailVerifiedAt DATETIME2 NULL",
+        },
+        {
+          col: "SubmitterUserId",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD SubmitterUserId NVARCHAR(50) NULL",
+        },
+        {
+          col: "VerificationGraceEndsAt",
+          ddl: "ALTER TABLE dbo.UserSubmissions ADD VerificationGraceEndsAt DATETIME2 NULL",
+        },
       ];
       for (const a of alters) {
         await execute(`
@@ -796,6 +808,25 @@ export async function ensureUserSubmissionColumns(): Promise<void> {
           END
         `);
       }
+      await execute(`
+        IF OBJECT_ID(N'dbo.SubmissionEmailVerificationTokens', N'U') IS NULL
+        BEGIN
+          CREATE TABLE dbo.SubmissionEmailVerificationTokens (
+            VerifyId      NVARCHAR(50)  NOT NULL PRIMARY KEY,
+            SubmissionId  NVARCHAR(50)  NOT NULL,
+            TokenHash     NVARCHAR(64)  NOT NULL,
+            ExpiresAt     DATETIME2     NOT NULL,
+            UsedAt        DATETIME2     NULL,
+            CreatedAt     DATETIME2     NOT NULL CONSTRAINT DF_SubEmailVerify_CreatedAt DEFAULT (GETUTCDATE())
+          );
+          CREATE UNIQUE INDEX UX_SubEmailVerify_TokenHash
+            ON dbo.SubmissionEmailVerificationTokens(TokenHash);
+          CREATE INDEX IX_SubEmailVerify_SubmissionId
+            ON dbo.SubmissionEmailVerificationTokens(SubmissionId);
+          CREATE INDEX IX_SubEmailVerify_ExpiresAt
+            ON dbo.SubmissionEmailVerificationTokens(ExpiresAt);
+        END
+      `);
     })();
   }
   await userSubmissionColumnsReady;
@@ -816,6 +847,13 @@ function mapSubmissionRow(row: UserProblemSubmission): UserProblemSubmission {
     OutcomeEmailSentAt: row.OutcomeEmailSentAt
       ? new Date(row.OutcomeEmailSentAt).toISOString()
       : null,
+    EmailVerifiedAt: row.EmailVerifiedAt
+      ? new Date(row.EmailVerifiedAt).toISOString()
+      : null,
+    SubmitterUserId: row.SubmitterUserId ?? null,
+    VerificationGraceEndsAt: row.VerificationGraceEndsAt
+      ? new Date(row.VerificationGraceEndsAt).toISOString()
+      : null,
     CreatedAt: new Date(row.CreatedAt).toISOString(),
     UpdatedAt: new Date(row.UpdatedAt).toISOString(),
   };
@@ -832,7 +870,8 @@ export async function listUserSubmissions(filters: {
     SELECT SubmissionId, Title, Description, Category, Urgency,
            SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt,
            ModerationAction, ModerationReason, LinkedPainPointId, PipelineOutcome,
-           ConfirmationEmailSentAt, OutcomeEmailSentAt
+           ConfirmationEmailSentAt, OutcomeEmailSentAt,
+           EmailVerifiedAt, SubmitterUserId, VerificationGraceEndsAt
     FROM UserSubmissions
     ORDER BY CreatedAt DESC
   `);
@@ -867,7 +906,8 @@ export async function getUserSubmissionById(
     `SELECT SubmissionId, Title, Description, Category, Urgency,
             SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt,
             ModerationAction, ModerationReason, LinkedPainPointId, PipelineOutcome,
-            ConfirmationEmailSentAt, OutcomeEmailSentAt
+            ConfirmationEmailSentAt, OutcomeEmailSentAt,
+            EmailVerifiedAt, SubmitterUserId, VerificationGraceEndsAt
      FROM UserSubmissions WHERE SubmissionId = @id`,
     { id }
   );
@@ -889,10 +929,10 @@ export async function createUserSubmissionDb(
   await execute(
     `INSERT INTO UserSubmissions
        (SubmissionId, Title, Description, Category, Urgency, SubmitterName, SubmitterEmail, Status, CreatedAt, UpdatedAt,
-        ModerationAction, ModerationReason)
+        ModerationAction, ModerationReason, EmailVerifiedAt, SubmitterUserId)
      VALUES
        (@submissionId, @title, @description, @category, @urgency, @submitterName, @submitterEmail, @status, @now, @now,
-        @moderationAction, @moderationReason)`,
+        @moderationAction, @moderationReason, @emailVerifiedAt, @submitterUserId)`,
     {
       submissionId,
       title: input.title.trim(),
@@ -905,6 +945,8 @@ export async function createUserSubmissionDb(
       now,
       moderationAction: input.moderationAction ?? null,
       moderationReason: input.moderationReason ?? null,
+      emailVerifiedAt: input.emailVerifiedAt ?? null,
+      submitterUserId: input.submitterUserId ?? null,
     }
   );
 
@@ -1037,12 +1079,21 @@ export async function updateSubmissionPipelineFields(
     moderationReason?: string;
     confirmationEmailSentAt?: string | null;
     outcomeEmailSentAt?: string | null;
+    emailVerifiedAt?: string | null;
+    submitterUserId?: string | null;
+    /** Pass null to clear grace; omit to leave unchanged; string to set. */
+    verificationGraceEndsAt?: string | null;
     status?: SubmissionStatus;
   }
 ): Promise<void> {
   await ensureUserSubmissionColumns();
   const existing = await getUserSubmissionById(id);
   if (!existing) return;
+
+  const clearGrace = fields.verificationGraceEndsAt === null;
+  const setGrace =
+    fields.verificationGraceEndsAt !== undefined &&
+    fields.verificationGraceEndsAt !== null;
 
   await execute(
     `UPDATE UserSubmissions SET
@@ -1053,6 +1104,13 @@ export async function updateSubmissionPipelineFields(
        ModerationReason = @moderationReason,
        ConfirmationEmailSentAt = COALESCE(@confirmationEmailSentAt, ConfirmationEmailSentAt),
        OutcomeEmailSentAt = COALESCE(@outcomeEmailSentAt, OutcomeEmailSentAt),
+       EmailVerifiedAt = COALESCE(@emailVerifiedAt, EmailVerifiedAt),
+       SubmitterUserId = COALESCE(@submitterUserId, SubmitterUserId),
+       VerificationGraceEndsAt = CASE
+         WHEN @clearGrace = 1 THEN NULL
+         WHEN @setGrace = 1 THEN @verificationGraceEndsAt
+         ELSE VerificationGraceEndsAt
+       END,
        UpdatedAt = GETUTCDATE()
      WHERE SubmissionId = @id`,
     {
@@ -1072,6 +1130,11 @@ export async function updateSubmissionPipelineFields(
         fields.moderationReason ?? existing.ModerationReason ?? null,
       confirmationEmailSentAt: fields.confirmationEmailSentAt ?? null,
       outcomeEmailSentAt: fields.outcomeEmailSentAt ?? null,
+      emailVerifiedAt: fields.emailVerifiedAt ?? null,
+      submitterUserId: fields.submitterUserId ?? null,
+      verificationGraceEndsAt: setGrace ? fields.verificationGraceEndsAt : null,
+      clearGrace: clearGrace ? 1 : 0,
+      setGrace: setGrace ? 1 : 0,
     }
   );
 }

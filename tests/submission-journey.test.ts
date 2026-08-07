@@ -81,3 +81,19 @@ describe("submission triage (reuses problems4us-32 filter)", () => {
     expect(d.moderationAction).toBe("drop_pii");
   });
 });
+
+describe("auth-email-token shared mechanism (submissionverify)", () => {
+  it("mints opaque tokens and hashes are purpose-isolated", async () => {
+    const { mintAuthEmailToken, hashAuthEmailToken } = await import(
+      "@/lib/auth-email-token"
+    );
+    const token = mintAuthEmailToken();
+    expect(token.length).toBeGreaterThan(20);
+    const subHash = hashAuthEmailToken("submissionverify", token);
+    const acctHash = hashAuthEmailToken("emailverify", token);
+    const pwdHash = hashAuthEmailToken("pwdreset", token);
+    expect(subHash).not.toBe(acctHash);
+    expect(subHash).not.toBe(pwdHash);
+    expect(subHash).toMatch(/^[a-f0-9]{64}$/);
+  });
+});
