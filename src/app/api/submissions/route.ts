@@ -254,7 +254,8 @@ export async function POST(request: NextRequest) {
       piiHold
     );
 
-    let moderationAction = triage.moderationAction;
+    let moderationAction: "keep" | "drop_toxic" | "drop_pii" | "pii_choice" =
+      triage.moderationAction;
     let moderationReason = triage.reason;
     if (piiHold) {
       moderationAction = piiReview.hasDirectIdentifiers

@@ -9,7 +9,9 @@ export type AuthEmailTokenPurpose =
   | "pwdreset"
   | "emailverify"
   /** Submission acknowledgement / publish-gate verification (same mint/hash). */
-  | "submissionverify";
+  | "submissionverify"
+  /** Submitter chooses original vs PII-rewritten text before publish. */
+  | "submissionpiichoice";
 
 function getAuthEmailPepper(): string {
   return (
